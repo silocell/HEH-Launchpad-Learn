@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Level Up</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Cdefs%3E%3ClinearGradient id=%22g%22 x1=%220%22 y1=%221%22 x2=%221%22 y2=%220%22%3E%3Cstop offset=%220%22 stop-color=%22%234f46e5%22/%3E%3Cstop offset=%221%22 stop-color=%22%2306b6d4%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width=%2264%22 height=%2264%22 rx=%2216%22 fill=%22url(%23g)%22/%3E%3Cpath d=%22M14 46h9v-9h9v-9h9v-9h9%22 fill=%22none%22 stroke=%22%23fff%22 stroke-width=%225%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3Cpath d=%22M40 13h11v11%22 fill=%22none%22 stroke=%22%23fcd34d%22 stroke-width=%225%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E">
+<script>
+try{ var t = JSON.parse(localStorage.getItem("hl.theme")); if(t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t); }catch(e){}
+if (/^\/HEH-(Homework|Launchpad)-Lab(\/|$)/i.test(location.pathname)) document.documentElement.classList.add("lab");
+</script>
+<style>
+/* Level Up - practice that learns you. Tasks, XP and a shop, in the
+   spirit of the maths homework sites; questions written by Claude Haiku
+   and checked by Groq on the lab server. */
+:root{
+  --bg:#f3f5fb; --card:#ffffff; --ink:#151a2d; --soft:#5b6380; --rule:#e2e6f2;
+  --bar:#141a33; --barink:#fff;
+  --a1:#4f46e5; --a2:#06b6d4; --good:#16a34a; --bad:#dc2626; --gold:#f59e0b;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1120; --card:#171b2e; --ink:#e7eaf6; --soft:#9aa3c2; --rule:#272d47; --bar:#0a0d1a;
+    --good:#4ade80; --bad:#f87171;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1120; --card:#171b2e; --ink:#e7eaf6; --soft:#9aa3c2; --rule:#272d47; --bar:#0a0d1a;
+  --good:#4ade80; --bad:#f87171;
+}
+body[data-skin="c-ocean"] { --a1:#0369a1; --a2:#22d3ee }
+body[data-skin="c-sunset"]{ --a1:#ea580c; --a2:#db2777 }
+body[data-skin="c-forest"]{ --a1:#15803d; --a2:#65a30d }
+body[data-skin="c-galaxy"]{ --a1:#7c3aed; --a2:#ec4899 }
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+button{font:inherit;cursor:pointer}
+button:disabled{cursor:default;opacity:.55}
+.labbar{display:none;background:#7c3aed;color:#fff;font-size:.72rem;font-weight:700;letter-spacing:.06em;
+  text-align:center;padding:5px 12px;text-transform:uppercase}
+.labbar a{color:#fff;text-transform:none;letter-spacing:0;margin-left:10px}
+html.lab .labbar{display:block}
+
+/* top bar */
+.top{background:var(--bar);color:var(--barink);display:flex;align-items:center;gap:14px;padding:10px 18px;position:sticky;top:0;z-index:5}
+.brand{white-space:nowrap;font-weight:800;font-size:1.15rem;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+.brand i{font-style:normal;display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;
+  background:linear-gradient(135deg,var(--a1),var(--a2))}
+.top .sp{flex:1}
+.chip{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);border-radius:999px;padding:5px 12px;font-weight:700;font-size:.9rem;white-space:nowrap}
+.chip.pts b{color:#fcd34d}
+.top a.back{color:#c7cbe0;font-size:.85rem;text-decoration:none}
+.top a.back:hover{color:#fff}
+@media (max-width:520px){ .top{gap:8px;padding:10px 12px} .top a.back{display:none} .chip{padding:5px 9px} #shopBtn{padding:6px 10px!important} }
+
+main{max-width:980px;margin:0 auto;padding:22px 16px 60px}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:16px;padding:18px}
+h1{font-size:1.5rem;margin:0 0 2px}
+h2{font-size:1rem;margin:0 0 10px;text-transform:uppercase;letter-spacing:.06em;color:var(--soft)}
+.muted{color:var(--soft)}
+.btn{border:0;border-radius:12px;padding:12px 20px;font-weight:700;color:#fff;
+  background:linear-gradient(90deg,var(--a1),var(--a2))}
+.btn:hover:not(:disabled){filter:brightness(1.08)}
+.ghost{border:1px solid var(--rule);background:transparent;color:var(--ink);border-radius:12px;padding:10px 16px;font-weight:600}
+.ghost:hover:not(:disabled){border-color:var(--a1)}
+
+/* home */
+.hello{display:flex;align-items:center;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+.avatar{width:64px;height:64px;border-radius:18px;display:grid;place-items:center;font-size:2rem;
+  background:linear-gradient(135deg,var(--a1),var(--a2))}
+.title-tag{display:inline-block;font-size:.78rem;font-weight:700;padding:2px 10px;border-radius:999px;
+  background:color-mix(in srgb,var(--a1) 15%,transparent);color:var(--a1)}
+:root[data-theme="dark"] .title-tag{color:#c7d2fe}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .title-tag{color:#c7d2fe} }
+.lvl{margin-left:auto;min-width:220px}
+.lvl .row{display:flex;justify-content:space-between;font-size:.85rem;font-weight:600}
+.meter{height:12px;border-radius:999px;background:var(--rule);overflow:hidden;margin-top:6px}
+.meter>span{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,var(--a1),var(--a2));transition:width .6s}
+
+.grid{display:grid;grid-template-columns:2fr 1fr;gap:18px}
+@media (max-width:760px){ .grid{grid-template-columns:1fr} .lvl{margin-left:0;width:100%} }
+.tasks{display:grid;gap:12px}
+.task{display:flex;align-items:center;gap:14px;border:1px solid var(--rule);border-radius:14px;padding:14px;background:var(--card);
+  text-align:left;color:var(--ink);width:100%}
+.task:hover:not(:disabled){border-color:var(--a1);transform:translateY(-1px)}
+.task .num{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-size:1.1rem;color:#fff;flex:none}
+.task[data-k="warm"] .num{background:#0ea5e9}
+.task[data-k="target"] .num{background:#f43f5e}
+.task[data-k="challenge"] .num{background:#a855f7}
+.task[data-k="free"] .num{background:linear-gradient(135deg,var(--a1),var(--a2))}
+.task .what{flex:1;min-width:0}
+.task .what b{display:block}
+.task .what small{color:var(--soft)}
+.task .meter{height:8px}
+.task .done{font-size:1.4rem}
+.learn li{margin:0 0 8px}
+.learn ul{padding-left:18px;margin:0}
+.subjects{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.subj{border:1px solid var(--rule);background:transparent;color:var(--ink);border-radius:999px;padding:6px 12px;font-weight:600;font-size:.88rem}
+.subj[aria-pressed="true"]{background:var(--a1);border-color:var(--a1);color:#fff}
+.topics{display:grid;gap:6px;margin-top:6px;font-size:.88rem}
+.topic{display:grid;grid-template-columns:1fr 64px 42px;gap:8px;align-items:center}
+.topic .meter{height:6px;margin:0}
+.who-ai{font-size:.78rem;color:var(--soft);margin-top:14px}
+
+/* question */
+.qwrap{max-width:720px;margin:0 auto}
+.qhead{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.code{font-weight:800;font-size:1rem;background:var(--ink);color:var(--card);border-radius:8px;padding:4px 10px;letter-spacing:.04em}
+.qhead .sp{flex:1}
+.dots{display:flex;gap:6px}
+.dots i{width:12px;height:12px;border-radius:50%;background:var(--rule)}
+.dots i.ok{background:var(--good)} .dots i.no{background:var(--bad)} .dots i.now{outline:2px solid var(--a1);outline-offset:2px}
+.qcard{padding:26px}
+.qmeta{font-size:.78rem;text-transform:uppercase;letter-spacing:.07em;color:var(--soft);font-weight:700}
+.qtext{font-size:1.45rem;font-weight:700;margin:10px 0 20px;line-height:1.35;white-space:pre-wrap}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:560px){ .opts{grid-template-columns:1fr} .qtext{font-size:1.2rem} }
+.opt{border:2px solid var(--rule);background:var(--card);color:var(--ink);border-radius:14px;padding:14px 16px;text-align:left;font-size:1.05rem;font-weight:600;
+  display:flex;gap:10px;align-items:center}
+.opt kbd{font:inherit;font-size:.8rem;width:24px;height:24px;display:grid;place-items:center;border-radius:7px;background:var(--rule);flex:none}
+.opt:hover:not(:disabled){border-color:var(--a1)}
+.opt.sel{border-color:var(--a1);background:color-mix(in srgb,var(--a1) 10%,var(--card))}
+.opt.right{border-color:var(--good);background:color-mix(in srgb,var(--good) 14%,var(--card))}
+.opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,var(--card));text-decoration:line-through}
+.qbar{display:flex;gap:10px;margin-top:18px;align-items:center;flex-wrap:wrap}
+.qbar .sp{flex:1}
+.hint{margin-top:14px;padding:12px 14px;border-radius:12px;background:color-mix(in srgb,var(--gold) 14%,var(--card));border:1px solid color-mix(in srgb,var(--gold) 40%,transparent)}
+.fb{margin-top:16px;padding:16px;border-radius:14px}
+.fb.good{background:color-mix(in srgb,var(--good) 12%,var(--card));border:1px solid color-mix(in srgb,var(--good) 40%,transparent)}
+.fb.bad{background:color-mix(in srgb,var(--bad) 9%,var(--card));border:1px solid color-mix(in srgb,var(--bad) 35%,transparent)}
+.fb b.big{font-size:1.2rem;display:block;margin-bottom:4px}
+.more{white-space:pre-wrap;margin-top:10px;padding-top:10px;border-top:1px dashed var(--rule)}
+.linkish{background:none;border:0;color:var(--soft);text-decoration:underline;padding:0;font-size:.85rem}
+
+/* overlays */
+.veil{position:fixed;inset:0;background:rgba(5,8,20,.55);display:grid;place-items:center;padding:16px;z-index:20}
+.sheet{background:var(--card);border-radius:18px;width:min(560px,100%);max-height:88vh;overflow:auto;padding:22px;border:1px solid var(--rule)}
+.sheet h3{margin:0 0 4px}
+.shop-group{margin-top:16px}
+.shop-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--rule)}
+.shop-item .ic{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;font-size:1.3rem;background:var(--rule);flex:none}
+.shop-item .nm{flex:1}
+.shop-item .nm small{display:block;color:var(--soft)}
+.party{text-align:center}
+.party .em{font-size:3.4rem}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--card);padding:10px 18px;border-radius:999px;font-weight:600;z-index:30;
+  max-width:calc(100% - 32px)}
+.pop{animation:pop .5s ease}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.18)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion: reduce){ .pop{animation:none} .meter>span{transition:none} }
+.center{text-align:center;padding:60px 16px}
+canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:40}
+.xbtn{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;
+  font:700 22px/1 system-ui,sans-serif;text-decoration:none;border:2px solid rgba(255,255,255,.35);flex:none;margin-left:6px}
+.xbtn:hover{background:rgba(255,255,255,.26)}
+.xbtn:focus-visible{outline:3px solid #fde68a;outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="labbar">Lab — things here are being tried out and may break <a href="/HEH-Homework/">back to the Launchpad</a></div>
+<div class="top">
+  <div class="brand"><img src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Cdefs%3E%3ClinearGradient id=%22g%22 x1=%220%22 y1=%221%22 x2=%221%22 y2=%220%22%3E%3Cstop offset=%220%22 stop-color=%22%234f46e5%22/%3E%3Cstop offset=%221%22 stop-color=%22%2306b6d4%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width=%2264%22 height=%2264%22 rx=%2216%22 fill=%22url(%23g)%22/%3E%3Cpath d=%22M14 46h9v-9h9v-9h9v-9h9%22 fill=%22none%22 stroke=%22%23fff%22 stroke-width=%225%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3Cpath d=%22M40 13h11v11%22 fill=%22none%22 stroke=%22%23fcd34d%22 stroke-width=%225%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E" width="30" height="30" alt="" style="border-radius:8px">Level Up</div>
+  <div class="sp"></div>
+  <span class="chip pts" id="ptsChip">⭐ <b id="pts">–</b> pts</span>
+  <span class="chip" id="streakChip" hidden>🔥 <span id="streak">0</span></span>
+  <button class="ghost" id="shopBtn" style="color:#fff;border-color:rgba(255,255,255,.25);padding:6px 14px">Shop</button>
+<a class="xbtn" href="/HEH-Homework/" title="Back to the Launchpad" aria-label="Close and go back to the Launchpad">✕</a>
+</div>
+<main id="main"><div class="center muted">Loading…</div></main>
+<canvas id="confetti"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js"></script>
+<script>
+(function(){
+"use strict";
+/* The real site's own server (HEH-Live, since 24 Oct 2026). The lab
+   swaps these for the lab server further down. */
+var SUPABASE_URL = "https://hehs-live.duckdns.org";
+var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkyODMyMjkwLCJleHAiOjIxMDgxOTIyOTB9.7gFhQa5RBwVtiOPLO7Qf2-aVEbkd5xgpLiN1J06Gybo";
+var LAB = document.documentElement.classList.contains("lab");
+if (LAB) {
+  var TUNNEL = false;
+  try { TUNNEL = localStorage.getItem("hl.labapi") === "tunnel"; } catch (e) {}
+  SUPABASE_URL = TUNNEL ? "http://localhost:8000" : "https://hehs.duckdns.org";
+  SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkyNzcxNTQzLCJleHAiOjIxMDgxMzE1NDN9.MFpgmA0d-KISwuCicZMUhnaEpVHY-Sw_jFp3Muck6FM";
+}
+var sb = null;
+try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth:{ persistSession:true, autoRefreshToken:true } }); } catch (e) {}
+
+var main = document.getElementById("main");
+var BADGE = { "a-rocket":"🚀", "a-star":"⭐", "a-bolt":"⚡", "a-owl":"🦉", "a-crown":"👑", "a-dragon":"🐉" };
+var SUBJ_ICON = { maths:"🔢", english:"📖", science:"🧪" };
+var KIND_NAME = { title:"Titles", theme:"Colours", badge:"Badges" };
+var THEME_SWATCH = { "c-classic":"#4f46e5", "c-ocean":"#0369a1", "c-sunset":"#ea580c", "c-forest":"#15803d", "c-galaxy":"#7c3aed" };
+var S = null;          // last summary from the server
+var auto = null;       // lab test mode: "right" or "mixed" while autoplaying
+var mem = [];          // this visit's answers, for memory checks
+/* Key handlers are swapped per question. Without this, every question
+   left by the Home button (or an error) left its handler behind, and a
+   later Enter or A-D press on the home screen fired at a dead question. */
+var offKeys = null, offEnter = null;
+function dropKeyHandlers(){ if (offKeys) offKeys(); if (offEnter) offEnter(); }
+var sinceCheck = 0;
+
+function h(tag, cls, text){ var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function toast(msg){ var t = h("div", "toast", msg); document.body.appendChild(t); setTimeout(function(){ t.remove(); }, 2600); }
+
+function api(body){
+  return sb.functions.invoke("levelup", { body: body }).then(function(r){
+    if (r.error) {
+      var ctx = r.error.context;
+      if (ctx && ctx.json) return ctx.json().then(function(j){ throw new Error(j && j.error || "Couldn't reach Level Up."); },
+                                                  function(){ throw new Error("Couldn't reach Level Up."); });
+      throw new Error("Couldn't reach Level Up.");
+    }
+    if (r.data && r.data.error) throw new Error(r.data.error);
+    return r.data;
+  });
+}
+
+function setTop(){
+  if (!S) return;
+  document.getElementById("pts").textContent = S.pts;
+  var sc = document.getElementById("streakChip");
+  sc.hidden = !(S.streak > 1); document.getElementById("streak").textContent = S.streak;
+  document.body.setAttribute("data-skin", (S.wear && S.wear.theme) || "c-classic");
+}
+function bump(id){ var e = document.getElementById(id); e.classList.remove("pop"); void e.offsetWidth; e.classList.add("pop"); }
+
+/* ---------------- home ---------------- */
+function home(){
+  return api({ action:"state" }).then(function(s){ S = s; setTop(); drawHome(); }).catch(showErr);
+}
+function drawHome(){
+  main.textContent = "";
+  var hello = h("div", "hello");
+  var av = h("div", "avatar", BADGE[S.wear.badge] || "🚀");
+  var who = h("div");
+  var titleName = (S.shop.filter(function(x){ return x.id === S.wear.title; })[0] || {}).name || "Rookie";
+  who.appendChild(h("h1", null, greeting()));
+  who.appendChild(h("span", "title-tag", titleName));
+  var lvl = h("div", "lvl");
+  var row = h("div", "row"); row.appendChild(h("span", null, "Level " + S.level)); row.appendChild(h("span", "muted", S.into + " / " + S.need + " XP"));
+  var m = h("div", "meter"), fill = h("span"); m.appendChild(fill);
+  lvl.appendChild(row); lvl.appendChild(m);
+  hello.appendChild(av); hello.appendChild(who); hello.appendChild(lvl);
+  main.appendChild(hello);
+  requestAnimationFrame(function(){ fill.style.width = Math.round(100 * S.into / S.need) + "%"; });
+
+  var grid = h("div", "grid");
+  var left = h("div"), right = h("div");
+  var tc = h("div", "card");
+  tc.appendChild(h("h2", null, "Today's tasks"));
+  var list = h("div", "tasks");
+  var allDone = true;
+  S.tasks.forEach(function(t, i){
+    var done = t.done >= t.of; if (!done) allDone = false;
+    list.appendChild(taskBtn(t.key, String(i + 1), t.name, t.topic + (done ? " · " + t.right + "/" + t.of + " right" : " · " + t.done + "/" + t.of), t.done / t.of, done));
+  });
+  list.appendChild(taskBtn("free", "∞", "Free practice", allDone ? "It picks what you need most" : "Mixed questions, picked for you", 0, false));
+  tc.appendChild(list);
+  if (allDone) tc.appendChild(h("p", "muted", "🎉 All three tasks done today. New ones arrive tomorrow — Free practice keeps going."));
+  left.appendChild(tc);
+
+  if (S.topics && S.topics.length) {
+    var tp = h("div", "card"); tp.style.marginTop = "18px";
+    tp.appendChild(h("h2", null, "Your topics"));
+    var tl = h("div", "topics");
+    S.topics.sort(function(a, b){ return b.acc - a.acc; }).forEach(function(t){
+      var r = h("div", "topic");
+      r.appendChild(h("span", null, SUBJ_ICON[t.subject] + " " + t.name));
+      var mm = h("div", "meter"), ff = h("span"); ff.style.width = t.acc + "%"; mm.appendChild(ff); r.appendChild(mm);
+      r.appendChild(h("span", "muted", "L" + t.level));
+      tl.appendChild(r);
+    });
+    tp.appendChild(tl);
+    left.appendChild(tp);
+  }
+
+  var lc = h("div", "card learn");
+  lc.appendChild(h("h2", null, "What it's learnt about you"));
+  var ul = h("ul"); (S.insights || []).forEach(function(x){ ul.appendChild(h("li", null, x)); }); lc.appendChild(ul);
+  lc.appendChild(h("h2", null, "Subjects")).style.marginTop = "16px";
+  var sj = h("div", "subjects");
+  ["maths", "english", "science"].forEach(function(k){
+    var b = h("button", "subj", SUBJ_ICON[k] + " " + k[0].toUpperCase() + k.slice(1)); b.type = "button";
+    b.setAttribute("aria-pressed", S.subjects.indexOf(k) >= 0 ? "true" : "false");
+    b.onclick = function(){
+      var on = S.subjects.slice(), i = on.indexOf(k);
+      if (i >= 0) on.splice(i, 1); else on.push(k);
+      if (!on.length) return toast("Keep at least one subject.");
+      api({ action:"subjects", subjects:on }).then(function(s){ S = s; drawHome(); toast("Today's tasks changed to match."); }).catch(function(e){ toast(e.message); });
+    };
+    sj.appendChild(b);
+  });
+  lc.appendChild(sj);
+  lc.appendChild(h("p", "who-ai", "Questions written by " + S.ai.writer + ", checked by " + S.ai.checker + ". Spotted a wrong one? Report it."));
+  right.appendChild(lc);
+  if (S.tester) {
+    /* Lab test mode (only for accounts on the lab's tester list). */
+    var tc2 = h("div", "card"); tc2.style.marginTop = "18px";
+    tc2.appendChild(h("h2", null, "🧪 Test mode"));
+    tc2.appendChild(h("p", "muted", "Autoplays the next task at a human pace (about 4 seconds a question), so three strikes doesn't trip."));
+    var row2 = h("div", "subjects");
+    function nextTask(){ var t = S.tasks.filter(function(x){ return x.done < x.of; })[0]; return t ? t.key : "free"; }
+    [["Autoplay: perfect task", "right"], ["Autoplay: mixed", "mixed"]].forEach(function(x){
+      var b = h("button", "subj", x[0]); b.type = "button"; b.onclick = function(){ auto = x[1]; play(nextTask(), []); }; row2.appendChild(b);
+    });
+    tc2.appendChild(row2); right.appendChild(tc2);
+  }
+
+  grid.appendChild(left); grid.appendChild(right);
+  main.appendChild(grid);
+}
+function greeting(){
+  var hr = new Date().getHours();
+  return hr < 12 ? "Good morning!" : hr < 18 ? "Good afternoon!" : "Good evening!";
+}
+function taskBtn(key, num, name, sub, frac, done){
+  var b = h("button", "task"); b.type = "button"; b.setAttribute("data-k", key);
+  b.appendChild(h("span", "num", num));
+  var w = h("span", "what"); w.appendChild(h("b", null, name)); w.appendChild(h("small", null, sub));
+  if (key !== "free") { var m = h("div", "meter"), f = h("span"); f.style.width = Math.round(frac * 100) + "%"; m.appendChild(f); w.appendChild(m); }
+  b.appendChild(w);
+  b.appendChild(h("span", "done", done ? "✅" : "›"));
+  if (done) b.disabled = true;
+  b.onclick = function(){ play(key, []); };
+  return b;
+}
+
+/* ---------------- a question ---------------- */
+/* Writing a question can take a few seconds when the bank hasn't got
+   one ready. The pupil spends those seconds reading the feedback on
+   the last one, so we start fetching the next one then - the same
+   single request, just begun earlier. By the time "Next question" is
+   clicked it is usually already here. */
+var waiting = null;                    // { task: ..., p: Promise }
+function prefetch(task){
+  if (waiting && waiting.task === task) return;
+  var p = api({ action:"next", task:task });
+  waiting = { task: task, p: p };
+  /* A failure must not become an unhandled rejection, and must not be
+     retried behind the pupil's back - we simply forget it and let the
+     click make an ordinary request. */
+  p.catch(function(){ if (waiting && waiting.p === p) waiting = null; });
+}
+function nextQuestion(task){
+  if (waiting && waiting.task === task){
+    var p = waiting.p; waiting = null;
+    return p;
+  }
+  waiting = null;
+  return api({ action:"next", task:task });
+}
+function play(task, dots){
+  if (!auto && sinceCheck >= 6 && mem.length >= 3 && Math.random() < 0.6) { sinceCheck = 0; return memoryCheck(function(){ play(task, dots); }); }
+  var p = nextQuestion(task), arrived = false;
+  /* Only say we're waiting if we actually are. */
+  p.then(function(){ arrived = true; });
+  setTimeout(function(){
+    if (arrived) return;
+    main.textContent = "";
+    main.appendChild(h("div", "center muted", "Getting your next question\u2026"));
+  }, 120);
+  p.then(function(q){ drawQ(task, q, dots); }).catch(showErr);
+}
+
+function drawQ(task, q, dots){
+  dropKeyHandlers();
+  main.textContent = "";
+  var wrap = h("div", "qwrap");
+  var head = h("div", "qhead");
+  head.appendChild(h("span", "code", q.code));
+  head.appendChild(h("b", null, q.task));
+  head.appendChild(h("span", "sp"));
+  if (q.of) {
+    var ds = h("div", "dots");
+    for (var i = 0; i < q.of; i++) { var d = h("i"); if (dots[i] === 1) d.className = "ok"; else if (dots[i] === 0) d.className = "no"; else if (i === q.qNo - 1) d.className = "now"; ds.appendChild(d); }
+    head.appendChild(ds);
+  }
+  var home = h("button", "ghost", "Home"); home.type = "button"; home.onclick = homeNow; head.appendChild(home);
+  wrap.appendChild(head);
+
+  var card = h("div", "card qcard");
+  card.appendChild(h("div", "qmeta", (SUBJ_ICON[q.subject] || "") + " " + q.topic + " · level " + q.level));
+  card.appendChild(h("div", "qtext", q.q));
+  var opts = h("div", "opts"), chosen = null, btns = [];
+  q.options.forEach(function(o, i){
+    var b = h("button", "opt"); b.type = "button";
+    b.appendChild(h("kbd", null, "ABCD"[i])); b.appendChild(h("span", null, o));
+    b.onclick = function(){ chosen = o; btns.forEach(function(x){ x.classList.toggle("sel", x === b); }); submit.disabled = false; };
+    btns.push(b); opts.appendChild(b);
+  });
+  card.appendChild(opts);
+  var bar = h("div", "qbar");
+  var hintB = h("button", "ghost", "💡 Hint (half points)"); hintB.type = "button"; hintB.hidden = !q.hasHint;
+  var submit = h("button", "btn", "Submit"); submit.type = "button"; submit.disabled = true;
+  bar.appendChild(hintB); bar.appendChild(h("span", "sp")); bar.appendChild(submit);
+  card.appendChild(bar);
+  wrap.appendChild(card);
+  main.appendChild(wrap);
+  var started = performance.now();
+  if (q.answer != null) {
+    var tb = h("div", "qbar"); tb.style.borderTop = "1px dashed var(--rule)"; tb.style.paddingTop = "10px";
+    tb.appendChild(h("span", "muted", "🧪 Test:"));
+    function testPick(rightOne){
+      var b = btns.filter(function(x){ return (x.lastChild.textContent === String(q.answer)) === rightOne; })[0];
+      if (b) { b.click(); submit.click(); }
+    }
+    var tr = h("button", "ghost", "✓ Answer right"); tr.type = "button"; tr.onclick = function(){ testPick(true); };
+    var tw = h("button", "ghost", "✗ Answer wrong"); tw.type = "button"; tw.onclick = function(){ testPick(false); };
+    var ts = h("button", "ghost", auto ? "■ Stop autoplay" : ""); ts.type = "button"; ts.hidden = !auto; ts.onclick = function(){ auto = null; ts.hidden = true; };
+    tb.appendChild(tr); tb.appendChild(tw); tb.appendChild(ts); card.appendChild(tb);
+    if (auto) setTimeout(function(){ if (auto && document.body.contains(tr)) testPick(auto === "right" || Math.random() < .7); }, 2200);
+  }
+
+  hintB.onclick = function(){
+    hintB.disabled = true;
+    api({ action:"hint", id:q.id }).then(function(r){ var hd = h("div", "hint", "💡 " + r.hint); card.insertBefore(hd, bar.nextSibling); })
+      .catch(function(e){ toast(e.message); hintB.disabled = false; });
+  };
+  function keys(e){
+    if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
+    var k = e.key.toUpperCase(), i = "ABCD".indexOf(k);
+    if (i < 0) i = "1234".indexOf(k);
+    if (i >= 0 && btns[i] && !btns[i].disabled) btns[i].click();
+    if (e.key === "Enter" && !submit.disabled && !submit.hidden) submit.click();
+  }
+  document.addEventListener("keydown", keys);
+  offKeys = function(){ document.removeEventListener("keydown", keys); offKeys = null; };
+
+  submit.onclick = function(){
+    submit.disabled = true; hintB.disabled = true;
+    btns.forEach(function(b){ b.disabled = true; });
+    api({ action:"answer", id:q.id, pick:chosen, ms:Math.round(performance.now() - started) }).then(function(r){
+      if (offKeys) offKeys();
+      S = Object.assign(S || {}, r); setTop(); bump("ptsChip");
+      btns.forEach(function(b){
+        var t = b.lastChild.textContent;
+        if (t === r.answer) b.classList.add("right"); else if (t === chosen) b.classList.add("wrong");
+      });
+      if (r.right) mem.push({ code:q.code, q:q.q, answer:r.answer, options:q.options });
+      if (mem.length > 12) mem.shift();
+      sinceCheck++;
+      var fb = h("div", "fb " + (r.right ? "good" : "bad"));
+      fb.appendChild(h("b", "big", r.right ? pickOf(["Nice one!", "Spot on!", "Correct!", "Brilliant!", "Yes!"]) + " +" + r.gained + " pts"
+                                            : "Not quite — it was " + r.answer));
+      if (r.explain) fb.appendChild(h("div", null, r.explain));
+      if (r.moved) fb.appendChild(h("div", null, "📈 " + r.moved)).style.marginTop = "6px";
+      if (r.canExplain) {
+        var ex = h("button", "ghost", "Explain it to me"); ex.type = "button"; ex.style.marginTop = "10px";
+        ex.onclick = function(){
+          ex.disabled = true; ex.textContent = "Thinking…";
+          api({ action:"explain", id:q.id }).then(function(x){ ex.remove(); fb.appendChild(h("div", "more", x.more)); })
+            .catch(function(e){ ex.textContent = "Explain it to me"; ex.disabled = false; toast(e.message); });
+        };
+        fb.appendChild(ex);
+      }
+      var rep = h("button", "linkish", "Something wrong with this question?"); rep.type = "button";
+      rep.onclick = function(){ api({ action:"report", id:q.id }).then(function(x){ rep.replaceWith(h("small", "muted", x.said || "Thanks.")); }); };
+      var foot = h("div", "qbar"); foot.appendChild(rep); foot.appendChild(h("span", "sp"));
+      var nd = dots.concat([r.right ? 1 : 0]);
+      /* Start the next one now, while this feedback is being read. */
+      if (!r.taskDone) prefetch(task);
+      var next = h("button", "btn", r.taskDone ? "Finish task" : "Next question"); next.type = "button";
+      next.onclick = function(){ r.taskDone ? taskParty(q.task, r.bonus, nd) : play(task, nd); };
+      foot.appendChild(next);
+      card.appendChild(fb); card.appendChild(foot);
+      bar.remove();
+      next.focus();
+      if (auto) setTimeout(function(){ if (auto && document.body.contains(next)) next.click(); }, 1500);
+      function go(e){ if (e.key === "Enter") { if (offEnter) offEnter(); if (document.body.contains(next)) { e.preventDefault(); next.click(); } } }
+      document.addEventListener("keydown", go);
+      offEnter = function(){ document.removeEventListener("keydown", go); offEnter = null; };
+      if (r.right && (r.moved || r.streak % 5 === 0)) confetti();
+    }).catch(function(e){
+      auto = null;
+      toast(e.message); submit.disabled = false;
+      btns.forEach(function(b){ b.disabled = false; });
+      if (!card.querySelector(".hint")) hintB.disabled = false;
+    });
+  };
+}
+function pickOf(a){ return a[Math.floor(Math.random() * a.length)]; }
+function homeNow(){ dropKeyHandlers(); waiting = null; home(); }
+
+function taskParty(name, bonus, dots){
+  dropKeyHandlers();
+  auto = null;
+  confetti();
+  var right = dots.filter(function(x){ return x === 1; }).length;
+  var v = h("div", "veil"), s = h("div", "sheet party");
+  s.appendChild(h("div", "em", right === dots.length ? "🏆" : right >= 3 ? "🎉" : "💪"));
+  s.appendChild(h("h3", null, name + " done!"));
+  s.appendChild(h("p", null, right + " out of " + dots.length + " right. Task bonus: +" + bonus + " pts."));
+  var b = h("button", "btn", "Back to tasks"); b.type = "button"; b.onclick = function(){ v.remove(); home(); };
+  s.appendChild(b); v.appendChild(s); document.body.appendChild(v); b.focus();
+}
+
+/* A quick "do you remember?" now and then - like writing your answers
+   down. No points to lose; it's just a nudge to actually remember. */
+function memoryCheck(then){
+  var m = pickOf(mem.slice(0, -1).length ? mem.slice(0, -1) : mem);
+  var v = h("div", "veil"), s = h("div", "sheet");
+  s.appendChild(h("h3", null, "🧠 Memory check"));
+  s.appendChild(h("p", "muted", "What was your answer to " + m.code + "?"));
+  s.appendChild(h("p", null, m.q));
+  var opts = h("div", "opts");
+  m.options.forEach(function(o){
+    var b = h("button", "opt", o); b.type = "button";
+    b.onclick = function(){
+      [].forEach.call(opts.children, function(x){ x.disabled = true; if (x.textContent === m.answer) x.classList.add("right"); });
+      if (o !== m.answer) b.classList.add("wrong");
+      var go = h("button", "btn", o === m.answer ? "Sharp memory! Carry on" : "Carry on"); go.type = "button"; go.style.marginTop = "14px";
+      go.onclick = function(){ v.remove(); then(); };
+      s.appendChild(go); go.focus();
+    };
+    opts.appendChild(b);
+  });
+  s.appendChild(opts); v.appendChild(s); document.body.appendChild(v);
+}
+
+/* ---------------- shop ---------------- */
+document.getElementById("shopBtn").onclick = function(){
+  if (!S) return;
+  var v = h("div", "veil"), s = h("div", "sheet");
+  v.onclick = function(e){ if (e.target === v) { v.remove(); drawHomeIfHome(); } };
+  function paint(){
+    s.textContent = "";
+    var hd = h("div", "qhead"); hd.appendChild(h("h3", null, "Shop")); hd.appendChild(h("span", "sp"));
+    hd.appendChild(h("span", "chip pts", "⭐ " + S.pts + " pts")).style.cssText = "background:var(--rule)";
+    var x = h("button", "ghost", "Close"); x.type = "button"; x.onclick = function(){ v.remove(); drawHomeIfHome(); }; hd.appendChild(x);
+    s.appendChild(hd);
+    s.appendChild(h("p", "muted", "Earn points by answering questions. Nothing here costs real money."));
+    ["title", "theme", "badge"].forEach(function(kind){
+      var g = h("div", "shop-group"); g.appendChild(h("h2", null, KIND_NAME[kind]));
+      S.shop.filter(function(i){ return i.kind === kind; }).forEach(function(it){
+        var row = h("div", "shop-item");
+        var ic = h("div", "ic", kind === "badge" ? BADGE[it.id] : kind === "theme" ? "" : "🏷️");
+        if (kind === "theme") ic.style.background = THEME_SWATCH[it.id];
+        var nm = h("div", "nm"); nm.appendChild(h("b", null, it.name));
+        nm.appendChild(h("small", null, it.cost ? it.cost + " pts" : "Free"));
+        var own = S.owned.indexOf(it.id) >= 0, wearing = S.wear[kind] === it.id;
+        var b = h("button", wearing ? "ghost" : own ? "ghost" : "btn", wearing ? "Using" : own ? "Use" : "Buy");
+        b.type = "button"; b.disabled = wearing || (!own && S.pts < it.cost);
+        b.onclick = function(){
+          b.disabled = true;
+          api({ action: own ? "wear" : "buy", item: it.id }).then(function(r){
+            S = r; setTop(); paint(); if (!own) { toast("Got it: " + it.name + "!"); confetti(); }
+          }).catch(function(e){ toast(e.message); b.disabled = false; });
+        };
+        row.appendChild(ic); row.appendChild(nm); row.appendChild(b); g.appendChild(row);
+      });
+      s.appendChild(g);
+    });
+  }
+  function esc(e){ if (e.key === "Escape") { document.removeEventListener("keydown", esc); v.remove(); drawHomeIfHome(); } }
+  document.addEventListener("keydown", esc);
+  var oldRemove = v.remove.bind(v);
+  v.remove = function(){ document.removeEventListener("keydown", esc); oldRemove(); };
+  paint(); v.appendChild(s); document.body.appendChild(v);
+};
+function drawHomeIfHome(){ if (main.querySelector(".hello")) drawHome(); }
+
+/* ---------------- confetti ---------------- */
+function confetti(){
+  if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  var c = document.getElementById("confetti"), g = c.getContext("2d");
+  c.width = innerWidth; c.height = innerHeight;
+  var cols = ["#4f46e5", "#06b6d4", "#f59e0b", "#ec4899", "#22c55e"], bits = [];
+  for (var i = 0; i < 120; i++) bits.push({ x: c.width / 2, y: c.height / 3, vx: (Math.random() - .5) * 14, vy: Math.random() * -12 - 3,
+    s: 4 + Math.random() * 5, c: cols[i % 5], r: Math.random() * 6 });
+  var t = 0;
+  (function step(){
+    g.clearRect(0, 0, c.width, c.height);
+    bits.forEach(function(b){ b.x += b.vx; b.y += b.vy; b.vy += .35; b.vx *= .99; b.r += .2;
+      g.save(); g.translate(b.x, b.y); g.rotate(b.r); g.fillStyle = b.c; g.fillRect(-b.s / 2, -b.s / 2, b.s, b.s * .6); g.restore(); });
+    if (++t < 110) requestAnimationFrame(step); else g.clearRect(0, 0, c.width, c.height);
+  })();
+}
+
+/* ---------------- start ---------------- */
+function showErr(e){
+  dropKeyHandlers(); auto = null;
+  main.textContent = "";
+  var box = h("div", "card center");
+  box.appendChild(h("p", null, e && e.message || "Something went wrong."));
+  var again = h("button", "btn", "Try again"); again.type = "button"; again.onclick = home;
+  box.appendChild(again);
+  main.appendChild(box);
+}
+/* Level Up runs on the real site too now: the levelup function and its
+   tables are installed on the live server, so there is nothing to hold
+   back. The lab still gets new features first. */
+if (!sb) {
+  showErr(new Error("Couldn't load. Check your connection."));
+} else {
+  sb.auth.getSession().then(function(r){
+    if (!r.data || !r.data.session) {
+      main.textContent = "";
+      var box = h("div", "card center");
+      box.appendChild(h("div", null, "🚀")).style.fontSize = "3rem";
+      box.appendChild(h("h1", null, "Level Up"));
+      box.appendChild(h("p", "muted", "Practice that learns how you work, gives you points, and lets you spend them. Sign in on the Launchpad first."));
+      var a = h("a", "btn", "Sign in"); a.href = "./"; a.style.textDecoration = "none"; a.style.display = "inline-block";
+      box.appendChild(a); main.appendChild(box);
+      return;
+    }
+    home();
+  });
+}
+})();
+</script>
+</body>
+</html>

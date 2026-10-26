@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Word Dragons</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2216%22 fill=%22%23059669%22/%3E%3Cellipse cx=%2232%22 cy=%2236%22 rx=%2216%22 ry=%2220%22 fill=%22%23fde68a%22/%3E%3Ccircle cx=%2226%22 cy=%2230%22 r=%223%22 fill=%22%23f59e0b%22/%3E%3Ccircle cx=%2238%22 cy=%2242%22 r=%224%22 fill=%22%23f59e0b%22/%3E%3C/svg%3E">
+<script>
+try{ var t = JSON.parse(localStorage.getItem("hl.theme")); if(t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t); }catch(e){}
+if (/^\/HEH-(Homework|Launchpad)-Lab(\/|$)/i.test(location.pathname)) document.documentElement.classList.add("lab");
+</script>
+<style>
+/* Word Dragons: grow dragons by doing English; battle by answering the
+   same questions faster. Players only ever see each other's dragon. */
+:root{ --bg:#effaf4; --card:#fff; --ink:#122019; --soft:#58706a; --rule:#d7ebe1; --bar:#0b2a1d; --a1:#059669; --a2:#0ea5e9; --good:#16a34a; --bad:#dc2626; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#0a1611; --card:#11211a; --ink:#e3f2ea; --soft:#9cb8ad; --rule:#20372c; --bar:#04100b; --good:#4ade80; --bad:#f87171; } }
+:root[data-theme="dark"]{ --bg:#0a1611; --card:#11211a; --ink:#e3f2ea; --soft:#9cb8ad; --rule:#20372c; --bar:#04100b; --good:#4ade80; --bad:#f87171; }
+*{box-sizing:border-box} [hidden]{display:none!important} html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+button{font:inherit;cursor:pointer} button:disabled{cursor:default;opacity:.5}
+.labbar{display:none;background:#7c3aed;color:#fff;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-align:center;padding:5px 12px;text-transform:uppercase}
+.labbar a{color:#fff;text-transform:none;letter-spacing:0;margin-left:10px} html.lab .labbar{display:block}
+.top{background:var(--bar);color:#fff;display:flex;align-items:center;gap:12px;padding:10px 18px;position:sticky;top:0;z-index:5}
+.brand{font-weight:800;font-size:1.15rem;white-space:nowrap} .top .sp{flex:1}
+.chip{background:rgba(255,255,255,.12);border-radius:999px;padding:5px 12px;font-weight:700;white-space:nowrap;font-size:.9rem}
+.top a{color:#b9d6c9;font-size:.85rem;text-decoration:none}
+@media (max-width:520px){ .top a{display:none} .top{gap:8px;padding:10px 12px} }
+nav.tabs{display:flex;gap:6px;max-width:980px;margin:16px auto 0;padding:0 16px}
+nav.tabs button{border:0;background:transparent;color:var(--soft);font-weight:700;padding:8px 14px;border-radius:999px}
+nav.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+main{max-width:980px;margin:0 auto;padding:16px 16px 60px}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:16px;padding:18px}
+h2{font-size:.9rem;margin:0 0 10px;text-transform:uppercase;letter-spacing:.06em;color:var(--soft)}
+.muted{color:var(--soft)}
+.btn{border:0;border-radius:12px;padding:11px 20px;font-weight:800;color:#fff;background:linear-gradient(90deg,var(--a1),var(--a2))}
+.ghost{border:1px solid var(--rule);background:transparent;color:var(--ink);border-radius:12px;padding:9px 14px;font-weight:600}
+.nest{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.dragon{text-align:center;position:relative}
+.dragon svg{width:100%;max-width:200px;height:auto}
+.dragon .nm{font-size:1.2rem;font-weight:800}
+.el{display:inline-block;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;padding:2px 8px;border-radius:999px;color:#fff}
+.el-fire{background:#ea580c}.el-stone{background:#78716c}.el-storm{background:#6366f1}.el-ice{background:#0891b2}
+.meter{height:9px;border-radius:999px;background:var(--rule);overflow:hidden;margin:4px 0 2px}
+.meter>span{display:block;height:100%;border-radius:999px}
+.lbl{display:flex;justify-content:space-between;font-size:.74rem;color:var(--soft)}
+.row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+.eggs{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}
+.eggs button{border:2px solid var(--rule);background:var(--card);color:var(--ink);border-radius:12px;padding:10px;font-weight:700}
+.eggs small{display:block;color:var(--soft);font-weight:500}
+.veil{position:fixed;inset:0;background:rgba(0,10,6,.6);display:grid;place-items:center;padding:16px;z-index:20}
+.sheet{background:var(--card);border-radius:18px;width:min(620px,100%);max-height:92vh;overflow:auto;padding:22px;border:1px solid var(--rule)}
+.qtext{font-size:1.3rem;font-weight:700;margin:8px 0 16px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:560px){ .opts{grid-template-columns:1fr} }
+.opt{border:2px solid var(--rule);background:var(--card);color:var(--ink);border-radius:14px;padding:13px;text-align:left;font-weight:600;font-size:1rem}
+.opt:hover:not(:disabled){border-color:var(--a1)}
+.opt.right{border-color:var(--good);background:color-mix(in srgb,var(--good) 14%,var(--card))}
+.opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,var(--card));text-decoration:line-through}
+.fb{margin-top:14px;padding:12px 14px;border-radius:12px}
+.fb.good{background:color-mix(in srgb,var(--good) 12%,var(--card))} .fb.bad{background:color-mix(in srgb,var(--bad) 9%,var(--card))}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px} @media (max-width:760px){ .grid2{grid-template-columns:1fr} }
+input[type=email],select{font:inherit;padding:10px 12px;border:1px solid var(--rule);border-radius:10px;background:var(--card);color:var(--ink);width:100%;margin:4px 0 10px}
+.battle{display:flex;align-items:center;gap:12px;border-top:1px solid var(--rule);padding:12px 0}
+.battle svg{width:70px;height:auto;flex:none}
+.battle .w{flex:1;min-width:0}
+.res{font-weight:800;text-transform:uppercase;font-size:.75rem;letter-spacing:.06em}
+.won{color:var(--good)} .lost{color:var(--bad)} .draw,.wait{color:var(--soft)}
+.clock{font-variant-numeric:tabular-nums;font-weight:800}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:700;z-index:30;max-width:calc(100% - 32px)}
+.center{text-align:center;padding:50px 16px}
+@keyframes bob{50%{transform:translateY(-4px)}} .dragon svg .body{animation:bob 2.4s ease-in-out infinite}
+@keyframes wob{25%{transform:rotate(-4deg)}75%{transform:rotate(4deg)}} .dragon svg .egg{transform-origin:60px 80px;animation:wob 2s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){ .dragon svg .body,.dragon svg .egg{animation:none} }
+.xbtn{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;
+  font:700 22px/1 system-ui,sans-serif;text-decoration:none;border:2px solid rgba(255,255,255,.35);flex:none;margin-left:6px}
+.xbtn:hover{background:rgba(255,255,255,.26)}
+.xbtn:focus-visible{outline:3px solid #fde68a;outline-offset:2px}
+</style>
+<script src="/HEH-Homework/games-gate.js?b=20261024a"></script>
+</head>
+<body>
+<div class="labbar">Lab — things here are being tried out and may break <a href="/HEH-Homework/">back to the Launchpad</a></div>
+<div class="top"><div class="brand">🐉 Word Dragons</div><div class="sp"></div><span class="chip" id="rec">–</span><a class="xbtn" href="/HEH-Homework/" title="Back to the Launchpad" aria-label="Close and go back to the Launchpad">✕</a></div>
+<nav class="tabs" id="tabs" hidden>
+  <button data-tab="nest" aria-selected="true">Nest</button>
+  <button data-tab="battles" aria-selected="false">Battles</button>
+</nav>
+<main id="main"><div class="center muted">Loading…</div></main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js"></script>
+<script>
+(function(){
+"use strict";
+/* The real site's own server (HEH-Live, since 24 Oct 2026). The lab
+   swaps these for the lab server further down. */
+var SUPABASE_URL = "https://hehs-live.duckdns.org";
+var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkyODMyMjkwLCJleHAiOjIxMDgxOTIyOTB9.7gFhQa5RBwVtiOPLO7Qf2-aVEbkd5xgpLiN1J06Gybo";
+var LAB = document.documentElement.classList.contains("lab");
+if (LAB) {
+  var TUNNEL = false;
+  try { TUNNEL = localStorage.getItem("hl.labapi") === "tunnel"; } catch (e) {}
+  SUPABASE_URL = TUNNEL ? "http://localhost:8000" : "https://hehs.duckdns.org";
+  SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkyNzcxNTQzLCJleHAiOjIxMDgxMzE1NDN9.MFpgmA0d-KISwuCicZMUhnaEpVHY-Sw_jFp3Muck6FM";
+}
+var sb = null;
+try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth:{ persistSession:true, autoRefreshToken:true } }); } catch (e) {}
+var main = document.getElementById("main"), S = null, tab = "nest";
+var COL = { fire:["#f97316","#fed7aa","#b91c1c"], stone:["#78716c","#e7e5e4","#44403c"], storm:["#6366f1","#c7d2fe","#3730a3"], ice:["#22d3ee","#e0f7fa","#0e7490"] };
+var autoLesson = false;
+var SKILL = { fire:"Spelling", stone:"Grammar", storm:"Vocabulary", ice:"Punctuation" };
+
+function h(t, c, x){ var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+function toast(m){ var t = h("div", "toast", m); document.body.appendChild(t); setTimeout(function(){ t.remove(); }, 2800); }
+function api(body){
+  return sb.functions.invoke("dragons", { body: body }).then(function(r){
+    if (r.error) { var c = r.error.context; if (c && c.json) return c.json().then(function(j){ throw new Error(j && j.error || "Couldn't reach the dragons."); }, function(){ throw new Error("Couldn't reach the dragons."); }); throw new Error("Couldn't reach the dragons."); }
+    if (r.data && r.data.error) throw new Error(r.data.error);
+    return r.data;
+  });
+}
+
+/* ---------- dragon art, drawn from its element, stage and health ---------- */
+function art(d){
+  var ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("viewBox", "0 0 120 110");
+  var c = COL[d.element] || COL.fire, g = "";
+  if (d.stage === "Egg") {
+    var crack = d.hatch || 0;
+    g += '<g class="egg"><ellipse cx="60" cy="62" rx="30" ry="38" fill="' + c[1] + '" stroke="' + c[0] + '" stroke-width="3"/>' +
+         '<circle cx="48" cy="50" r="6" fill="' + c[0] + '" opacity=".6"/><circle cx="70" cy="70" r="8" fill="' + c[0] + '" opacity=".6"/><circle cx="62" cy="40" r="4" fill="' + c[0] + '" opacity=".6"/>';
+    if (crack >= 2) g += '<path d="M40 56 l8 6 6 -8 7 7 6 -6" fill="none" stroke="#111" stroke-width="2"/>';
+    if (crack >= 4) g += '<path d="M52 80 l6 -6 5 5 7 -7" fill="none" stroke="#111" stroke-width="2"/>';
+    g += '</g>';
+  } else {
+    var s = { Baby:.62, Young:.76, Adult:.9, Elder:1 }[d.stage] || .7;
+    var sleepy = d.health != null && d.health < 20;
+    g += '<g class="body" transform="translate(' + (60 - 60 * s) + ',' + (100 - 100 * s) + ') scale(' + s + ')">' +
+      '<path d="M30 74 C10 74 6 92 18 96 C10 88 18 82 30 84Z" fill="' + c[0] + '"/>' +                                   // tail
+      '<path d="M50 52 C40 20 18 22 12 30 C24 32 26 40 22 48 C32 44 38 50 34 58Z" fill="' + c[2] + '" opacity=".9"/>' +     // wing
+      '<ellipse cx="58" cy="72" rx="28" ry="22" fill="' + c[0] + '"/>' +                                                  // body
+      '<ellipse cx="62" cy="78" rx="16" ry="13" fill="' + c[1] + '"/>' +                                                  // belly
+      '<rect x="44" y="88" width="8" height="12" rx="4" fill="' + c[2] + '"/><rect x="66" y="88" width="8" height="12" rx="4" fill="' + c[2] + '"/>' +
+      '<path d="M72 60 C78 50 80 44 84 40" stroke="' + c[0] + '" stroke-width="14" stroke-linecap="round" fill="none"/>' +  // neck
+      '<circle cx="88" cy="36" r="16" fill="' + c[0] + '"/>' +                                                            // head
+      '<ellipse cx="100" cy="40" rx="8" ry="6" fill="' + c[0] + '"/><circle cx="104" cy="38" r="1.6" fill="' + c[2] + '"/>';
+    if (d.stage === "Adult" || d.stage === "Elder") g += '<path d="M80 24 L76 8 L86 21Z M90 21 L92 4 L97 20Z" fill="' + c[2] + '"/>';
+    if (d.stage === "Elder") g += '<path d="M78 46 C76 54 80 58 84 56" fill="none" stroke="' + c[1] + '" stroke-width="3"/>';
+    g += sleepy ? '<path d="M84 34 q4 3 8 0" stroke="#111" stroke-width="2.4" fill="none" stroke-linecap="round"/><text x="104" y="18" font-size="12" font-weight="800" fill="' + c[2] + '">z</text>'
+                : '<circle cx="90" cy="33" r="5" fill="#fff"/><circle cx="91.5" cy="33" r="2.6" fill="#111"/>';
+    if (d.element === "fire" && !sleepy) g += '<path d="M108 42 q8 -2 10 4 q-6 -1 -6 3 q-4 -4 -4 -7Z" fill="#facc15"/>';
+    if (d.element === "ice") g += '<path d="M30 60 l4 0 M32 58 l0 4" stroke="#fff" stroke-width="1.5"/>';
+    if (d.element === "storm" && !sleepy) g += '<path d="M24 20 l-4 8 h5 l-3 8 8 -11 h-5 l3 -5Z" fill="#facc15"/>';
+    g += '</g>';
+  }
+  svg.innerHTML = g; return svg;
+}
+
+document.querySelectorAll("#tabs button").forEach(function(b){
+  b.onclick = function(){ tab = b.dataset.tab; document.querySelectorAll("#tabs button").forEach(function(x){ x.setAttribute("aria-selected", x === b ? "true" : "false"); }); draw(); };
+});
+function draw(){ document.getElementById("tabs").hidden = false; document.getElementById("rec").textContent = "🏆 " + S.wins + " · " + S.total + " right"; if (tab === "nest") drawNest(); else drawBattles(); }
+function load(){ return api({ action:"state" }).then(function(s){ S = s; draw(); }).catch(err); }
+function err(e){ main.textContent = ""; var b = h("div", "card center"); b.appendChild(h("p", null, e && e.message || "Something went wrong.")); var a = h("button", "btn", "Try again"); a.onclick = load; b.appendChild(a); main.appendChild(b); }
+
+/* ---------- nest ---------- */
+function bar(val, max, colour){ var m = h("div", "meter"), f = h("span"); f.style.width = Math.max(0, Math.min(100, 100 * val / max)) + "%"; f.style.background = colour; m.appendChild(f); return m; }
+function drawNest(){
+  main.textContent = "";
+  if (!S.dragons.length && !S.canHatch) { main.appendChild(h("div", "card center", "Something's odd - no egg yet. Try again in a moment.")); return; }
+  var nest = h("div", "nest");
+  S.dragons.forEach(function(d){
+    var c = h("div", "card dragon");
+    c.appendChild(art(d));
+    c.appendChild(h("div", "nm", d.name));
+    var meta = h("div"); meta.appendChild(h("span", "el el-" + d.element, SKILL[d.element])); meta.appendChild(document.createTextNode("  " + d.stage + (d.stage === "Egg" ? "" : " · level " + d.level))); c.appendChild(meta);
+    if (d.stage === "Egg") {
+      var l = h("div", "lbl"); l.appendChild(h("span", null, "Hatching")); l.appendChild(h("span", null, d.hatch + " / 5")); c.appendChild(l);
+      c.appendChild(bar(d.hatch, 5, "#f59e0b"));
+      c.appendChild(h("p", "muted", "Get 5 " + SKILL[d.element].toLowerCase() + " questions right to hatch it."));
+    } else {
+      var l1 = h("div", "lbl"); l1.appendChild(h("span", null, "XP")); l1.appendChild(h("span", null, (d.xp - d.prev) + " / " + (d.next - d.prev))); c.appendChild(l1);
+      c.appendChild(bar(d.xp - d.prev, d.next - d.prev, "linear-gradient(90deg,#059669,#0ea5e9)"));
+      var l2 = h("div", "lbl"); l2.appendChild(h("span", null, d.health < 20 ? "😴 Sleepy" : d.health < 50 ? "Hungry" : "Healthy")); l2.appendChild(h("span", null, d.health + "%")); c.appendChild(l2);
+      c.appendChild(bar(d.health, 100, d.health < 20 ? "#dc2626" : d.health < 50 ? "#f59e0b" : "#16a34a"));
+    }
+    var row = h("div", "row");
+    var t = h("button", "btn", d.stage === "Egg" ? "Warm the egg" : "Train"); t.onclick = function(){ lesson(d); };
+    var r = h("button", "ghost", "New name"); r.title = "Pick a different name from the list";
+    r.onclick = function(){ api({ action:"rename", dragon:d.id }).then(function(s){ S = s; drawNest(); }).catch(function(e){ toast(e.message); }); };
+    row.appendChild(t); row.appendChild(r); c.appendChild(row);
+    nest.appendChild(c);
+  });
+  if (S.canHatch) {
+    var e = h("div", "card dragon");
+    e.appendChild(art({ stage:"Egg", element:"fire", hatch:0 }));
+    e.appendChild(h("div", "nm", S.dragons.length ? "A new egg!" : "Your first egg"));
+    e.appendChild(h("p", "muted", "Pick its element - that's the English skill it grows on."));
+    var eg = h("div", "eggs");
+    ["fire","stone","storm","ice"].forEach(function(el){
+      var b = h("button"); b.appendChild(h("span", "el el-" + el, el)); b.appendChild(h("small", null, SKILL[el]));
+      b.onclick = function(){ api({ action:"egg", element:el }).then(function(s){ S = s; drawNest(); }).catch(function(x){ toast(x.message); }); };
+      eg.appendChild(b);
+    });
+    e.appendChild(eg); nest.appendChild(e);
+  } else if (S.nextEggAt && S.dragons.length < 4) {
+    var n = h("div", "card dragon center"); n.appendChild(h("div", "nm", "🥚 Next egg"));
+    n.appendChild(h("p", "muted", "At " + S.nextEggAt + " right answers (you're on " + S.total + ")."));
+    n.appendChild(bar(S.total, S.nextEggAt, "#f59e0b")); nest.appendChild(n);
+  }
+  main.appendChild(nest);
+  main.appendChild(h("p", "muted", "Dragons get hungry if you skip days, and sleepy below 20% - a lesson wakes them up. They never die."));
+}
+
+function lesson(d){
+  autoLesson = false;
+  var v = h("div", "veil"), s = h("div", "sheet"); v.appendChild(s); document.body.appendChild(v);
+  var quit = h("button", "ghost", "✕ Stop here"); quit.type = "button";
+  quit.style.cssText = "position:absolute;top:10px;right:10px";
+  quit.onclick = function(){ autoLesson = false; v.remove(); load(); };
+  v.style.position = "fixed"; s.style.position = "relative"; s.appendChild(quit);
+  s.appendChild(h("p", "muted", "Getting " + d.name + "'s lesson…"));
+  api({ action:"lesson", dragon:d.id }).then(function(L){
+    var i = 0, right = 0;
+    function show(){
+      s.textContent = ""; s.appendChild(quit);
+      var top = h("div", "lbl"); top.appendChild(h("span", null, d.name + " · " + SKILL[d.element])); top.appendChild(h("span", null, (i + 1) + " / " + L.questions.length)); s.appendChild(top);
+      var q = L.questions[i]; s.appendChild(h("div", "qtext", q.q));
+      var opts = h("div", "opts"), bs = [];
+      q.options.forEach(function(o){
+        var b = h("button", "opt", o); bs.push(b);
+        b.onclick = function(){
+          bs.forEach(function(x){ x.disabled = true; });
+          api({ action:"check", id:L.id, i:i, pick:o }).then(function(r){
+            S = Object.assign(S, r);
+            bs.forEach(function(x){ if (x.textContent === r.answer) x.classList.add("right"); else if (x === b && !r.right) x.classList.add("wrong"); });
+            if (r.right) right++;
+            var fb = h("div", "fb " + (r.right ? "good" : "bad"));
+            fb.appendChild(h("b", null, r.right ? (r.hatched ? "🐣 It hatched!" : r.levelled ? "⭐ Level up!" : "Yes! +10 XP") : "Not quite - it was " + r.answer));
+            if (r.explain) fb.appendChild(h("div", null, r.explain));
+            s.appendChild(fb);
+            var nx = h("button", "btn", i + 1 < L.questions.length ? "Next" : "Finish"); nx.style.marginTop = "12px";
+            nx.onclick = function(){ i++; if (i < L.questions.length) show(); else done(); };
+            s.appendChild(nx); nx.focus();
+            if (autoLesson) setTimeout(function(){ if (document.body.contains(nx)) nx.click(); }, 1000);
+          }).catch(function(e){ autoLesson = false; toast(e.message); bs.forEach(function(x){ x.disabled = false; }); });
+        };
+        opts.appendChild(b);
+      });
+      s.appendChild(opts);
+      if (q.answer != null) {
+        var tb = h("div", "row"); tb.style.justifyContent = "flex-start";
+        var r1 = h("button", "ghost", "🧪 Answer right"), r2 = h("button", "ghost", "🧪 Whole lesson right");
+        r1.onclick = function(){ bs.filter(function(x){ return x.textContent === q.answer; })[0].click(); };
+        r2.onclick = function(){ autoLesson = true; r1.click(); };
+        tb.appendChild(r1); tb.appendChild(r2); s.appendChild(tb);
+        if (autoLesson) setTimeout(function(){ if (document.body.contains(r1)) r1.click(); }, 1200);
+      }
+    }
+    function done(){
+      autoLesson = false;
+      s.textContent = ""; s.appendChild(quit); s.style.textAlign = "center";
+      var me = S.dragons.filter(function(x){ return x.id === d.id; })[0] || d;
+      var pic = art(me); pic.style.width = "180px"; pic.style.height = "auto"; s.appendChild(pic); s.appendChild(h("h2", null, right + " out of " + L.questions.length));
+      s.appendChild(h("p", null, me.name + (me.stage === "Egg" ? " is " + me.hatch + "/5 of the way to hatching." : " is level " + me.level + " and " + me.health + "% healthy.")));
+      var b = h("button", "btn", "Back to the nest"); b.onclick = function(){ v.remove(); drawNest(); }; s.appendChild(b);
+    }
+    show();
+  }).catch(function(e){ v.remove(); toast(e.message); });
+}
+
+/* ---------- battles ---------- */
+function hatchedOptions(sel){
+  S.dragons.filter(function(d){ return d.stage !== "Egg"; }).forEach(function(d){ sel.appendChild(new Option(d.name + " (" + SKILL[d.element] + ", level " + d.level + ", " + d.health + "%)", d.id)); });
+  return sel.options.length;
+}
+function drawBattles(){
+  main.textContent = "";
+  var grid = h("div", "grid2"), make = h("div", "card"), list = h("div", "card");
+  make.appendChild(h("h2", null, "Challenge someone"));
+  make.appendChild(h("p", "muted", "Type their school email. You'll both get the same 8 English questions - most right wins, and on a tie the faster one wins. They'll only ever see your dragon, never your name."));
+  var em = h("input"); em.type = "email"; em.placeholder = "their school email"; em.autocomplete = "off";
+  var sel = h("select");
+  make.appendChild(em); make.appendChild(sel);
+  if (!hatchedOptions(sel)) make.appendChild(h("p", "muted", "Hatch a dragon first - battles need one."));
+  var go = h("button", "btn", "Challenge!"); go.disabled = !sel.options.length;
+  go.onclick = function(){
+    go.disabled = true;
+    api({ action:"challenge", email:em.value, dragon:Number(sel.value) }).then(function(r){ toast(r.said); fight(r, false); })
+      .catch(function(e){ toast(e.message); go.disabled = false; });
+  };
+  make.appendChild(go);
+
+  list.appendChild(h("h2", null, "Battles this week"));
+  var box = h("div"); list.appendChild(box); box.appendChild(h("p", "muted", "Loading…"));
+  api({ action:"battles" }).then(function(r){
+    box.textContent = "";
+    if (!r.battles.length) { box.appendChild(h("p", "muted", "No battles yet.")); return; }
+    r.battles.forEach(function(b){
+      var row = h("div", "battle"), foe = b.theirDragon;
+      if (foe) row.appendChild(art(foe)); else row.appendChild(h("span", null, "❔"));
+      var w = h("div", "w");
+      if (b.incoming && b.status === "waiting") {
+        w.appendChild(h("b", null, (foe ? foe.name + " the " + SKILL[foe.element] + " dragon (level " + foe.level + ")" : "A dragon") + " challenges you!"));
+        var s2 = h("select"); var n = hatchedOptions(s2); w.appendChild(s2);
+        var rr = h("div", "row"); rr.style.justifyContent = "flex-start";
+        var a = h("button", "btn", "Battle!"); a.disabled = !n;
+        a.onclick = function(){ a.disabled = true; api({ action:"accept", battle:b.id, dragon:Number(s2.value) }).then(function(x){ fight(x, true); }).catch(function(e){ toast(e.message); a.disabled = false; }); };
+        var dcl = h("button", "ghost", "No thanks"); dcl.onclick = function(){ api({ action:"decline", battle:b.id }).then(drawBattles); };
+        var blk = h("button", "ghost", "Block this dragon"); blk.title = "They won't be able to challenge you again";
+        blk.onclick = function(){ api({ action:"block", battle:b.id }).then(function(){ toast("Blocked. They can't challenge you again."); drawBattles(); }); };
+        rr.appendChild(a); rr.appendChild(dcl); rr.appendChild(blk); w.appendChild(rr);
+      } else {
+        var unfinished = !b.me && (b.status === "playing" || b.status === "accepted");
+        var label = b.result ? b.result : unfinished ? "unfinished" : b.status === "waiting" ? "waiting for them" : b.status;
+        w.appendChild(h("div", "res " + (b.result || "wait"), label));
+        w.appendChild(h("div", null, (b.myDragon ? b.myDragon.name : "You") + " vs " + (foe ? foe.name : "a dragon")));
+        if (b.me) w.appendChild(h("small", "muted", "You: " + b.me.right + "/8 in " + (b.me.time / 1000).toFixed(1) + "s" + (b.them ? " · Them: " + b.them.right + "/8 in " + (b.them.time / 1000).toFixed(1) + "s" : "")));
+        if (unfinished) {
+          /* A battle left half-way (tab closed, page reloaded) can be
+             picked up again - it used to be stuck for ever. */
+          var carry = h("button", "btn", "Carry on"); carry.type = "button"; carry.style.marginTop = "8px";
+          carry.onclick = function(){
+            carry.disabled = true;
+            api(b.incoming ? { action:"accept", battle:b.id } : { action:"resume", battle:b.id })
+              .then(function(x){ fight(x, b.incoming); })
+              .catch(function(e){ toast(e.message); carry.disabled = false; });
+          };
+          w.appendChild(carry);
+        }
+      }
+      row.appendChild(w); box.appendChild(row);
+    });
+  }).catch(function(e){ box.textContent = e.message; });
+  grid.appendChild(make); grid.appendChild(list); main.appendChild(grid);
+}
+
+/* The battle itself: same questions for both, no answers shown until the end. */
+function fight(r, second){
+  var v = h("div", "veil"), s = h("div", "sheet"); v.appendChild(s); document.body.appendChild(v);
+  var i = 0, picks = [], ms = [], shown = performance.now(), t0 = performance.now(), lastPick = 0, sent = false;
+  var clock = h("span", "clock", "0.0s");
+  var iv = setInterval(function(){ clock.textContent = ((performance.now() - t0) / 1000).toFixed(1) + "s"; }, 100);
+  function show(){
+    s.textContent = "";
+    var top = h("div", "lbl"); top.appendChild(h("span", null, "⚔️ Question " + (i + 1) + " of " + r.questions.length)); top.appendChild(clock); s.appendChild(top);
+    var q = r.questions[i]; s.appendChild(h("div", "qtext", q.q));
+    var opts = h("div", "opts");
+    q.options.forEach(function(o){
+      var b = h("button", "opt", o);
+      b.onclick = function(){
+        var nw = performance.now();
+        if (nw - lastPick < 250) return;          /* a double-click answered two questions */
+        lastPick = nw;
+        picks.push(o); ms.push(Math.round(nw - shown)); i++;
+        if (i < r.questions.length) { shown = performance.now(); show(); } else send();
+      };
+      opts.appendChild(b);
+    });
+    s.appendChild(opts);
+    var gu = h("button", "linkish", "Give up (keeps what you've answered)"); gu.type = "button"; gu.style.cssText = "margin-top:12px;background:none;border:0;color:var(--soft);text-decoration:underline;cursor:pointer;font-size:.85rem";
+    gu.onclick = function(){ if (gu.textContent.indexOf("Really") < 0) { gu.textContent = "Really give up? The rest count as wrong."; return; } send(); };
+    s.appendChild(gu);
+    if (q.answer != null) {
+      var tb = h("div", "row"); tb.style.justifyContent = "flex-start";
+      var a1 = h("button", "ghost", "🧪 Autoplay battle (all right)"); a1.onclick = function(){ autoBattle = true; tick(); };
+      tb.appendChild(a1); s.appendChild(tb);
+      if (autoBattle) tick();
+    }
+    function tick(){ setTimeout(function(){ var b = [].filter.call(opts.children, function(x){ return x.textContent === q.answer; })[0]; if (b && document.body.contains(b)) b.click(); }, 900 + Math.random() * 600); }
+  }
+  var autoBattle = false;
+  function send(){
+    if (sent) return; sent = true;
+    clearInterval(iv);
+    s.textContent = ""; s.appendChild(h("p", "muted", "Marking…"));
+    api({ action:"submit", battle:r.battle, picks:picks, ms:ms }).then(function(x){
+      s.textContent = ""; s.style.textAlign = "center";
+      s.appendChild(h("div", "qtext", x.right + " out of " + x.of + " right"));
+      if (!x.counted) s.appendChild(h("p", null, "That was faster than anyone can read, so it didn't count."));
+      s.appendChild(h("p", "muted", second ? "Battle over - see who won in Battles." : "Done! Now it's their turn. You'll see the result in Battles."));
+      var b = h("button", "btn", "Back"); b.onclick = function(){ v.remove(); load().then(function(){ tab = "battles"; draw(); }); };
+      s.appendChild(b);
+    }).catch(function(e){ v.remove(); toast(e.message); });
+  }
+  show();
+}
+
+/* Live as well as lab: the dragons function is installed on both. */
+if (!sb) err(new Error("Couldn't load. Check your connection."));
+else sb.auth.getSession().then(function(r){
+  if (!r.data || !r.data.session) {
+    main.textContent = ""; var b = h("div", "card center"); b.appendChild(h("div", null, "🐉")).style.fontSize = "3rem";
+    b.appendChild(h("h2", null, "Word Dragons")); b.appendChild(h("p", "muted", "Sign in on the Launchpad first."));
+    var a = h("a", "btn", "Sign in"); a.href = "./"; a.style.textDecoration = "none"; a.style.display = "inline-block"; b.appendChild(a); main.appendChild(b); return;
+  }
+  load();
+});
+})();
+</script>
+</body>
+</html>

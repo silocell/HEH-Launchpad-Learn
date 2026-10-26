@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Battle Stories</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2216%22 fill=%22%237c2d12%22/%3E%3Cpath d=%22M16 16 L48 48 M48 16 L16 48%22 stroke=%22%23fde68a%22 stroke-width=%227%22 stroke-linecap=%22round%22/%3E%3C/svg%3E">
+<script>
+try{ var t = JSON.parse(localStorage.getItem("hl.theme")); if(t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t); }catch(e){}
+if (/^\/HEH-(Homework|Launchpad)-Lab(\/|$)/i.test(location.pathname)) document.documentElement.classList.add("lab");
+</script>
+<style>
+/* Battle Stories - history you watch, then explain.
+   Episode 1: Hastings, 1066. Every fact here was checked by hand, not
+   written by AI. Where historians disagree, the game says so. */
+:root{ --bg:#faf5ec; --card:#fffdf8; --ink:#2a1d12; --soft:#7a6650; --rule:#eadfcd; --bar:#3b1f0e; --a1:#b45309; --a2:#7c2d12; --good:#15803d; --bad:#b91c1c; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#17110b; --card:#21180f; --ink:#f3e8d7; --soft:#bfa98c; --rule:#3a2c1d; --bar:#0d0804; --good:#4ade80; --bad:#f87171; } }
+:root[data-theme="dark"]{ --bg:#17110b; --card:#21180f; --ink:#f3e8d7; --soft:#bfa98c; --rule:#3a2c1d; --bar:#0d0804; --good:#4ade80; --bad:#f87171; }
+*{box-sizing:border-box} [hidden]{display:none!important} html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 Georgia,"Times New Roman",serif;min-height:100vh}
+button{font:600 15px/1.2 system-ui,-apple-system,"Segoe UI",sans-serif;cursor:pointer}
+.labbar{display:none;background:#7c3aed;color:#fff;font:700 .72rem system-ui,sans-serif;letter-spacing:.06em;text-align:center;padding:5px 12px;text-transform:uppercase}
+.labbar a{color:#fff;text-transform:none;letter-spacing:0;margin-left:10px} html.lab .labbar{display:block}
+.top{background:var(--bar);color:#fde68a;display:flex;align-items:center;gap:12px;padding:10px 18px;font-family:system-ui,sans-serif}
+.brand{font-weight:800;font-size:1.1rem} .top .sp{flex:1} .top a{color:#e8d3b0;font-size:.85rem;text-decoration:none}
+main{max-width:1000px;margin:0 auto;padding:16px 16px 60px}
+.stage{border-radius:16px;overflow:hidden;border:1px solid var(--rule);background:#1b120a}
+canvas{display:block;width:100%;aspect-ratio:16/9;height:auto}
+.caption{padding:14px 18px;background:#1b120a;color:#fff;font-size:1.05rem;min-height:5.5em}
+.caption b{display:block;font:800 .78rem system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#fde68a;margin-bottom:4px}
+@media (max-width:640px){ .caption{font-size:.95rem} }
+.controls{display:flex;gap:8px;align-items:center;margin:12px 0;flex-wrap:wrap}
+.btn{border:0;border-radius:12px;padding:10px 18px;color:#fff;background:linear-gradient(90deg,var(--a1),var(--a2))}
+.ghost{border:1px solid var(--rule);background:transparent;color:var(--ink);border-radius:12px;padding:9px 14px}
+.progress{flex:1;display:flex;gap:4px;min-width:160px}
+.progress i{flex:1;height:8px;border-radius:999px;background:var(--rule)}
+.progress i.ok{background:var(--good)} .progress i.no{background:var(--bad)} .progress i.now{background:var(--a1)}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:16px;padding:20px}
+.qtext{font-size:1.25rem;font-weight:700;margin:6px 0 14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px} @media (max-width:600px){ .opts{grid-template-columns:1fr} }
+.opt{border:2px solid var(--rule);background:var(--card);color:var(--ink);border-radius:14px;padding:12px;text-align:left;font-size:1rem;font-family:Georgia,serif;font-weight:400}
+.opt:hover:not(:disabled){border-color:var(--a1)}
+.opt.right{border-color:var(--good);background:color-mix(in srgb,var(--good) 13%,var(--card))}
+.opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,var(--card));text-decoration:line-through}
+.fb{margin-top:14px;padding:14px;border-radius:12px;background:color-mix(in srgb,var(--a1) 9%,var(--card))}
+.note{font-size:.88rem;color:var(--soft);margin-top:8px;font-style:italic}
+.kicker{font:800 .74rem system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--a1)}
+.episodes{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin-top:14px}
+.ep{text-align:left;border:1px solid var(--rule);background:var(--card);color:var(--ink);border-radius:16px;padding:16px;font-family:Georgia,serif}
+.ep b{display:block;font-size:1.15rem} .ep small{color:var(--soft)} .ep.soon{opacity:.55;cursor:default}
+.why{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px} @media (max-width:700px){ .why{grid-template-columns:1fr} }
+.why div{border:1px solid var(--rule);border-radius:12px;padding:12px;background:var(--card)}
+.why b{font-family:system-ui,sans-serif}
+.clips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.clipbtn{border:1px solid rgba(253,230,138,.5);background:rgba(253,230,138,.12);color:#fde68a;border-radius:999px;padding:7px 14px;font-size:.85rem}
+.clipbtn:hover{background:rgba(253,230,138,.22)}
+.veil{position:fixed;inset:0;background:rgba(0,0,0,.75);display:grid;place-items:center;padding:16px;z-index:20}
+.vbox{background:#111;border-radius:16px;width:min(900px,100%);overflow:hidden}
+.vtop,.vfoot{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;color:#eee;font-family:system-ui,sans-serif;font-size:.85rem}
+.vtop .ghost{color:#eee;border-color:#444}
+.vfoot a{color:#fde68a}
+.vbox iframe{display:block;width:100%;aspect-ratio:16/9;border:0}
+.xbtn{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;
+  font:700 22px/1 system-ui,sans-serif;text-decoration:none;border:2px solid rgba(255,255,255,.35);flex:none;margin-left:6px}
+.xbtn:hover{background:rgba(255,255,255,.26)}
+.xbtn:focus-visible{outline:3px solid #fde68a;outline-offset:2px}
+</style>
+<script src="/HEH-Homework/games-gate.js?b=20261024a"></script>
+</head>
+<body>
+<div class="labbar">Lab — things here are being tried out and may break <a href="/HEH-Homework/">back to the Launchpad</a></div>
+<div class="top"><div class="brand">⚔️ Battle Stories</div><div class="sp"></div><span id="best"></span><a class="xbtn" href="/HEH-Homework/" title="Back to the Launchpad" aria-label="Close and go back to the Launchpad">✕</a></div>
+<main id="main"></main>
+
+<script>
+(function(){
+"use strict";
+var main = document.getElementById("main");
+var calm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+function h(t, c, x){ var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+function read(k, d){ try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+function store(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+/* ====================================================================
+   Episode 1: Hastings, 1066. Ten scenes. Each scene: a view (map or
+   battlefield), a caption, an animation over `dur` seconds, then one
+   question. Facts as taught at KS3; disagreements flagged in `note`.
+   ==================================================================== */
+var W = 960, H = 540;
+var SCENES = [
+  { title:"January 1066", view:"map", dur:9,
+    text:"King Edward the Confessor dies with no children. Three men say England's crown should be theirs: Harold Godwinson, the most powerful earl in England; William, Duke of Normandy; and Harald Hardrada, King of Norway.",
+    q:"Who was crowned King of England when Edward the Confessor died?",
+    opts:["Harold Godwinson","William of Normandy","Harald Hardrada","Edward's son"], a:0,
+    why:"Harold Godwinson was crowned the day after Edward died. Edward had no children, which is why there was a fight over the crown at all." },
+  { title:"September 1066 - Stamford Bridge", view:"map", dur:9,
+    clips:[["m9NdbxQWdJ8", "1066: The Battle of Fulford"], ["qtW7H7yPZLg", "1066: The Battle of Stamford Bridge"]],
+    text:"Harald Hardrada lands in the north with Harold's own brother Tostig, and beats the northern earls at Fulford on 20 September. Harold races north from London and surprises the Vikings at Stamford Bridge on 25 September. Hardrada and Tostig are both killed.",
+    q:"Who did King Harold defeat at the Battle of Stamford Bridge?",
+    opts:["Harald Hardrada and Tostig","William of Normandy","The Scots","The Danes at London"], a:0,
+    why:"Harold beat the Norwegian army of Harald Hardrada, helped by Harold's brother Tostig. It was a huge victory - but it happened in Yorkshire, about 250 miles from where the next battle would be." },
+  { title:"28 September - William lands", view:"map", dur:9,
+    text:"Three days after Stamford Bridge, the wind finally changes and William's fleet crosses the Channel. He lands at Pevensey on the south coast. Harold has to march his army all the way back south.",
+    q:"Why was Harold's army at a disadvantage when it reached Hastings?",
+    opts:["It had just fought a battle and marched hundreds of miles","It had no weapons","It was mostly made of Normans","It arrived by sea"], a:0,
+    why:"Harold's men had fought at Stamford Bridge, then marched back south in about two weeks. Some soldiers were left behind, and many who made it were exhausted.",
+    note:"Historians still argue about whether Harold should have waited in London for more troops instead of rushing to Hastings." },
+  { title:"14 October, morning - the shield wall", view:"field", dur:10, kind:"form",
+    clips:[["zigjVCFzZ38", "1066: The Battle of Hastings"]],
+    text:"Harold places his army along the top of a hill, Senlac Ridge, near Hastings. His best soldiers, the housecarls, lock their shields together into a wall. Below them, William lines up archers at the front, foot soldiers behind, and knights on horseback at the back.",
+    q:"Why did Harold put his army on top of the hill?",
+    opts:["So the Normans had to attack uphill","So they could see the sea","Because the Normans were already at the bottom","To get away from the archers"], a:0,
+    why:"Attacking uphill is exhausting, especially for horses. Behind a shield wall at the top, the English could hold their ground." },
+  { title:"The first attacks", view:"field", dur:12, kind:"attack",
+    text:"Norman archers fire uphill, but most arrows thud into the shields. The foot soldiers climb the slope and are driven back. Then the knights charge - and they can't break the wall either.",
+    q:"Why did the first Norman attacks fail?",
+    opts:["The shield wall held and the Normans were attacking uphill","The Normans ran out of horses","The English had better bows","It rained all morning"], a:0,
+    why:"The shield wall was very hard to break from below. Arrows stuck in shields, and men and horses tired on the slope." },
+  { title:"Is William dead?", view:"field", dur:10, kind:"rumour",
+    text:"On the Norman left, soldiers from Brittany begin to fall back. A rumour spreads that William has been killed. William pushes back his helmet so his men can see his face, and rides among them to stop the panic.",
+    q:"What did William do when his men thought he was dead?",
+    opts:["Lifted his helmet to show his face","Ordered a retreat","Hid in the woods","Sent a message to Harold"], a:0,
+    why:"The Bayeux Tapestry shows William pushing up his helmet, with the words 'Here is Duke William'. Without a leader, armies at this time often fell apart." },
+  { title:"Chasing down the hill", view:"field", dur:11, kind:"chase",
+    text:"Some English soldiers - many of them part-time fighters called the fyrd - break out of the shield wall to chase the retreating Bretons downhill. Norman knights turn and surround them on the open slope.",
+    q:"Why was leaving the shield wall a disaster for the English?",
+    opts:["On open ground they were cut off by knights, and the wall got weaker","The hill collapsed","They ran into the sea","It let the archers go home"], a:0,
+    why:"Off the hill and out of formation, foot soldiers stood little chance against knights. Every man who left made the wall thinner." },
+  { title:"Afternoon - pretending to run away", view:"field", dur:11, kind:"feint",
+    text:"The chroniclers say the Normans now ran away on purpose, more than once, to tempt more English down the hill - then turned and attacked them. Bit by bit the shield wall gets shorter and thinner.",
+    q:"According to the Norman chroniclers, why did the Normans pretend to retreat?",
+    opts:["To lure the English off the hill","Because they were really losing","To rest their horses","To let the archers find more arrows"], a:0,
+    why:"A pretend retreat (a 'feigned retreat') draws enemies out of a strong position.",
+    note:"Historians debate whether the feigned retreats were really planned, or whether the chroniclers made a lucky escape sound clever." },
+  { title:"Evening - Harold falls", view:"field", dur:12, kind:"fall",
+    text:"As the light fades, the archers fire high into the air so arrows drop behind the shields. Harold is killed, along with his brothers Gyrth and Leofwine. With their king dead, the English fight on for a while, then break and flee.",
+    q:"What is the Bayeux Tapestry?",
+    opts:["A long embroidered cloth telling the story of the conquest","A Saxon war banner","A book written by Harold","A castle in Normandy"], a:0,
+    why:"It's about 70 metres long and was made for the Normans, probably soon after 1066 - so it tells the story from the winners' side.",
+    note:"The Tapestry shows a man with an arrow near his eye beside Harold's name. Historians still argue about whether that man is Harold, and how he really died." },
+  { title:"Christmas Day 1066", view:"crown", dur:8,
+    text:"William - now called William the Conqueror - is crowned King of England in Westminster Abbey on Christmas Day, 1066. Over the next years he builds castles across England and gives English land to his Norman followers.",
+    q:"When was William crowned King of England?",
+    opts:["Christmas Day 1066","14 October 1066","New Year's Day 1067","Easter 1066"], a:0,
+    why:"He was crowned at Westminster Abbey on 25 December 1066, about ten weeks after the battle." }
+];
+
+/* ---------------- drawing ---------------- */
+var cv, g, scale = 1, raf = 0, sceneStart = 0, playing = false, idx = 0, done = [], units = [], arrows = [], harold = null, william = null;
+function setupCanvas(c){
+  cv = c; g = cv.getContext("2d");
+  var dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = W * dpr; cv.height = H * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+function ease(t){ t = Math.max(0, Math.min(1, t)); return t < .5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2; }
+function seg(t, a, b){ return ease((t - a) / (b - a)); }
+
+function drawMap(t, sc){
+  /* The map used to be a hand-plotted blob that did not look much like
+     Britain, with labels running off the bottom of the frame behind the
+     caption. It is now drawn from real coastline positions - latitude
+     and longitude, projected - so the shape is recognisable and every
+     place sits where it actually is. Everything is kept above the
+     caption bar, which covers the lowest part of the canvas. */
+  var LAT0 = 48.9, LAT1 = 59.0, LON0 = -6.6, LON1 = 2.6;
+  var TOP = 14, BOT = 424, CX = 430;
+  /* One scale for both directions, or the country comes out squashed.
+     Degrees of longitude are shorter than degrees of latitude - by the
+     cosine of the latitude - so the east-west scale is reduced to match
+     instead of being stretched to fill the frame. */
+  var YS = (BOT - TOP) / (LAT1 - LAT0);
+  var XS = YS * Math.cos((LAT0 + LAT1) / 2 * Math.PI / 180);
+  var MIDLON = (LON0 + LON1) / 2;
+  function P(lat, lon){
+    return [CX + (lon - MIDLON) * XS, BOT - (lat - LAT0) * YS];
+  }
+  /* Great Britain, headland by headland, going clockwise from Land's End. */
+  var BRITAIN = [
+    [50.07,-5.72],[49.96,-5.20],[50.20,-4.78],[50.37,-4.14],[50.58,-3.46],[50.52,-2.45],
+    [50.72,-1.88],[50.73,-0.80],[50.74,0.24],[51.13,1.33],[51.38,1.44],[51.60,0.95],
+    [52.00,1.08],[52.48,1.75],[52.93,1.30],[52.92,0.15],[53.30,0.10],[53.58,0.11],
+    [54.12,-0.08],[54.49,-0.61],[54.63,-1.15],[55.01,-1.42],[55.45,-1.60],[55.77,-2.00],
+    [56.06,-2.60],[56.37,-2.80],[56.70,-2.46],[57.15,-2.09],[57.69,-2.00],[57.60,-3.90],
+    [57.85,-4.00],[58.44,-3.09],[58.64,-3.07],[58.55,-4.40],[58.62,-5.00],[58.10,-5.35],
+    [57.90,-5.16],[57.30,-5.70],[56.82,-5.10],[56.40,-5.90],[55.80,-5.70],[55.31,-5.80],
+    [55.60,-4.90],[55.46,-4.63],[54.90,-4.95],[54.63,-4.86],[54.85,-3.60],[54.40,-3.40],
+    [54.10,-3.23],[53.70,-3.05],[53.45,-3.02],[53.33,-3.83],[53.30,-4.60],[52.90,-4.50],
+    [52.80,-4.75],[52.40,-4.10],[52.10,-4.60],[51.88,-5.31],[51.70,-4.90],[51.60,-3.95],
+    [51.48,-3.18],[51.21,-3.47],[51.08,-4.20],[50.99,-4.53],[50.60,-4.90],[50.42,-5.08]
+  ];
+  /* The northern coast of France, west to east. */
+  var FRANCE = [
+    [48.60,-4.60],[48.63,-1.51],[49.30,-1.60],[49.64,-1.62],[49.40,-1.10],[49.35,-0.30],
+    [49.49,0.11],[49.75,0.60],[49.92,1.08],[50.30,1.55],[50.95,1.85],[51.20,2.55],
+    [48.60,2.55],[48.60,-4.60]
+  ];
+  function land(pts, close){
+    g.beginPath();
+    pts.forEach(function(p, i){ var q = P(p[0], p[1]); i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]); });
+    if (close !== false) g.closePath();
+    g.fill(); g.stroke();
+  }
+  g.fillStyle = "#7fb3d5"; g.fillRect(0, 0, W, H);
+  g.fillStyle = "#a8c686"; g.strokeStyle = "#5c7a45"; g.lineWidth = 2;
+  land(BRITAIN); land(FRANCE);
+
+  /* Sea names, well clear of the coast. */
+  g.fillStyle = "#2b4a63"; g.font = "italic 15px Georgia";
+  var nsea = P(56.4, 1.9); g.fillText("North Sea", nsea[0], nsea[1]);
+  var chan = P(50.0, -2.2); g.fillText("The Channel", chan[0] - 42, chan[1]);
+  var norm = P(49.15, 0.5); g.fillText("Normandy", norm[0], norm[1]);
+
+  /* A town: a dot, with its name on whichever side has room. */
+  function town(lat, lon, name, colour, left, dy){
+    var q = P(lat, lon); q[1] += (dy || 0);
+    g.fillStyle = colour || "#3b2a1a";
+    g.beginPath(); g.arc(q[0], q[1], 5, 0, 7); g.fill();
+    g.font = "bold 15px system-ui";
+    var w = g.measureText(name).width;
+    g.strokeStyle = "rgba(255,255,255,.85)"; g.lineWidth = 3;
+    var tx = left ? q[0] - 9 - w : q[0] + 9;
+    g.strokeText(name, tx, q[1] + 5); g.fillText(name, tx, q[1] + 5);
+    if (dy) { /* keep the dot on the real spot even when the name moved */
+      var real = P(lat, lon);
+      g.beginPath(); g.arc(real[0], real[1], 5, 0, 7); g.fill();
+    }
+    g.lineWidth = 2; g.strokeStyle = "#5c7a45";
+  }
+  town(53.96, -1.08, "York", null, true);
+  town(51.51, -0.13, "London");
+  town(50.86, 0.57, "Hastings", null, false, -9);
+  town(50.82, 0.33, "Pevensey", "#1e40af", true, 11);
+
+  function route(pts, p, colour, dash){
+    var px = pts.map(function(c){ return P(c[0], c[1]); });
+    g.save(); g.strokeStyle = colour; g.lineWidth = 5; g.setLineDash(dash ? [12, 8] : []); g.lineCap = "round";
+    var total = 0, L = [];
+    for (var i = 1; i < px.length; i++) { var d = Math.hypot(px[i][0]-px[i-1][0], px[i][1]-px[i-1][1]); L.push(d); total += d; }
+    var want = total * p; g.beginPath(); g.moveTo(px[0][0], px[0][1]);
+    for (var j = 1; j < px.length && want > 0; j++) {
+      var f = Math.min(1, want / L[j-1]);
+      g.lineTo(px[j-1][0] + (px[j][0]-px[j-1][0]) * f, px[j-1][1] + (px[j][1]-px[j-1][1]) * f);
+      want -= L[j-1];
+    }
+    g.stroke(); g.restore();
+  }
+  /* A claimant: a crown with the name under it, nudged so the name
+     always fits inside the picture rather than sliding off the edge. */
+  function crown(lat, lon, label, colour, a){
+    if (a <= 0) return;
+    var q = P(lat, lon), x = q[0], y = q[1];
+    g.globalAlpha = a; g.fillStyle = colour;
+    g.beginPath(); g.moveTo(x-20, y+9); g.lineTo(x-20, y-9); g.lineTo(x-10, y);
+    g.lineTo(x, y-15); g.lineTo(x+10, y); g.lineTo(x+20, y-9); g.lineTo(x+20, y+9);
+    g.closePath(); g.fill();
+    g.font = "bold 16px system-ui";
+    var w = g.measureText(label).width;
+    var tx = Math.max(6, Math.min(W - w - 6, x - w / 2));
+    var ty = Math.min(BOT + 6, y + 32);
+    g.fillStyle = "#fff"; g.strokeStyle = "rgba(0,0,0,.55)"; g.lineWidth = 3;
+    g.strokeText(label, tx, ty); g.fillText(label, tx, ty);
+    g.globalAlpha = 1; g.lineWidth = 2; g.strokeStyle = "#5c7a45";
+  }
+  function note(lat, lon, words){
+    var q = P(lat, lon);
+    g.font = "bold 15px system-ui";
+    var w = g.measureText(words).width;
+    var x = Math.max(6, Math.min(W - w - 6, q[0] - w / 2));
+    g.fillStyle = "#fff"; g.strokeStyle = "rgba(0,0,0,.55)"; g.lineWidth = 3;
+    g.strokeText(words, x, q[1]); g.fillText(words, x, q[1]);
+    g.lineWidth = 2; g.strokeStyle = "#5c7a45";
+  }
+
+  if (sc === 0) {
+    crown(53.0, -3.4, "Harold (England)", "#b91c1c", seg(t, .5, 2));
+    crown(49.45, -0.8, "William (Normandy)", "#1d4ed8", seg(t, 2.5, 4));
+    crown(58.0, 2.3, "Harald Hardrada (Norway)", "#4b5563", seg(t, 4.5, 6));
+  } else if (sc === 1) {
+    route([[58.6,2.2],[56.0,0.6],[54.1,-0.6],[53.96,-1.0]], seg(t, .5, 3), "#4b5563", false);
+    route([[51.51,-0.13],[52.6,-1.0],[53.70,-1.10],[53.99,-0.92]], seg(t, 3.5, 6.5), "#b91c1c", true);
+    if (t > 6.5) {
+      var q = P(53.99, -0.92), r = 10 + 26 * Math.min(1, (t - 6.5) / .8);
+      g.strokeStyle = "#facc15"; g.lineWidth = 4;
+      g.beginPath(); g.arc(q[0], q[1], r, 0, 7); g.stroke();
+      note(54.6, -0.9, "Stamford Bridge, 25 Sept");
+      g.lineWidth = 2; g.strokeStyle = "#5c7a45";
+    }
+  } else if (sc === 2) {
+    route([[49.5,-0.2],[50.2,0.1],[50.82,0.33]], seg(t, .5, 3), "#1d4ed8", false);
+    route([[53.99,-0.92],[52.8,-1.0],[51.51,-0.13],[50.86,0.57]], seg(t, 3, 7.5), "#b91c1c", true);
+    if (t > 3) note(50.3, 1.5, "28 Sept: William lands");
+  }
+}
+
+/* The battlefield. The ridge is at the top; the Normans start at the bottom. */
+function makeArmies(){
+  units = []; arrows = [];
+  var i, x;
+  for (i = 0; i < 3; i++) for (x = 220; x <= 740; x += 13) units.push({ side:"S", kind: i === 0 ? "house" : "fyrd", hx:x, hy:150 + i*14, x:x + (Math.random()*30-15), y:20 + i*14, a:1 });
+  harold = { side:"S", kind:"king", hx:480, hy:118, x:480, y:-20, a:1 }; units.push(harold);
+  var divs = [[150, 330, "B"], [380, 580, "N"], [630, 810, "F"]];
+  divs.forEach(function(d){
+    for (x = d[0]; x <= d[1]; x += 15) {
+      units.push({ side:"N", kind:"arch", div:d[2], hx:x, hy:420, x:x, y:600, a:1 });
+      units.push({ side:"N", kind:"foot", div:d[2], hx:x, hy:448, x:x, y:630, a:1 });
+      if ((x - d[0]) % 30 === 0) units.push({ side:"N", kind:"cav", div:d[2], hx:x + 7, hy:482, x:x + 7, y:660, a:1 });
+    }
+  });
+  william = { side:"N", kind:"duke", div:"N", hx:480, hy:505, x:480, y:700, a:1 }; units.push(william);
+}
+function drawField(t, kind){
+  var dusk = kind === "fall" ? Math.min(.5, t / 24) : 0;
+  var sky = g.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, "#5f8f4e"); sky.addColorStop(.38, "#4f7d40"); sky.addColorStop(.42, "#6d9a55"); sky.addColorStop(1, "#86ad62");
+  g.fillStyle = sky; g.fillRect(0, 0, W, H);
+  g.fillStyle = "rgba(0,0,0,.08)"; for (var c = 0; c < 6; c++) { g.beginPath(); g.ellipse(480, 160 + c*14, 380 - c*10, 60, 0, 0, 7); g.fill(); }   // contour shading
+  g.fillStyle = "#355e2b"; [[60,60],[100,90],[860,70],[900,110],[40,300],[920,320]].forEach(function(p){ g.beginPath(); g.arc(p[0], p[1], 24, 0, 7); g.fill(); });
+  g.fillStyle = "rgba(255,255,255,.75)"; g.font = "bold 13px system-ui"; g.fillText("SENLAC RIDGE", 420, 98); g.fillText("Normans", 20, 525); g.fillText("English", 20, 165);
+  // shield-wall line
+  var wall = units.filter(function(u){ return u.side === "S" && u.kind === "house" && u.a > .5; });
+  if (wall.length > 3 && kind !== "fall") { g.strokeStyle = "rgba(120,53,15,.8)"; g.lineWidth = 5; g.beginPath(); g.moveTo(wall[0].x - 6, wall[0].y + 6); g.lineTo(wall[wall.length-1].x + 6, wall[wall.length-1].y + 6); g.stroke(); }
+  units.forEach(drawUnit);
+  arrows.forEach(function(ar){
+    var p = Math.min(1, (t - ar.t0) / ar.d); if (p < 0 || p >= 1 && t - ar.t0 > ar.d + 1.2) return;
+    var x = ar.x0 + (ar.x1 - ar.x0) * p, y = ar.y0 + (ar.y1 - ar.y0) * p - Math.sin(Math.PI * p) * ar.arc;
+    var x2 = ar.x0 + (ar.x1 - ar.x0) * Math.max(0, p - .05), y2 = ar.y0 + (ar.y1 - ar.y0) * Math.max(0, p - .05) - Math.sin(Math.PI * Math.max(0, p - .05)) * ar.arc;
+    g.strokeStyle = "#2b1a0d"; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x2, y2); g.lineTo(x, y); g.stroke();
+  });
+  if (dusk) { g.fillStyle = "rgba(40,10,40," + dusk + ")"; g.fillRect(0, 0, W, H); }
+  pending.forEach(function(b){ drawBubble(b[0], b[1], b[2]); }); pending = [];
+}
+function drawUnit(u){
+  if (u.a <= 0.02) return;
+  g.globalAlpha = u.a;
+  if (u.side === "S") {
+    if (u.kind === "king") {
+      g.fillStyle = "#facc15"; g.fillRect(u.x - 2, u.y - 28, 3, 30);                       // standard pole
+      g.fillStyle = "#b91c1c"; g.beginPath(); g.moveTo(u.x + 1, u.y - 28); g.lineTo(u.x + 22, u.y - 22); g.lineTo(u.x + 1, u.y - 14); g.fill();
+      g.fillStyle = "#7f1d1d"; g.beginPath(); g.arc(u.x, u.y + 4, 7, 0, 7); g.fill();
+      g.fillStyle = "#facc15"; g.fillRect(u.x - 5, u.y - 6, 10, 4);
+    } else {
+      g.fillStyle = u.kind === "house" ? "#991b1b" : "#dc6b4a"; g.beginPath(); g.arc(u.x, u.y, 5, 0, 7); g.fill();
+      if (u.kind === "house") { g.fillStyle = "#e7c27a"; g.beginPath(); g.arc(u.x, u.y + 5, 4, 0, Math.PI); g.fill(); }
+    }
+  } else if (u.side === "N") {
+    if (u.kind === "cav") { g.fillStyle = "#5b3a1e"; g.beginPath(); g.ellipse(u.x, u.y + 2, 9, 5, 0, 0, 7); g.fill(); g.fillStyle = "#1e3a8a"; g.beginPath(); g.arc(u.x, u.y - 2, 4.5, 0, 7); g.fill(); }
+    else if (u.kind === "duke") { g.fillStyle = "#5b3a1e"; g.beginPath(); g.ellipse(u.x, u.y + 2, 11, 6, 0, 0, 7); g.fill(); g.fillStyle = "#1d4ed8"; g.beginPath(); g.arc(u.x, u.y - 3, 6, 0, 7); g.fill(); g.fillStyle = "#facc15"; g.fillRect(u.x - 4, u.y - 11, 8, 3); }
+    else if (u.kind === "arch") { g.fillStyle = "#60a5fa"; g.beginPath(); g.moveTo(u.x, u.y - 5); g.lineTo(u.x + 5, u.y + 4); g.lineTo(u.x - 5, u.y + 4); g.fill(); }
+    else { g.fillStyle = "#2563eb"; g.fillRect(u.x - 4, u.y - 4, 8, 8); }
+  }
+  g.globalAlpha = 1;
+}
+var pending = [];
+function bubble(x, y, text){ pending.push([x, y, text]); }
+function drawBubble(x, y, text){
+  g.font = "bold 15px system-ui"; var w = g.measureText(text).width + 20;
+  g.fillStyle = "rgba(255,255,255,.95)"; g.strokeStyle = "#111"; g.lineWidth = 2;
+  g.beginPath(); g.roundRect ? g.roundRect(x - w/2, y - 30, w, 26, 8) : g.rect(x - w/2, y - 30, w, 26); g.fill(); g.stroke();
+  g.beginPath(); g.moveTo(x - 6, y - 4); g.lineTo(x, y + 6); g.lineTo(x + 6, y - 4); g.fill();
+  g.fillStyle = "#111"; g.fillText(text, x - w/2 + 10, y - 12);
+}
+function volley(t0, fromKind, high, n, toY){
+  var shooters = units.filter(function(u){ return u.side === "N" && u.kind === fromKind && u.a > .5; });
+  for (var i = 0; i < n; i++) {
+    var s = shooters[Math.floor(Math.random() * shooters.length)]; if (!s) return;
+    arrows.push({ t0: t0 + Math.random() * 1.2, d: 1.1, x0: s.x, y0: s.y, x1: s.x + (Math.random() * 60 - 30), y1: (toY || 155) + Math.random() * (high ? 40 : 10), arc: high ? 160 : 40 });
+  }
+}
+
+/* Each battle scene moves units between their home spots and where the
+   story sends them, as a function of time - so replaying is exact. */
+function fieldAt(t, kind, first){
+  units.forEach(function(u){
+    var p;
+    if (kind === "form") {
+      p = u.side === "S" ? seg(t, .3, 4) : seg(t, 3, 7);
+      u.x = u.hx + (u.x0 - u.hx) * (1 - p); u.y = u.hy + (u.y0 - u.hy) * (1 - p); u.a = 1;
+    } else { u.x = u.hx; u.y = u.hy; u.a = u.dead ? 0 : 1; }
+  });
+  if (kind === "attack") {
+    if (first) { arrows = []; volley(1, "arch", false, 40, 150); volley(2.4, "arch", false, 40, 150); }
+    units.forEach(function(u){
+      if (u.side !== "N") return;
+      if (u.kind === "foot") { var up = seg(t, 4, 6) - seg(t, 7, 8.5); u.y = u.hy - up * 230; }
+      if (u.kind === "cav")  { var up2 = seg(t, 8.5, 10) - seg(t, 10.6, 11.8); u.y = u.hy - up2 * 270; }
+    });
+  }
+  if (kind === "rumour") {
+    units.forEach(function(u){ if (u.side === "N" && u.div === "B") { var back = seg(t, 1, 4); u.y = u.hy + back * 70; } });
+    if (t > 3 && t < 6.5) bubble(william.x, william.y - 14, "“The Duke is dead!”");
+    if (t >= 6.5) bubble(william.x, william.y - 14, "“Look at me - I'm alive!”");
+  }
+  if (kind === "chase") {
+    units.forEach(function(u){
+      if (u.side === "N" && u.div === "B") u.y = u.hy + 70 - seg(t, 6, 9) * 40;
+      if (u.side === "S" && u.kind === "fyrd" && u.hx < 360) {
+        var down = seg(t, 1, 4.5); u.y = u.hy + down * 240; u.x = u.hx - down * 20;
+        u.a = 1 - seg(t, 7.5, 9.5); if (t > 10.5) u.dead = true;
+      }
+      if (u.side === "N" && u.kind === "cav" && u.div === "N") { var sweep = seg(t, 4.5, 7.5); u.x = u.hx - sweep * 200; u.y = u.hy - sweep * 70; }
+    });
+  }
+  if (kind === "feint") {
+    units.forEach(function(u){
+      if (u.side === "N" && u.kind === "cav") { var go = seg(t, .5, 2) - seg(t, 2.5, 4) + seg(t, 5.5, 7) - seg(t, 7.5, 9); u.y = u.hy - go * 230; }
+      if (u.side === "S" && u.kind === "fyrd" && u.hx >= 600 && !u.dead) {
+        var down = seg(t, 3, 5) * 150; u.y = u.hy + down; u.a = 1 - seg(t, 8, 10); if (t > 10.5) u.dead = true;
+      }
+    });
+  }
+  if (kind === "fall") {
+    if (first) { arrows = []; volley(1, "arch", true, 60, 130); volley(3, "arch", true, 60, 130); }
+    if (t > 5.5) harold.a = 1 - seg(t, 5.5, 6.5);
+    units.forEach(function(u){
+      if (u.side === "S" && u !== harold) { var flee = seg(t, 7, 11); u.y = u.hy - flee * 220; u.a = (u.dead ? 0 : 1) * (1 - seg(t, 9, 11.5)); }
+      if (u.side === "N" && (u.kind === "cav" || u.kind === "foot")) { u.y = u.hy - seg(t, 7, 11) * 200; }
+    });
+    if (t > 5.5 && t < 8.5) bubble(480, 105, "Harold is killed");
+  }
+}
+function drawCrown(t){
+  g.fillStyle = "#3b1f0e"; g.fillRect(0, 0, W, H);
+  g.fillStyle = "rgba(253,230,138," + (0.15 + 0.1 * Math.sin(t * 2)) + ")"; g.beginPath(); g.arc(480, 230, 170, 0, 7); g.fill();
+  var a = seg(t, .3, 2.5); g.globalAlpha = a; g.fillStyle = "#facc15";
+  g.beginPath(); g.moveTo(400, 290); g.lineTo(400, 210); g.lineTo(440, 250); g.lineTo(480, 180); g.lineTo(520, 250); g.lineTo(560, 210); g.lineTo(560, 290); g.closePath(); g.fill();
+  g.fillStyle = "#dc2626"; [[440,270],[480,265],[520,270]].forEach(function(p){ g.beginPath(); g.arc(p[0], p[1], 8, 0, 7); g.fill(); });
+  g.fillStyle = "#fde68a"; g.font = "bold 34px Georgia"; var s = "25 December 1066"; g.fillText(s, 480 - g.measureText(s).width / 2, 360);
+  g.font = "italic 22px Georgia"; s = "Westminster Abbey"; g.fillText(s, 480 - g.measureText(s).width / 2, 395);
+  g.globalAlpha = 1;
+}
+
+/* ---------------- playing a scene ---------------- */
+var lastKind = null;
+function frame(now){
+  var sc = SCENES[idx], t = (now - sceneStart) / 1000;
+  if (calm) t = sc.dur;                                    // reduced motion: show where the scene ends up
+  if (sc.view === "map") drawMap(t, idx);
+  else if (sc.view === "crown") drawCrown(t);
+  else { var first = lastKind !== sc.kind; lastKind = sc.kind; fieldAt(t, sc.kind, first); drawField(t, sc.kind); }
+  if (t < sc.dur && playing && !calm) raf = requestAnimationFrame(frame);
+  else { playing = false; showQuestion(); }
+}
+function playScene(i){
+  idx = i; cancelAnimationFrame(raf); lastKind = null;
+  var sc = SCENES[i];
+  if (sc.view === "field") {
+    if (!units.length || sc.kind === "form") makeArmies();
+    units.forEach(function(u){ u.x0 = u.x; u.y0 = u.y; });
+    // scenes after the chase start with the chasers gone
+    var at = SCENES.slice(0, i).map(function(s){ return s.kind; });
+    units.forEach(function(u){ u.dead = false;
+      if (u.side === "S" && u.kind === "fyrd" && u.hx < 360 && at.indexOf("chase") >= 0) u.dead = true;
+      if (u.side === "S" && u.kind === "fyrd" && u.hx >= 600 && at.indexOf("feint") >= 0) u.dead = true; });
+    if (sc.kind === "form") units.forEach(function(u){ u.x0 = u.side === "S" ? u.hx + (Math.random()*40-20) : u.hx; u.y0 = u.side === "S" ? -30 - Math.random()*40 : 600 + Math.random()*80; });
+  }
+  drawScene();
+  sceneStart = performance.now(); playing = true; raf = requestAnimationFrame(frame);
+  if (voiceOn) say(sc.text);
+}
+var voiceOn = false;
+/* ---------- reading it aloud ----------
+   The browser's voice reads what it is given letter by letter, and it
+   gets the names in this story badly wrong - "Senlac" as sen-LACK,
+   "fyrd" as "ferd", "Gyrth" as "girth", "Pevensey" as peven-SAY. Those
+   are the words the lesson is actually about, so being wrong matters.
+
+   There is no reliable way to give a browser a pronunciation (the SSML
+   phoneme tag is ignored almost everywhere), so each awkward name is
+   respelt the way it sounds and ONLY the spoken copy is changed. What
+   is on the screen stays spelt properly. */
+var SAY_AS = [
+  [/\bSenlac\b/g,        "Sen-lack"],
+  [/\bHardrada\b/g,      "Har-drah-da"],
+  [/\bHarald\b/g,        "Ha-rald"],
+  [/\bGodwinson\b/g,     "God-win-son"],
+  [/\bTostig\b/g,        "Toss-tig"],
+  [/\bhousecarls\b/gi,   "house-carls"],
+  [/\bfyrd\b/gi,         "feerd"],
+  [/\bGyrth\b/g,         "Girth"],
+  [/\bLeofwine\b/g,      "Lay-off-win-a"],
+  [/\bPevensey\b/g,      "Pevvensee"],
+  [/\bFulford\b/g,       "Full-ford"],
+  [/\bBretons\b/g,       "Brettons"],
+  [/\bBrittany\b/g,      "Brittanny"],
+  [/\bchroniclers\b/gi,  "cronnic-lers"],
+  [/\bNormandy\b/g,      "Nor-mandy"],
+  [/\bWestminster\b/g,   "West-minster"],
+  [/\bEaldred\b/g,       "Al-dred"],
+  [/\bWitan\b/g,         "Wittan"],
+  [/\bthegns?\b/gi,      "thanes"],
+  /* Dates and numbers the voice otherwise reads as digits. */
+  [/\b1066\b/g,          "ten sixty-six"],
+  [/\b1415\b/g,          "fourteen fifteen"],
+  [/\b1485\b/g,          "fourteen eighty-five"],
+  [/\b1588\b/g,          "fifteen eighty-eight"]
+];
+function forSpeaking(text){
+  var out = text;
+  SAY_AS.forEach(function(r){ out = out.replace(r[0], r[1]); });
+  /* A semicolon run-on is read as one long breathless list, so give the
+     voice somewhere to breathe. */
+  return out.replace(/;/g, ",");
+}
+/* The list of voices arrives asynchronously, so the first thing said can
+   miss the British one and come out American. Pick it once it is there. */
+var chosenVoice = null;
+function pickVoice(){
+  try {
+    var vs = speechSynthesis.getVoices() || [];
+    chosenVoice =
+      vs.filter(function(v){ return /en[-_]GB/i.test(v.lang) && /female|libby|sonia|hazel|serena/i.test(v.name); })[0] ||
+      vs.filter(function(v){ return /en[-_]GB/i.test(v.lang); })[0] ||
+      vs.filter(function(v){ return /^en/i.test(v.lang); })[0] || null;
+  } catch (e) {}
+}
+try { pickVoice(); speechSynthesis.addEventListener("voiceschanged", pickVoice); } catch (e) {}
+function say(text){
+  try {
+    speechSynthesis.cancel();
+    if (!chosenVoice) pickVoice();
+    var u = new SpeechSynthesisUtterance(forSpeaking(text));
+    u.lang = "en-GB";
+    if (chosenVoice) u.voice = chosenVoice;
+    u.rate = 0.95;            /* a storyteller's pace, not a news reader's */
+    u.pitch = 1;
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+
+/* ---------------- the page ---------------- */
+var capT, capX, capC, qbox, prog;
+function episodePage(){
+  main.textContent = "";
+  var best = read("hl.hist.best.hastings", null);
+  var intro = h("div", "card");
+  intro.appendChild(h("div", "kicker", "Battle Stories"));
+  intro.appendChild(h("h1", null, "Watch it happen. Then explain it."));
+  intro.appendChild(h("p", null, "Each episode re-enacts a real battle in short animated scenes. After each scene there's a question - not just what happened, but why."));
+  var eps = h("div", "episodes");
+  var e1 = h("button", "ep"); e1.appendChild(h("div", "kicker", "Episode 1 · Year 7")); e1.appendChild(h("b", null, "Hastings, 1066"));
+  e1.appendChild(h("small", null, "10 scenes · about 10 minutes" + (best != null ? " · best " + best + "/10" : "")));
+  e1.onclick = start; eps.appendChild(e1);
+  [["Episode 2", "Agincourt, 1415"], ["Episode 3", "The Spanish Armada, 1588"], ["Episode 4", "Bosworth, 1485"]].forEach(function(x){
+    var e = h("button", "ep soon"); e.disabled = true; e.appendChild(h("div", "kicker", x[0])); e.appendChild(h("b", null, x[1])); e.appendChild(h("small", null, "Coming soon")); eps.appendChild(e);
+  });
+  intro.appendChild(eps); main.appendChild(intro);
+  document.getElementById("best").textContent = best != null ? "Best: " + best + "/10" : "";
+}
+function start(){
+  main.textContent = ""; done = []; units = [];
+  var stage = h("div", "stage"); var c = h("canvas"); stage.appendChild(c);
+  var cap = h("div", "caption"); capT = h("b"); capX = h("div"); capC = h("div", "clips"); cap.appendChild(capT); cap.appendChild(capX); cap.appendChild(capC); stage.appendChild(cap);
+  main.appendChild(stage); setupCanvas(c);
+  var ctr = h("div", "controls");
+  var replay = h("button", "ghost", "↺ Replay scene"); replay.onclick = function(){ qbox.hidden = true; playScene(idx); };
+  var skip = h("button", "ghost", "Skip to question"); skip.onclick = function(){ if (playing) { try { speechSynthesis.cancel(); } catch (e) {} playing = false; cancelAnimationFrame(raf); sceneStart = performance.now() - SCENES[idx].dur * 1000; requestAnimationFrame(frame); } };
+  var voice = h("button", "ghost", "🔈 Read aloud: off"); voice.onclick = function(){ voiceOn = !voiceOn; voice.textContent = voiceOn ? "🔊 Read aloud: on" : "🔈 Read aloud: off"; if (voiceOn) say(SCENES[idx].text); else try { speechSynthesis.cancel(); } catch (e) {} };
+  prog = h("div", "progress"); SCENES.forEach(function(){ prog.appendChild(h("i")); });
+  ctr.appendChild(replay); ctr.appendChild(skip); ctr.appendChild(voice); ctr.appendChild(prog);
+  main.appendChild(ctr);
+  qbox = h("div", "card"); qbox.hidden = true; main.appendChild(qbox);
+  playScene(0);
+}
+function drawScene(){
+  var sc = SCENES[idx]; capT.textContent = (idx + 1) + " / " + SCENES.length + " · " + sc.title; capX.textContent = sc.text;
+  capC.textContent = "";
+  (sc.clips || []).forEach(function(c){ var b = h("button", "clipbtn", "\u25b6 Watch the BBC clip: " + c[1]); b.onclick = function(){ watch(c[0], c[1]); }; capC.appendChild(b); });
+  [].forEach.call(prog.children, function(el, i){ el.className = done[i] === true ? "ok" : done[i] === false ? "no" : i === idx ? "now" : ""; });
+}
+function showQuestion(){
+  var sc = SCENES[idx];
+  if (done[idx] !== undefined) { qbox.hidden = false; return; }   /* replaying an answered scene used to hide its question for ever */
+  qbox.hidden = false; qbox.textContent = "";
+  qbox.appendChild(h("div", "kicker", "Question " + (idx + 1)));
+  qbox.appendChild(h("div", "qtext", sc.q));
+  var order = sc.opts.map(function(_, i){ return i; }).sort(function(){ return Math.random() - .5; });
+  var opts = h("div", "opts"), bs = [];
+  order.forEach(function(oi){
+    var b = h("button", "opt", sc.opts[oi]); bs.push([b, oi]);
+    b.onclick = function(){
+      var ok = oi === sc.a; done[idx] = ok;
+      bs.forEach(function(x){ x[0].disabled = true; if (x[1] === sc.a) x[0].classList.add("right"); else if (x[0] === b) x[0].classList.add("wrong"); });
+      var fb = h("div", "fb"); fb.appendChild(h("b", null, ok ? "Yes! " : "Not quite. ")); fb.appendChild(document.createTextNode(sc.why));
+      if (sc.note) fb.appendChild(h("div", "note", "Historians disagree: " + sc.note));
+      qbox.appendChild(fb);
+      var nx = h("button", "btn", idx + 1 < SCENES.length ? "Next scene →" : "See how you did"); nx.style.marginTop = "12px";
+      nx.onclick = function(){ qbox.hidden = true; if (idx + 1 < SCENES.length) { playScene(idx + 1); window.scrollTo({ top: 0, behavior: calm ? "auto" : "smooth" }); } else finish(); };
+      qbox.appendChild(nx); drawScene(); nx.focus();
+    };
+    opts.appendChild(b);
+  });
+  qbox.appendChild(opts);
+  qbox.scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "nearest" });
+}
+/* BBC Teach clips, from the BBC's own YouTube channel (BBC Bitesize for
+   Teachers). Embedded, never copied: the video stays on YouTube. The
+   player only loads when someone presses the button, from YouTube's
+   privacy-enhanced address; "Open on YouTube" is there in case school
+   blocks embedded players. */
+function watch(id, title){
+  playing = false; cancelAnimationFrame(raf); try { speechSynthesis.cancel(); } catch (e) {}
+  var v = h("div", "veil"), s = h("div", "vbox");
+  var top = h("div", "vtop"); top.appendChild(h("b", null, title));
+  var x = h("button", "ghost", "Close"); x.onclick = function(){ v.remove(); }; top.appendChild(x);
+  var fr = document.createElement("iframe");
+  fr.src = "https://www.youtube-nocookie.com/embed/" + id + "?rel=0&modestbranding=1";
+  fr.title = title; fr.allow = "encrypted-media; picture-in-picture; fullscreen"; fr.referrerPolicy = "strict-origin-when-cross-origin";
+  var foot = h("div", "vfoot"); foot.appendChild(document.createTextNode("Video \u00a9 BBC \u00b7 BBC Bitesize for Teachers \u00b7 "));
+  var a = h("a", null, "Open on YouTube"); a.href = "https://www.youtube.com/watch?v=" + id; a.target = "_blank"; a.rel = "noopener"; foot.appendChild(a);
+  s.appendChild(top); s.appendChild(fr); s.appendChild(foot); v.appendChild(s); document.body.appendChild(v);
+  v.addEventListener("click", function(e){ if (e.target === v) v.remove(); });
+}
+
+function finish(){
+  try { speechSynthesis.cancel(); } catch (e) {}
+  var score = done.filter(Boolean).length, best = read("hl.hist.best.hastings", 0);
+  if (score > best) store("hl.hist.best.hastings", score);
+  main.textContent = "";
+  var c = h("div", "card");
+  c.appendChild(h("div", "kicker", "Hastings, 1066 · finished"));
+  c.appendChild(h("h1", null, score + " out of " + SCENES.length + (score === SCENES.length ? " - perfect!" : "")));
+  c.appendChild(h("p", null, "So why did William win? Historians usually sort the reasons into three groups. Which do you think mattered most?"));
+  var why = h("div", "why");
+  [["Luck", "Hardrada invaded first, so Harold had to fight two battles in three weeks. The wind changed at just the right time for William."],
+   ["William's skill", "He brought archers, foot soldiers and knights and used them together, kept his army calm when it panicked, and (perhaps) used feigned retreats."],
+   ["Harold's mistakes", "He rushed south instead of waiting for more men, and parts of his army left the shield wall."]].forEach(function(x){
+    var d = h("div"); d.appendChild(h("b", null, x[0])); d.appendChild(h("p", null, x[1])); why.appendChild(d);
+  });
+  c.appendChild(why);
+  c.appendChild(h("p", "note", "That's exactly the kind of 'which reason mattered most?' question you'll get in history essays."));
+  var again = h("button", "btn", "Watch again"); again.onclick = start;
+  var back = h("button", "ghost", "All episodes"); back.style.marginLeft = "8px"; back.onclick = episodePage;
+  c.appendChild(again); c.appendChild(back); main.appendChild(c);
+}
+episodePage();
+})();
+</script>
+</body>
+</html>

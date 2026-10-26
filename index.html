@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Learning Games</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2216%22 fill=%22%234f46e5%22/%3E%3Cpath d=%22M16 40l16-20 16 20z%22 fill=%22%23fff%22/%3E%3C/svg%3E">
+<script>
+try{ var t = JSON.parse(localStorage.getItem("hl.theme")); if(t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t); }catch(e){}
+</script>
+<style>
+:root{ --bg:#f3f5fb; --card:#fff; --ink:#151a2d; --soft:#5b6380; --rule:#e2e6f2; --bar:#141a33; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#0e1120; --card:#171b2e; --ink:#e7eaf6; --soft:#9aa3c2; --rule:#272d47; --bar:#0a0d1a; } }
+:root[data-theme="dark"]{ --bg:#0e1120; --card:#171b2e; --ink:#e7eaf6; --soft:#9aa3c2; --rule:#272d47; --bar:#0a0d1a; }
+*{box-sizing:border-box} html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+.top{background:var(--bar);color:#fff;display:flex;align-items:center;gap:12px;padding:12px 18px}
+.top b{font-size:1.15rem} .top .sp{flex:1} .top a{color:#c7cbe0;font-size:.85rem;text-decoration:none}
+.top a:hover{color:#fff}
+main{max-width:1000px;margin:0 auto;padding:22px 16px 60px}
+h1{margin:0 0 4px} .muted{color:var(--soft)}
+.note{margin-top:16px;background:var(--card);border:1px solid var(--rule);border-left:4px solid #6366f1;border-radius:10px;padding:12px 14px;font-size:.9rem;color:var(--soft)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:22px}
+.game{display:flex;gap:14px;align-items:flex-start;background:var(--card);border:1px solid var(--rule);border-radius:16px;padding:16px;color:var(--ink);text-decoration:none;transition:transform .15s,border-color .15s}
+.game:hover{transform:translateY(-2px);border-color:#6366f1}
+.icon{width:56px;height:56px;border-radius:14px;display:grid;place-items:center;font-size:1.8rem;flex:none;color:#fff}
+.game b{display:block;font-size:1.08rem}
+.game p{margin:4px 0 6px;color:var(--soft);font-size:.9rem}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:999px;background:var(--rule);color:var(--soft)}
+footer{max-width:1000px;margin:0 auto;padding:0 16px 40px;color:var(--soft);font-size:.85rem}
+footer a{color:inherit}
+@media (prefers-reduced-motion: reduce){ .game{transition:none} .game:hover{transform:none} }
+</style>
+</head>
+<body>
+<div class="top"><b>🚀 Learning Games</b><div class="sp"></div><a href="/HEH-Homework/games.html">← back to the Launchpad</a></div>
+<main>
+  <h1>Learning Games</h1>
+  <p class="muted">Games that are school work underneath. Part of Homework Launchpad.</p>
+  <div class="note">These four keep your points, your level and your progress, so they need you to be signed in to the Launchpad first. Open one without signing in and it will send you back.</div>
+  <div class="grid" id="list"></div>
+</main>
+<footer>
+  <p>Made by Shiv. Licensed under the <a href="https://www.gnu.org/licenses/gpl-3.0.html">GNU GPL v3</a>.</p>
+</footer>
+<script>
+var GAMES = [
+  { icon:"🚀", bg:"linear-gradient(135deg,#4f46e5,#06b6d4)", name:"Level Up", url:"levelup.html",
+    says:"Practice that learns you: daily tasks that get harder each day, points and a shop.", tags:["Maths","English","Science"] },
+  { icon:"✖️", bg:"linear-gradient(135deg,#f59e0b,#ef4444)", name:"Times Table Tycoon", url:"tables.html",
+    says:"60-second times-table rounds that learn your slow facts. Collect all the Numlings.", tags:["Maths"] },
+  { icon:"🐉", bg:"linear-gradient(135deg,#059669,#0ea5e9)", name:"Word Dragons", url:"dragons.html",
+    says:"Hatch and grow dragons by doing English. Keep them healthy, then battle someone by email.", tags:["English"] },
+  { icon:"⚔️", bg:"linear-gradient(135deg,#b45309,#7c2d12)", name:"Battle Stories", url:"history.html",
+    says:"Watch a battle re-enacted, then explain why it happened. Episode 1: Hastings, 1066.", tags:["History"] }
+];
+var list = document.getElementById("list");
+function h(t, c, x){ var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+GAMES.forEach(function(g){
+  var a = h("a", "game"); a.href = g.url;
+  var i = h("span", "icon", g.icon); i.style.background = g.bg; a.appendChild(i);
+  var w = h("span"); w.appendChild(h("b", null, g.name)); w.appendChild(h("p", null, g.says));
+  var tags = h("span", "tags"); g.tags.forEach(function(t){ tags.appendChild(h("span", "tag", t)); });
+  w.appendChild(tags); a.appendChild(w); list.appendChild(a);
+});
+</script>
+</body>
+</html>

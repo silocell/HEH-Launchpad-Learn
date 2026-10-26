@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Times Table Tycoon</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2216%22 fill=%22%23f59e0b%22/%3E%3Ctext x=%2232%22 y=%2244%22 text-anchor=%22middle%22 font-family=%22Arial%22 font-weight=%22900%22 font-size=%2234%22 fill=%22%23fff%22%3E%C3%97%3C/text%3E%3C/svg%3E">
+<script>
+try{ var t = JSON.parse(localStorage.getItem("hl.theme")); if(t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t); }catch(e){}
+if (/^\/HEH-(Homework|Launchpad)-Lab(\/|$)/i.test(location.pathname)) document.documentElement.classList.add("lab");
+</script>
+<style>
+/* Times Table Tycoon: 60-second rounds, Numlings to collect, a shop,
+   and (lab only) trading. The server deals each round and marks it. */
+:root{
+  --bg:#fff8ec; --card:#ffffff; --ink:#1f1a14; --soft:#6f6455; --rule:#efe3cf;
+  --bar:#2a1e0f; --a1:#f59e0b; --a2:#ef4444; --good:#16a34a; --bad:#dc2626;
+  --common:#94a3b8; --uncommon:#22c55e; --rare:#3b82f6; --epic:#a855f7; --legendary:#f59e0b;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#15110b; --card:#1f1912; --ink:#f4ede2; --soft:#b3a691; --rule:#342a1d; --bar:#0e0a05; --good:#4ade80; --bad:#f87171; }
+}
+:root[data-theme="dark"]{ --bg:#15110b; --card:#1f1912; --ink:#f4ede2; --soft:#b3a691; --rule:#342a1d; --bar:#0e0a05; --good:#4ade80; --bad:#f87171; }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+button{font:inherit;cursor:pointer}
+button:disabled{cursor:default;opacity:.5}
+.labbar{display:none;background:#7c3aed;color:#fff;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-align:center;padding:5px 12px;text-transform:uppercase}
+.labbar a{color:#fff;text-transform:none;letter-spacing:0;margin-left:10px}
+html.lab .labbar{display:block}
+.top{background:var(--bar);color:#fff;display:flex;align-items:center;gap:12px;padding:10px 18px;position:sticky;top:0;z-index:5}
+.brand{font-weight:800;font-size:1.15rem;white-space:nowrap;display:flex;align-items:center;gap:8px}
+.brand i{font-style:normal;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:var(--a1);font-weight:900}
+.top .sp{flex:1}
+.coins{background:rgba(255,255,255,.12);border-radius:999px;padding:5px 12px;font-weight:800;white-space:nowrap}
+.coins b{color:#fcd34d}
+.top a{color:#d9ccb8;font-size:.85rem;text-decoration:none}
+@media (max-width:520px){ .top{gap:8px;padding:10px 12px} .top a{display:none} }
+nav.tabs{display:flex;gap:6px;max-width:980px;margin:16px auto 0;padding:0 16px;flex-wrap:wrap}
+nav.tabs button{border:0;background:transparent;color:var(--soft);font-weight:700;padding:8px 14px;border-radius:999px}
+nav.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+main{max-width:980px;margin:0 auto;padding:16px 16px 60px}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:16px;padding:18px}
+h2{font-size:.9rem;margin:0 0 10px;text-transform:uppercase;letter-spacing:.06em;color:var(--soft)}
+.muted{color:var(--soft)}
+.btn{border:0;border-radius:12px;padding:12px 22px;font-weight:800;color:#fff;background:linear-gradient(90deg,var(--a1),var(--a2))}
+.ghost{border:1px solid var(--rule);background:transparent;color:var(--ink);border-radius:12px;padding:9px 14px;font-weight:600}
+.grid2{display:grid;grid-template-columns:3fr 2fr;gap:16px}
+@media (max-width:760px){ .grid2{grid-template-columns:1fr} }
+
+/* focus picker */
+.focus{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:10px 0 16px}
+@media (max-width:560px){ .focus{grid-template-columns:repeat(4,1fr)} }
+.focus button{border:2px solid var(--rule);background:var(--card);color:var(--ink);border-radius:12px;padding:10px 4px;font-weight:800;font-size:1.05rem;position:relative}
+.focus button small{display:block;font-size:.68rem;font-weight:600;color:var(--soft)}
+.focus button[aria-pressed="true"]{border-color:var(--a1);background:color-mix(in srgb,var(--a1) 14%,var(--card))}
+.focus button.done::after{content:"★";position:absolute;top:2px;right:6px;color:var(--a1);font-size:.8rem}
+
+/* heat map of facts */
+.heat{display:grid;grid-template-columns:repeat(12,1fr);gap:2px;font-size:.62rem;text-align:center}
+.heat div{aspect-ratio:1;display:grid;place-items:center;border-radius:4px;background:var(--rule);color:var(--soft)}
+.heat .hd{background:transparent;font-weight:800;color:var(--ink)}
+.legend{display:flex;gap:10px;font-size:.74rem;color:var(--soft);margin-top:8px;flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+
+/* the round */
+.arena{max-width:520px;margin:0 auto;text-align:center}
+.timer{height:12px;border-radius:999px;background:var(--rule);overflow:hidden}
+.timer>span{display:block;height:100%;background:linear-gradient(90deg,var(--a1),var(--a2));width:100%}
+.hud{display:flex;justify-content:space-between;font-weight:800;margin:10px 0}
+.qbig{font-size:4rem;font-weight:900;letter-spacing:.02em;margin:18px 0 6px;font-variant-numeric:tabular-nums}
+.typed{font-size:2.6rem;font-weight:800;min-height:3.4rem;border-bottom:4px solid var(--rule);margin:0 auto 16px;width:60%;font-variant-numeric:tabular-nums}
+.typed.ok{color:var(--good);border-color:var(--good)} .typed.no{color:var(--bad);border-color:var(--bad)}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pad button{border:0;border-radius:14px;padding:16px 0;font-size:1.5rem;font-weight:800;background:var(--card);color:var(--ink);box-shadow:0 2px 0 var(--rule),0 0 0 1px var(--rule) inset}
+.pad button:active{transform:translateY(2px)}
+.pad .go{background:var(--good);color:#fff;box-shadow:none}
+.combo{height:1.4em;color:var(--a1);font-weight:800}
+
+/* cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+.nl{border:2px solid var(--rule);border-radius:14px;padding:10px;text-align:center;background:var(--card);position:relative}
+.nl svg{width:96px;height:96px}
+.nl b{display:block}
+.nl small{display:block;color:var(--soft);font-size:.74rem}
+.nl .r{font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.nl.missing svg{filter:grayscale(1) brightness(.35);opacity:.5}
+.nl .cnt{position:absolute;top:6px;right:8px;font-weight:800;font-size:.8rem}
+.nl.sel{outline:3px solid var(--a1)}
+.r-common{color:var(--common)}.r-uncommon{color:var(--uncommon)}.r-rare{color:var(--rare)}.r-epic{color:var(--epic)}.r-legendary{color:var(--legendary)}
+
+/* trade */
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+select,input[type=number]{font:inherit;padding:8px 10px;border:1px solid var(--rule);border-radius:10px;background:var(--card);color:var(--ink)}
+.offer{border-top:1px solid var(--rule);padding:12px 0}
+.offer .mini{display:inline-flex;align-items:center;gap:4px;margin:2px 6px 2px 0;font-size:.85rem}
+.offer .mini svg{width:28px;height:28px}
+.status{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.veil{position:fixed;inset:0;background:rgba(10,6,0,.55);display:grid;place-items:center;padding:16px;z-index:20}
+.sheet{background:var(--card);border-radius:18px;width:min(560px,100%);max-height:88vh;overflow:auto;padding:22px;border:1px solid var(--rule);text-align:center}
+.big{font-size:3rem;font-weight:900}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:700;z-index:30;max-width:calc(100% - 32px)}
+.center{text-align:center;padding:50px 16px}
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+.popin{animation:pop .45s ease both}
+@media (prefers-reduced-motion: reduce){ .popin{animation:none} }
+.xbtn{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;
+  font:700 22px/1 system-ui,sans-serif;text-decoration:none;border:2px solid rgba(255,255,255,.35);flex:none;margin-left:6px}
+.xbtn:hover{background:rgba(255,255,255,.26)}
+.xbtn:focus-visible{outline:3px solid #fde68a;outline-offset:2px}
+</style>
+<script src="/HEH-Homework/games-gate.js?b=20261024a"></script>
+</head>
+<body>
+<div class="labbar">Lab — things here are being tried out and may break <a href="/HEH-Homework/">back to the Launchpad</a></div>
+<div class="top">
+  <div class="brand"><i>×</i>Times Table Tycoon</div>
+  <div class="sp"></div>
+  <span class="coins">🪙 <b id="coins">–</b></span>
+  <a class="xbtn" href="/HEH-Homework/" title="Back to the Launchpad" aria-label="Close and go back to the Launchpad">✕</a>
+</div>
+<nav class="tabs" id="tabs" hidden>
+  <button data-tab="play" aria-selected="true">Play</button>
+  <button data-tab="collection" aria-selected="false">Numlings</button>
+  <button data-tab="shop" aria-selected="false">Shop</button>
+  <button data-tab="trade" aria-selected="false" hidden>Trade</button>
+</nav>
+<main id="main"><div class="center muted">Loading…</div></main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js"></script>
+<script>
+(function(){
+"use strict";
+/* The real site's own server (HEH-Live, since 24 Oct 2026). The lab
+   swaps these for the lab server further down. */
+var SUPABASE_URL = "https://hehs-live.duckdns.org";
+var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkyODMyMjkwLCJleHAiOjIxMDgxOTIyOTB9.7gFhQa5RBwVtiOPLO7Qf2-aVEbkd5xgpLiN1J06Gybo";
+var LAB = document.documentElement.classList.contains("lab");
+if (LAB) {
+  var TUNNEL = false;
+  try { TUNNEL = localStorage.getItem("hl.labapi") === "tunnel"; } catch (e) {}
+  SUPABASE_URL = TUNNEL ? "http://localhost:8000" : "https://hehs.duckdns.org";
+  SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkyNzcxNTQzLCJleHAiOjIxMDgxMzE1NDN9.MFpgmA0d-KISwuCicZMUhnaEpVHY-Sw_jFp3Muck6FM";
+}
+var sb = null;
+try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth:{ persistSession:true, autoRefreshToken:true } }); } catch (e) {}
+
+var main = document.getElementById("main");
+var S = null, tab = "play", focus = "mixed";
+/* The running round's off-switch. Changing tab mid-round used to leave
+   the timer and key handler running on dead elements, and a minute
+   later the results screen stomped whatever tab you were on. */
+var abortRound = null;
+var COLOURS = { 2:"#60a5fa",3:"#34d399",4:"#f472b6",5:"#fbbf24",6:"#a78bfa",7:"#f87171",8:"#22d3ee",9:"#fb923c",10:"#4ade80",11:"#e879f9",12:"#facc15" };
+
+function h(tag, cls, text){ var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function toast(m){ var t = h("div", "toast", m); document.body.appendChild(t); setTimeout(function(){ t.remove(); }, 2600); }
+function api(body){
+  return sb.functions.invoke("tables", { body: body }).then(function(r){
+    if (r.error) {
+      var c = r.error.context;
+      if (c && c.json) return c.json().then(function(j){ var e = new Error(j && j.error || "Couldn't reach the game."); e.data = j; throw e; }, function(){ throw new Error("Couldn't reach the game."); });
+      throw new Error("Couldn't reach the game.");
+    }
+    if (r.data && r.data.error) throw new Error(r.data.error);
+    return r.data;
+  });
+}
+function setCoins(){ if (S) document.getElementById("coins").textContent = S.coins; }
+
+/* ---------- Numling art: drawn from the card, no image files ----------
+   Each times table's creature has that many sides (a hexagon for the
+   6s), so the art itself is a little maths clue. */
+function art(kind, shiny){
+  var ns = "http://www.w3.org/2000/svg";
+  var svg = document.createElementNS(ns, "svg"); svg.setAttribute("viewBox", "0 0 100 100");
+  var g = "";
+  var t = /^n(\d+)$/.test(kind) ? Number(kind.slice(1)) : 0;
+  var fill = t ? COLOURS[t] : kind === "squarelord" ? "#f59e0b" : kind === "speeddemon" ? "#ef4444" : kind === "perfectionist" ? "#8b5cf6" : "#999";
+  var stroke = shiny ? "#facc15" : "rgba(0,0,0,.25)";
+  var sw = shiny ? 5 : 3;
+  if (t === 2) g += '<ellipse cx="50" cy="48" rx="34" ry="28" fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + sw + '"/>';
+  else if (t) {
+    var pts = [], r = 32, sides = t;
+    for (var i = 0; i < sides; i++) { var a = -Math.PI/2 + i * 2 * Math.PI / sides; pts.push((50 + r * Math.cos(a)).toFixed(1) + "," + (48 + r * Math.sin(a)).toFixed(1)); }
+    g += '<polygon points="' + pts.join(" ") + '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + sw + '" stroke-linejoin="round"/>';
+  } else if (kind === "squarelord") {
+    g += '<rect x="18" y="24" width="64" height="56" rx="10" fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + sw + '"/>' +
+         '<path d="M28 30 L34 12 L44 24 L50 8 L56 24 L66 12 L72 30Z" fill="#fde047" stroke="#ca8a04" stroke-width="2"/>';
+  } else if (kind === "speeddemon") {
+    g += '<path d="M50 8 C78 30 84 56 70 76 C62 88 38 88 30 76 C16 56 22 30 50 8Z" fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + sw + '"/>' +
+         '<path d="M54 30 L40 58 L52 58 L46 80 L64 48 L52 48 L58 30Z" fill="#fde047"/>';
+  } else {
+    var s = []; for (var k = 0; k < 10; k++) { var rr = k % 2 ? 18 : 40, an = -Math.PI/2 + k * Math.PI / 5; s.push((50 + rr * Math.cos(an)).toFixed(1) + "," + (48 + rr * Math.sin(an)).toFixed(1)); }
+    g += '<polygon points="' + s.join(" ") + '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + sw + '" stroke-linejoin="round"/>';
+  }
+  // face
+  g += '<circle cx="40" cy="46" r="7" fill="#fff"/><circle cx="60" cy="46" r="7" fill="#fff"/>' +
+       '<circle cx="41.5" cy="47" r="3.4" fill="#1f1a14"/><circle cx="61.5" cy="47" r="3.4" fill="#1f1a14"/>' +
+       '<path d="M42 60 Q50 67 58 60" fill="none" stroke="#1f1a14" stroke-width="3" stroke-linecap="round"/>';
+  if (t) g += '<text x="50" y="97" text-anchor="middle" font-family="Arial" font-weight="900" font-size="15" fill="' + fill + '" stroke="rgba(0,0,0,.35)" stroke-width=".6">×' + t + '</text>';
+  if (shiny) g += '<path d="M84 14 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3Z" fill="#facc15"/><path d="M14 22 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2Z" fill="#facc15"/>';
+  svg.innerHTML = g;
+  return svg;
+}
+function cardEl(kind, opts){
+  opts = opts || {};
+  var c = S.catalogue[kind] || { name: "?", rarity: "common", how: "" };
+  var d = h("div", "nl" + (opts.missing ? " missing" : "") + " popin");
+  d.appendChild(art(kind, !!opts.shiny));
+  d.appendChild(h("b", null, (opts.shiny ? "✨ " : "") + c.name));
+  d.appendChild(h("span", "r r-" + c.rarity, c.rarity));
+  if (opts.sub) d.appendChild(h("small", null, opts.sub));
+  if (opts.count > 1) d.appendChild(h("span", "cnt", "×" + opts.count));
+  return d;
+}
+
+/* ---------- tabs ---------- */
+document.querySelectorAll("#tabs button").forEach(function(b){
+  b.onclick = function(){ tab = b.dataset.tab; document.querySelectorAll("#tabs button").forEach(function(x){ x.setAttribute("aria-selected", x === b ? "true" : "false"); }); draw(); };
+});
+function draw(){
+  if (abortRound) abortRound();
+  document.getElementById("tabs").hidden = false;
+  document.querySelector('#tabs [data-tab="trade"]').hidden = !(LAB && S && S.trading);
+  if (tab === "play") drawPlay(); else if (tab === "collection") drawCollection(); else if (tab === "shop") drawShop(); else drawTrade();
+}
+function load(){ return api({ action:"state" }).then(function(s){ S = s; setCoins(); draw(); }).catch(err); }
+function err(e){ main.textContent = ""; var b = h("div", "card center"); b.appendChild(h("p", null, e && e.message || "Something went wrong.")); var a = h("button", "btn", "Try again"); a.onclick = load; b.appendChild(a); main.appendChild(b); }
+
+/* ---------- play ---------- */
+function drawPlay(){
+  main.textContent = "";
+  var grid = h("div", "grid2"), left = h("div", "card"), right = h("div", "card");
+  left.appendChild(h("h2", null, "Pick your times table"));
+  var f = h("div", "focus");
+  ["mixed", 2,3,4,5,6,7,8,9,10,11,12].forEach(function(t){
+    var b = h("button"); b.type = "button";
+    b.textContent = t === "mixed" ? "Mix" : "×" + t;
+    var sm = h("small", null, t === "mixed" ? "all of them" : (S.tables[t].seen ? S.tables[t].acc + "%" : "new"));
+    b.appendChild(sm);
+    if (t !== "mixed" && S.tables[t].mastered) b.classList.add("done");
+    b.setAttribute("aria-pressed", String(t) === focus ? "true" : "false");
+    b.onclick = function(){ focus = String(t); drawPlay(); };
+    f.appendChild(b);
+  });
+  left.appendChild(f);
+  var go = h("button", "btn", "Start 60-second round"); go.type = "button"; go.style.width = "100%"; go.style.fontSize = "1.15rem";
+  go.onclick = function(){ startRound(); };
+  left.appendChild(go);
+  left.appendChild(h("p", "muted", "Best: " + S.best + " in a round · " + S.roundsLeft + " rounds left today · ★ = mastered"));
+  left.appendChild(h("p", "muted", "Score 12+ for a Numling drop. Master a table (fast and right on every fact) for a shiny one."));
+
+  right.appendChild(h("h2", null, "What it knows about you"));
+  var hm = h("div", "heat");
+  hm.appendChild(h("div", "hd", "×"));
+  for (var c = 2; c <= 12; c++) hm.appendChild(h("div", "hd", c));
+  for (var a = 2; a <= 12; a++) {
+    hm.appendChild(h("div", "hd", a));
+    for (var b2 = 2; b2 <= 12; b2++) {
+      var k = Math.min(a, b2) + "x" + Math.max(a, b2), fct = S.facts[k], cell = h("div", null, "");
+      if (fct && fct.n) {
+        var acc = fct.ok / fct.n;
+        cell.style.background = acc < .7 ? "#ef4444" : fct.ms > 4000 ? "#f59e0b" : fct.ms > 2500 ? "#a3e635" : "#16a34a";
+        cell.title = a + " × " + b2 + ": " + Math.round(acc * 100) + "% right, " + (fct.ms / 1000).toFixed(1) + "s";
+      }
+      hm.appendChild(cell);
+    }
+  }
+  right.appendChild(hm);
+  var lg = h("div", "legend");
+  [["#16a34a","quick"],["#a3e635","OK"],["#f59e0b","slow"],["#ef4444","often wrong"],["var(--rule)","not yet"]].forEach(function(x){
+    var s = h("span"); var i = h("i"); i.style.background = x[0]; s.appendChild(i); s.appendChild(document.createTextNode(x[1])); lg.appendChild(s);
+  });
+  right.appendChild(lg);
+  right.appendChild(h("p", "muted", "The red and orange ones come up more often until they turn green."));
+  grid.appendChild(left); grid.appendChild(right); main.appendChild(grid);
+}
+
+function startRound(){
+  main.textContent = ""; main.appendChild(h("div", "center muted", "Get ready…"));
+  api({ action:"start", focus:focus }).then(function(r){ countdown(function(){ play(r); }); }).catch(function(e){ toast(e.message); drawPlay(); });
+}
+function countdown(then){
+  var n = 3; main.textContent = ""; var big = h("div", "center"); var num = h("div", "qbig", "3"); big.appendChild(num); main.appendChild(big);
+  var iv = setInterval(function(){ n--; if (n <= 0) { clearInterval(iv); abortRound = null; then(); } else num.textContent = n; }, 700);
+  abortRound = function(){ clearInterval(iv); abortRound = null; };
+}
+
+function play(r){
+  main.textContent = "";
+  var ar = h("div", "arena");
+  var tm = h("div", "timer"), tfill = h("span"); tm.appendChild(tfill);
+  var hud = h("div", "hud"), sc = h("span", null, "✓ 0"), tl = h("span", null, r.secs + "s"); hud.appendChild(sc); hud.appendChild(tl);
+  var q = h("div", "qbig"), typed = h("div", "typed"), combo = h("div", "combo");
+  var pad = h("div", "pad");
+  ["7","8","9","4","5","6","1","2","3","⌫","0","✓"].forEach(function(k){
+    var b = h("button", k === "✓" ? "go" : null, k); b.type = "button";
+    b.onclick = function(){ press(k); };
+    pad.appendChild(b);
+  });
+  ar.appendChild(tm); ar.appendChild(hud); ar.appendChild(q); ar.appendChild(typed); ar.appendChild(combo); ar.appendChild(pad);
+  main.appendChild(ar);
+  var autoT = null;
+  if (S.tester) {
+    /* Lab test mode: types the right answer at a human pace (0.7-1.2s),
+       which the server accepts - faster than 0.25s it wouldn't. */
+    var tb = h("div", "row"); tb.style.justifyContent = "center"; tb.style.marginTop = "12px";
+    var go = h("button", "ghost", "🧪 Autoplay (all right)"), mix = h("button", "ghost", "🧪 Autoplay (some wrong)");
+    function autoplay(wrongs){
+      if (autoT) return;
+      (function step(){
+        if (ended) return;
+        autoT = setTimeout(function(){
+          if (ended || locked) return step();
+          var p = r.questions[i], ans = String(p[0] * p[1]);
+          if (wrongs && Math.random() < .15) ans = String(p[0] * p[1] + 1);
+          val = ""; ans.split("").forEach(function(ch){ press(ch); });
+          if (val) press("✓");
+          step();
+        }, 700 + Math.random() * 500);
+      })();
+      go.disabled = mix.disabled = true;
+    }
+    go.onclick = function(){ autoplay(false); }; mix.onclick = function(){ autoplay(true); };
+    tb.appendChild(go); tb.appendChild(mix); ar.appendChild(tb);
+  }
+
+  var i = 0, val = "", answers = [], right = 0, streak = 0, shown = performance.now(), locked = false, ended = false;
+  var t0 = performance.now(), dur = r.secs * 1000;
+  abortRound = function(){ ended = true; clearInterval(tick); clearTimeout(autoT); document.removeEventListener("keydown", key); abortRound = null; };
+  function showQ(){ var p = r.questions[i]; q.textContent = p[0] + " × " + p[1]; val = ""; typed.textContent = ""; typed.className = "typed"; shown = performance.now(); }
+  function press(k){
+    if (locked || ended) return;
+    if (k === "⌫") { val = val.slice(0, -1); typed.textContent = val; return; }
+    if (k === "✓") { if (val) submit(); return; }
+    if (val.length < 3) { val += k; typed.textContent = val; }
+    var p = r.questions[i];
+    if (String(p[0] * p[1]).length === val.length && Number(val) === p[0] * p[1]) submit();   // auto-submit when right
+  }
+  function submit(){
+    var p = r.questions[i], ok = Number(val) === p[0] * p[1];
+    answers.push({ v: Number(val), ms: Math.round(performance.now() - shown) });
+    if (ok) { right++; streak++; typed.className = "typed ok"; } else { streak = 0; typed.className = "typed no"; typed.textContent = p[0] * p[1]; }
+    sc.textContent = "✓ " + right;
+    combo.textContent = streak >= 5 ? "🔥 " + streak + " in a row" : "";
+    locked = true;
+    setTimeout(function(){ locked = false; i++; if (i >= r.questions.length || ended) return finish(); showQ(); }, ok ? 160 : 900);
+  }
+  function key(e){
+    if (/^[0-9]$/.test(e.key)) press(e.key);
+    else if (e.key === "Backspace") press("⌫");
+    else if (e.key === "Enter") press("✓");
+  }
+  document.addEventListener("keydown", key);
+  var tick = setInterval(function(){
+    var left = Math.max(0, dur - (performance.now() - t0));
+    tfill.style.width = (100 * left / dur) + "%"; tl.textContent = Math.ceil(left / 1000) + "s";
+    if (left <= 0) finish();
+  }, 100);
+  function finish(){
+    if (ended) return; ended = true; abortRound = null; clearInterval(tick); clearTimeout(autoT); document.removeEventListener("keydown", key);
+    main.textContent = ""; main.appendChild(h("div", "center muted", "Marking…"));
+    var wait = Math.max(0, dur + 300 - (performance.now() - t0));     // the server checks a whole minute passed
+    setTimeout(function(){
+      api({ action:"finish", id:r.id, answers:answers }).then(results).catch(function(e){ toast(e.message); if (e.data && e.data.coins != null) S = Object.assign(S, e.data); load(); });
+    }, wait);
+  }
+  showQ();
+}
+
+function results(r){
+  S = Object.assign(S, r); setCoins();
+  main.textContent = "";
+  var c = h("div", "card center");
+  c.appendChild(h("div", "big", r.right + " right"));
+  c.appendChild(h("p", null, (r.newBest ? "🏆 New best! " : "") + "+" + r.earned + " coins" + (r.wrong ? " · " + r.wrong + " to practise" : " · none wrong!")));
+  if (r.got && r.got.length) {
+    c.appendChild(h("h2", null, "You got"));
+    var cs = h("div", "cards"); cs.style.maxWidth = "480px"; cs.style.margin = "0 auto 12px";
+    r.got.forEach(function(g){ cs.appendChild(cardEl(g.kind, { shiny:g.shiny, sub:g.why })); });
+    c.appendChild(cs);
+  } else if (r.right < 12) c.appendChild(h("p", "muted", "Score 12 or more for a Numling drop."));
+  if (r.missed && r.missed.length) {
+    c.appendChild(h("h2", null, "Learn these"));
+    c.appendChild(h("p", null, r.missed.join("   ·   ")));
+  }
+  var again = h("button", "btn", "Play again"); again.type = "button"; again.onclick = startRound;
+  var back = h("button", "ghost", "Back"); back.type = "button"; back.onclick = drawPlay; back.style.marginLeft = "8px";
+  c.appendChild(again); c.appendChild(back);
+  main.appendChild(c); again.focus();
+}
+
+/* ---------- collection ---------- */
+function counts(){
+  var m = {}; S.cards.forEach(function(c){ var k = c.kind + (c.shiny ? "*" : ""); m[k] = (m[k] || 0) + 1; }); return m;
+}
+function drawCollection(){
+  main.textContent = "";
+  var m = counts(), have = Object.keys(S.catalogue).filter(function(k){ return m[k] || m[k + "*"]; }).length;
+  var c = h("div", "card");
+  c.appendChild(h("h2", null, "Numlings · " + have + " of " + Object.keys(S.catalogue).length + " found"));
+  var cs = h("div", "cards");
+  Object.keys(S.catalogue).forEach(function(k){
+    if (m[k + "*"]) cs.appendChild(cardEl(k, { shiny:true, count:m[k + "*"], sub:"Shiny" }));
+    if (m[k]) cs.appendChild(cardEl(k, { count:m[k], sub: S.catalogue[k].how }));
+    if (!m[k] && !m[k + "*"]) cs.appendChild(cardEl(k, { missing:true, sub: S.catalogue[k].how }));
+  });
+  c.appendChild(cs); main.appendChild(c);
+}
+
+/* ---------- shop: a specific card at a fixed price ---------- */
+function drawShop(){
+  main.textContent = "";
+  var c = h("div", "card");
+  c.appendChild(h("h2", null, "Shop"));
+  c.appendChild(h("p", "muted", "Pick exactly the Numling you want. No mystery packs, and coins only come from playing."));
+  var cs = h("div", "cards");
+  Object.keys(S.catalogue).forEach(function(k){
+    var cat = S.catalogue[k], price = S.prices[cat.rarity];
+    var d = cardEl(k, { sub: cat.rarity === "legendary" ? "Earn only" : price + " coins" });
+    if (cat.rarity !== "legendary") {
+      var b = h("button", "ghost", "Buy"); b.type = "button"; b.style.marginTop = "6px"; b.disabled = S.coins < price;
+      b.onclick = function(){ b.disabled = true; api({ action:"buy", kind:k }).then(function(s){ S = s; setCoins(); toast("Got " + cat.name + "!"); drawShop(); }).catch(function(e){ toast(e.message); b.disabled = false; }); };
+      d.appendChild(b);
+    }
+    cs.appendChild(d);
+  });
+  c.appendChild(cs); main.appendChild(c);
+}
+
+/* ---------- trade (lab only) ---------- */
+function mini(card){
+  var s = h("span", "mini"); s.appendChild(art(card.kind, card.shiny));
+  s.appendChild(document.createTextNode(((S.catalogue[card.kind] || {}).name || "?") + (card.shiny ? " ✨" : ""))); return s;
+}
+function drawTrade(){
+  main.textContent = "";
+  var grid = h("div", "grid2"), make = h("div", "card"), list = h("div", "card");
+  make.appendChild(h("h2", null, "Make an offer"));
+  make.appendChild(h("p", "muted", "Pick a player, then what you'll give and what you want. Both sides need something. Nothing moves until they say yes."));
+  var who = h("select"); who.appendChild(new Option("Choose a player…", ""));
+  var body = h("div");
+  make.appendChild(who); make.appendChild(body);
+  api({ action:"players" }).then(function(r){
+    if (!r.players.length) { body.appendChild(h("p", "muted", "Nobody else has played yet.")); return; }
+    r.players.forEach(function(p){ who.appendChild(new Option(p.name, p.id)); });
+  }).catch(function(e){ toast(e.message); });
+  var tradeSeq = 0;
+  who.onchange = function(){
+    body.textContent = ""; if (!who.value) return;
+    var give = {}, want = {};
+    var rq = ++tradeSeq;        /* a slower, older fetch must not paint over a newer pick */
+    api({ action:"collection", user:who.value }).then(function(r){
+      if (rq !== tradeSeq) return;
+      body.appendChild(h("h2", null, "You give")).style.marginTop = "14px";
+      var mine = h("div", "cards");
+      S.cards.forEach(function(cd){ var e = cardEl(cd.kind, { shiny:cd.shiny }); e.onclick = function(){ if (give[cd.id]) delete give[cd.id]; else if (Object.keys(give).length < 5) give[cd.id] = 1; e.classList.toggle("sel", !!give[cd.id]); }; mine.appendChild(e); });
+      if (!S.cards.length) mine.appendChild(h("p", "muted", "No cards yet."));
+      body.appendChild(mine);
+      var gc = h("input"); gc.type = "number"; gc.min = 0; gc.max = Math.min(1000, S.coins); gc.value = 0;
+      var row1 = h("div", "row"); row1.appendChild(h("span", null, "+ coins:")); row1.appendChild(gc); body.appendChild(row1);
+      body.appendChild(h("h2", null, "You want")).style.marginTop = "14px";
+      var theirs = h("div", "cards");
+      r.cards.forEach(function(cd){ var e = cardEl(cd.kind, { shiny:cd.shiny }); e.onclick = function(){ if (want[cd.id]) delete want[cd.id]; else if (Object.keys(want).length < 5) want[cd.id] = 1; e.classList.toggle("sel", !!want[cd.id]); }; theirs.appendChild(e); });
+      if (!r.cards.length) theirs.appendChild(h("p", "muted", "They haven't got any cards yet."));
+      body.appendChild(theirs);
+      var wc = h("input"); wc.type = "number"; wc.min = 0; wc.max = 1000; wc.value = 0;
+      var row2 = h("div", "row"); row2.appendChild(h("span", null, "+ coins:")); row2.appendChild(wc); body.appendChild(row2);
+      var send = h("button", "btn", "Send offer"); send.type = "button"; send.style.marginTop = "14px";
+      send.onclick = function(){
+        send.disabled = true;
+        api({ action:"offer", to:who.value, give:Object.keys(give).map(Number), giveCoins:Number(gc.value) || 0, want:Object.keys(want).map(Number), wantCoins:Number(wc.value) || 0 })
+          .then(function(){ toast("Offer sent!"); drawTrade(); }).catch(function(e){ toast(e.message); send.disabled = false; });
+      };
+      body.appendChild(send);
+    }).catch(function(e){ toast(e.message); });
+  };
+
+  list.appendChild(h("h2", null, "Offers"));
+  var box = h("div"); list.appendChild(box);
+  api({ action:"offers" }).then(function(r){
+    if (!r.offers.length) { box.appendChild(h("p", "muted", "No offers in the last three days.")); return; }
+    r.offers.forEach(function(o){
+      var d = h("div", "offer");
+      d.appendChild(h("div", "status " + (o.status === "done" ? "r-uncommon" : o.status === "open" ? "r-legendary" : "muted"),
+        (o.mine ? "To " + o.to : "From " + o.from) + " · " + o.status));
+      var g = h("div"); g.appendChild(h("small", "muted", o.mine ? "You give: " : "They give: "));
+      o.give.forEach(function(c){ g.appendChild(mini(c)); }); if (o.giveCoins) g.appendChild(h("span", "mini", "🪙 " + o.giveCoins));
+      var w = h("div"); w.appendChild(h("small", "muted", o.mine ? "You get: " : "You give: "));
+      o.want.forEach(function(c){ w.appendChild(mini(c)); }); if (o.wantCoins) w.appendChild(h("span", "mini", "🪙 " + o.wantCoins));
+      d.appendChild(g); d.appendChild(w);
+      if (o.status === "open") {
+        var row = h("div", "row");
+        if (o.mine) { var cx = h("button", "ghost", "Cancel"); cx.onclick = function(){ api({ action:"cancel", id:o.id }).then(drawTrade); }; row.appendChild(cx); }
+        else {
+          var yes = h("button", "btn", "Accept"); yes.onclick = function(){ yes.disabled = true; api({ action:"accept", id:o.id }).then(function(s){ S = Object.assign(S, s); setCoins(); toast("Traded!"); drawTrade(); }).catch(function(e){ toast(e.message); drawTrade(); }); };
+          var no = h("button", "ghost", "Decline"); no.onclick = function(){ api({ action:"decline", id:o.id }).then(drawTrade); };
+          row.appendChild(yes); row.appendChild(no);
+        }
+        d.appendChild(row);
+      }
+      box.appendChild(d);
+    });
+  }).catch(function(e){ toast(e.message); });
+  grid.appendChild(make); grid.appendChild(list); main.appendChild(grid);
+}
+
+/* ---------- start ---------- */
+/* Live as well as lab: the tables function is installed on both. */
+if (!sb) err(new Error("Couldn't load. Check your connection."));
+else sb.auth.getSession().then(function(r){
+  if (!r.data || !r.data.session) {
+    main.textContent = "";
+    var b = h("div", "card center"); b.appendChild(h("div", "big", "×")); b.appendChild(h("h2", null, "Times Table Tycoon"));
+    b.appendChild(h("p", "muted", "Sign in on the Launchpad first."));
+    var a = h("a", "btn", "Sign in"); a.href = "./"; a.style.textDecoration = "none"; a.style.display = "inline-block"; b.appendChild(a);
+    main.appendChild(b); return;
+  }
+  load();
+});
+})();
+</script>
+</body>
+</html>
