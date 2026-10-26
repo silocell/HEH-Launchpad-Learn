@@ -76,11 +76,11 @@ input[type=email],select{font:inherit;padding:10px 12px;border:1px solid var(--r
 .xbtn:hover{background:rgba(255,255,255,.26)}
 .xbtn:focus-visible{outline:3px solid #fde68a;outline-offset:2px}
 </style>
-<script src="/HEH-Homework/games-gate.js?b=20261024a"></script>
+<script src="https://civilinitiatives.org/games-gate.js?b=20261024a"></script>
 </head>
 <body>
-<div class="labbar">Lab — things here are being tried out and may break <a href="/HEH-Homework/">back to the Launchpad</a></div>
-<div class="top"><div class="brand">🐉 Word Dragons</div><div class="sp"></div><span class="chip" id="rec">–</span><a class="xbtn" href="/HEH-Homework/" title="Back to the Launchpad" aria-label="Close and go back to the Launchpad">✕</a></div>
+<div class="labbar">Lab — things here are being tried out and may break <a href="https://civilinitiatives.org/">back to the Launchpad</a></div>
+<div class="top"><div class="brand">🐉 Word Dragons</div><div class="sp"></div><span class="chip" id="rec">–</span><a class="xbtn" href="https://civilinitiatives.org/" title="Back to the Launchpad" aria-label="Close and go back to the Launchpad">✕</a></div>
 <nav class="tabs" id="tabs" hidden>
   <button data-tab="nest" aria-selected="true">Nest</button>
   <button data-tab="battles" aria-selected="false">Battles</button>
@@ -88,6 +88,7 @@ input[type=email],select{font:inherit;padding:10px 12px;border:1px solid var(--r
 <main id="main"><div class="center muted">Loading…</div></main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js"></script>
+<script src="https://civilinitiatives.org/auth-store.js?b=20261026a"></script>
 <script>
 (function(){
 "use strict";
@@ -103,7 +104,8 @@ if (LAB) {
   SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkyNzcxNTQzLCJleHAiOjIxMDgxMzE1NDN9.MFpgmA0d-KISwuCicZMUhnaEpVHY-Sw_jFp3Muck6FM";
 }
 var sb = null;
-try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth:{ persistSession:true, autoRefreshToken:true } }); } catch (e) {}
+try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth:{ persistSession:true, autoRefreshToken:true,
+             storage:(window.HEHAuth && window.HEHAuth.storage) || undefined } }); } catch (e) {}
 var main = document.getElementById("main"), S = null, tab = "nest";
 var COL = { fire:["#f97316","#fed7aa","#b91c1c"], stone:["#78716c","#e7e5e4","#44403c"], storm:["#6366f1","#c7d2fe","#3730a3"], ice:["#22d3ee","#e0f7fa","#0e7490"] };
 var autoLesson = false;

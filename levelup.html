@@ -161,19 +161,20 @@ canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:40}
 </style>
 </head>
 <body>
-<div class="labbar">Lab — things here are being tried out and may break <a href="/HEH-Homework/">back to the Launchpad</a></div>
+<div class="labbar">Lab — things here are being tried out and may break <a href="https://civilinitiatives.org/">back to the Launchpad</a></div>
 <div class="top">
   <div class="brand"><img src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Cdefs%3E%3ClinearGradient id=%22g%22 x1=%220%22 y1=%221%22 x2=%221%22 y2=%220%22%3E%3Cstop offset=%220%22 stop-color=%22%234f46e5%22/%3E%3Cstop offset=%221%22 stop-color=%22%2306b6d4%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width=%2264%22 height=%2264%22 rx=%2216%22 fill=%22url(%23g)%22/%3E%3Cpath d=%22M14 46h9v-9h9v-9h9v-9h9%22 fill=%22none%22 stroke=%22%23fff%22 stroke-width=%225%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3Cpath d=%22M40 13h11v11%22 fill=%22none%22 stroke=%22%23fcd34d%22 stroke-width=%225%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E" width="30" height="30" alt="" style="border-radius:8px">Level Up</div>
   <div class="sp"></div>
   <span class="chip pts" id="ptsChip">⭐ <b id="pts">–</b> pts</span>
   <span class="chip" id="streakChip" hidden>🔥 <span id="streak">0</span></span>
   <button class="ghost" id="shopBtn" style="color:#fff;border-color:rgba(255,255,255,.25);padding:6px 14px">Shop</button>
-<a class="xbtn" href="/HEH-Homework/" title="Back to the Launchpad" aria-label="Close and go back to the Launchpad">✕</a>
+<a class="xbtn" href="https://civilinitiatives.org/" title="Back to the Launchpad" aria-label="Close and go back to the Launchpad">✕</a>
 </div>
 <main id="main"><div class="center muted">Loading…</div></main>
 <canvas id="confetti"></canvas>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js"></script>
+<script src="https://civilinitiatives.org/auth-store.js?b=20261026a"></script>
 <script>
 (function(){
 "use strict";
@@ -189,7 +190,8 @@ if (LAB) {
   SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkyNzcxNTQzLCJleHAiOjIxMDgxMzE1NDN9.MFpgmA0d-KISwuCicZMUhnaEpVHY-Sw_jFp3Muck6FM";
 }
 var sb = null;
-try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth:{ persistSession:true, autoRefreshToken:true } }); } catch (e) {}
+try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth:{ persistSession:true, autoRefreshToken:true,
+             storage:(window.HEHAuth && window.HEHAuth.storage) || undefined } }); } catch (e) {}
 
 var main = document.getElementById("main");
 var BADGE = { "a-rocket":"🚀", "a-star":"⭐", "a-bolt":"⚡", "a-owl":"🦉", "a-crown":"👑", "a-dragon":"🐉" };
