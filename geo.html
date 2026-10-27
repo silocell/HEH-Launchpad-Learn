@@ -55,7 +55,8 @@ h1{margin:0 0 6px;font-size:1.6rem} .muted{color:var(--soft)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js"></script>
 <script src="https://civilinitiatives.org/auth-store.js?b=20261026a"></script>
-<script src="learn.js?b=20261027a"></script>
+<script src="learn.js?b=20261027b"></script>
+<script src="geo-facts.js?b=20261027a"></script>
 </head>
 <body>
 <div class="labbar">Lab</div>
@@ -71,29 +72,7 @@ function pick(a){ return a[Math.floor(Math.random() * a.length)]; }
 
 /* ---------------- the facts ----------------
    [place, answer, the wrong answer people usually give (optional)] */
-var EUROPE = [
-  ["France","Paris"],["Germany","Berlin"],["Spain","Madrid","Barcelona"],["Italy","Rome","Milan"],
-  ["Portugal","Lisbon","Porto"],["the Netherlands","Amsterdam","Rotterdam"],["Belgium","Brussels"],
-  ["Ireland","Dublin","Belfast"],["Poland","Warsaw","Kraków"],["Greece","Athens"],["Austria","Vienna"],
-  ["Switzerland","Bern","Zürich"],["Sweden","Stockholm"],["Norway","Oslo"],["Denmark","Copenhagen"],
-  ["Finland","Helsinki"],["the Czech Republic","Prague"],["Hungary","Budapest"],["Romania","Bucharest"],
-  ["Ukraine","Kyiv"],["Croatia","Zagreb"],["Iceland","Reykjavík"]
-];
-var WORLD = [
-  ["Japan","Tokyo","Kyoto"],["China","Beijing","Shanghai"],["India","New Delhi","Mumbai"],
-  ["the USA","Washington, D.C.","New York"],["Canada","Ottawa","Toronto"],["Australia","Canberra","Sydney"],
-  ["Brazil","Brasília","Rio de Janeiro"],["Argentina","Buenos Aires"],["Egypt","Cairo"],["Kenya","Nairobi"],
-  ["Nigeria","Abuja","Lagos"],["Mexico","Mexico City"],["Russia","Moscow"],["Turkey","Ankara","Istanbul"],
-  ["South Korea","Seoul"],["New Zealand","Wellington","Auckland"],["Peru","Lima"],["Ghana","Accra"],
-  ["Pakistan","Islamabad","Karachi"],["Morocco","Rabat","Casablanca"],["Chile","Santiago"],["Thailand","Bangkok"]
-];
-var CONTINENT = [
-  ["Kenya","Africa"],["Egypt","Africa"],["Nigeria","Africa"],["Brazil","South America"],["Argentina","South America"],
-  ["Peru","South America"],["Japan","Asia"],["India","Asia"],["China","Asia"],["Canada","North America"],
-  ["Mexico","North America"],["Poland","Europe"],["Portugal","Europe"],["New Zealand","Oceania"],["Fiji","Oceania"]
-];
-var CONTINENTS = ["Africa","Antarctica","Asia","Europe","North America","Oceania","South America"];
-var OCEANS = ["Pacific","Atlantic","Indian","Southern","Arctic"];
+var F = window.GEO_FACTS, EUROPE = F.EUROPE, WORLD = F.WORLD, CONTINENT = F.CONTINENT, CONTINENTS = F.CONTINENTS, OCEANS = F.OCEANS;
 
 /* Each topic makes one question at a time: { q, a, opts, why } */
 var TOPICS = {
@@ -120,7 +99,7 @@ var TOPICS = {
   world:  { name:"World capitals", icon:"🌍", make: function(){ return capitalQ(WORLD); } },
   continents: { name:"Continents & oceans", icon:"🌊", make: function(){
     return pick([
-      function(){ var c = pick(CONTINENT); return { q:"Which continent is " + c[0] + " in?", a:c[1], opts:[c[1]].concat(shuffle(CONTINENTS.filter(function(x){ return x !== c[1]; })).slice(0, 3)), why:c[0] + " is in " + c[1] + "." }; },
+      function(){ var c = pick(CONTINENT); return { data:{ k:"continent", place:c[0] }, q:"Which continent is " + c[0] + " in?", a:c[1], opts:[c[1]].concat(shuffle(CONTINENTS.filter(function(x){ return x !== c[1]; })).slice(0, 3)), why:c[0] + " is in " + c[1] + "." }; },
       function(){ return { q:"Which is the largest ocean?", a:"Pacific", opts:OCEANS.slice(0, 4), why:"The Pacific is the largest ocean - bigger than all the land on Earth put together." }; },
       function(){ return { q:"Which is the smallest ocean?", a:"Arctic", opts:["Arctic","Indian","Southern","Atlantic"], why:"The Arctic Ocean, around the North Pole, is the smallest of the five." }; },
       function(){ return { q:"Which ocean lies between the UK and the USA?", a:"Atlantic", opts:["Atlantic","Pacific","Arctic","Indian"], why:"The Atlantic separates Europe and Africa from the Americas." }; },
@@ -149,6 +128,7 @@ function capitalQ(list){
   var opts = [c[1]]; if (c[2]) opts.push(c[2]);
   while (opts.length < 4) opts.push(others.shift());
   return { q:"What is the capital of " + c[0] + "?", a:c[1], opts:opts,
+           data:{ k:"capital", set: list === EUROPE ? "europe" : "world", place:c[0] },
            why:"The capital of " + c[0] + " is " + c[1] + "." + (c[2] ? " " + c[2] + " is bigger or better known, which is why people guess it." : "") };
 }
 var ORDER = ["uk","europe","world","continents","compass"];
@@ -252,7 +232,7 @@ function round(topic){
       var ok = o === qn.a;
       bs.forEach(function(x){ x[0].disabled = true; if (x[1] === qn.a) x[0].classList.add("right"); else if (x[1] === o) x[0].classList.add("wrong"); });
       dots[i] = ok ? 1 : 0; if (ok) score++; else { missed.push(qn); again.push(qn); }
-      if (window.HEHLearn) HEHLearn.record({ subject:"geography", skill:T.name, ok:ok, front:qn.q, back:qn.a, note:qn.why, game:"geo" });
+      if (window.HEHLearn) HEHLearn.record({ subject:"geography", skill:T.name, ok:ok, front:qn.q, back:qn.a, note:qn.why, game:"geo", data: qn.data || { k:"mc", opts: qn.opts } });
       var fb = h("div", "fb"); fb.appendChild(h("b", null, ok ? "Yes! " : "Not quite - it's " + qn.a + ". ")); fb.appendChild(document.createTextNode(qn.why));
       c.appendChild(fb);
       var nx = h("button", "btn", i + 1 < n ? "Next" : "See how you did"); nx.type = "button"; nx.style.marginTop = "12px";

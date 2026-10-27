@@ -47,13 +47,29 @@ main{max-width:720px;margin:0 auto;padding:18px 16px 60px}
 .empty{text-align:center;padding:30px 10px}
 .empty .big{font-size:2.6rem}
 kbd{font:700 .7rem system-ui;border:1px solid var(--rule);border-radius:5px;padding:1px 5px;margin-left:6px;opacity:.75}
+.form{font:800 .72rem system-ui;letter-spacing:.07em;text-transform:uppercase;color:var(--a1)}
+.front{white-space:pre-line}
+.qarea{width:100%;max-width:520px}
+.qopts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px} .qopts.two{grid-template-columns:1fr 1fr}
+@media (max-width:520px){ .qopts:not(.two){grid-template-columns:1fr} }
+.qopt{border:2px solid var(--rule);background:var(--card);color:var(--ink);border-radius:14px;padding:12px;text-align:left;font-weight:500}
+.qopt:hover:not(:disabled){border-color:var(--a1)} .qopt kbd{margin:0 8px 0 0}
+.qopt.right,input.right{border-color:var(--good);background:color-mix(in srgb,var(--good) 13%,var(--card))}
+.qopt.wrong,input.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,var(--card))}
+form.typed{display:flex;gap:8px;margin-top:6px}
+form.typed input{flex:1;min-width:0;font:inherit;font-size:1.15rem;padding:11px 14px;border:2px solid var(--rule);border-radius:12px;background:var(--card);color:var(--ink)}
+.verdict{margin-top:6px;font-size:1.02rem} .verdict.good b{color:var(--good)} .verdict.bad b{color:var(--bad)}
+.after{margin-top:12px}
+.face.sib{min-height:0;border-style:dashed;margin-top:4px}
 @keyframes flip{from{transform:rotateX(70deg);opacity:.3}to{transform:none;opacity:1}}
 .face.turn{animation:flip .28s ease-out}
 @media (prefers-reduced-motion: reduce){ .face.turn{animation:none} }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js"></script>
 <script src="https://civilinitiatives.org/auth-store.js?b=20261026a"></script>
-<script src="learn.js?b=20261027a"></script>
+<script src="learn.js?b=20261027b"></script>
+<script src="geo-facts.js?b=20261027a"></script>
+<script src="related.js?b=20261027a"></script>
 </head>
 <body>
 <div class="labbar">Lab</div>
@@ -80,7 +96,7 @@ function load(){
   return HEHLearn.signedIn().then(function(yes){
     if (!yes) return say("🔒", "Sign in on the Launchpad first.", ["Go to the Launchpad", "https://civilinitiatives.org/"]);
     return HEHLearn.flush().then(function(){
-      return sb.from("flashcards").select("id,subject,skill,game,front,back,note,box,due_at,reviews,lapses").order("due_at").limit(400);
+      return sb.from("flashcards").select("id,subject,skill,game,front,back,note,data,box,due_at,reviews,lapses").order("due_at").limit(400);
     }).then(function(r){
       if (r.error) {
         if (/PGRST205|PGRST202|42P01|does not exist|Could not find/.test(r.error.message + (r.error.code || "")))
@@ -98,7 +114,7 @@ function draw(){
   main.textContent = "";
   var p = h("div", "panel");
   var mine = all.filter(function(c){ return subject === "all" || c.subject === subject; });
-  queue = mine.filter(due).sort(function(a, b){ return a.box - b.box || new Date(a.due_at) - new Date(b.due_at); });
+  queue = mine.filter(due).sort(function(a, b){ return a.box - b.box || new Date(a.due_at) - new Date(b.due_at) || a.id - b.id; });
   p.appendChild(h("h1", null, queue.length ? queue.length + " to review" : "All caught up"));
   var chips = h("div", "chips"), subs = {};
   all.forEach(function(c){ subs[c.subject] = (subs[c.subject] || 0) + (due(c) ? 1 : 0); });
@@ -135,43 +151,107 @@ function when(t){
   var d = Math.round(hrs / 24); return d === 1 ? "tomorrow" : "in " + d + " days";
 }
 
+/* Today's question for this card comes from related.js: the same fact,
+   asked a different way each day, harder the higher the box. It marks
+   itself, so there's no "did I know it?" honour system - except for an
+   old card with no fact saved, which falls back to exactly that. */
 function card(){
-  var c = queue[0];
+  var c = queue[0], q = HEHRelated.today(c);
   var wrap = h("div", "flash"), face = h("div", "face turn");
   face.appendChild(h("div", "meta", (SUBJ[c.subject] || c.subject) + (c.skill ? " · " + c.skill : "") + " · box " + c.box));
-  face.appendChild(h("div", "front", c.front));
   wrap.appendChild(face);
-  var acts = h("div", "acts");
-  var show = h("button", "btn", "Show answer"); show.type = "button"; show.appendChild(h("kbd", null, "Space"));
-  acts.appendChild(show);
-  main.appendChild(wrap); main.appendChild(acts);
-  show.focus();
-  function key(e){
-    if (e.key === " " || e.key === "Enter") { e.preventDefault(); if (!show.hidden) show.click(); }
-    else if (show.hidden && (e.key === "1" || e.key.toLowerCase() === "n")) noB.click();
-    else if (show.hidden && (e.key === "2" || e.key.toLowerCase() === "y")) okB.click();
-  }
-  document.addEventListener("keydown", key);
-  var okB = h("button", "ok", "Got it"), noB = h("button", "no", "Didn't know");
-  okB.type = noB.type = "button"; okB.appendChild(h("kbd", null, "2")); noB.appendChild(h("kbd", null, "1"));
-  show.onclick = function(){
-    show.hidden = true;
-    face.classList.remove("turn"); void face.offsetWidth; face.classList.add("turn");
-    face.appendChild(h("div", "back", c.back));
-    if (c.note) face.appendChild(h("div", "note", c.note));
-    acts.appendChild(noB); acts.appendChild(okB); okB.focus();
-  };
-  function mark(ok){
-    document.removeEventListener("keydown", key);
-    okB.disabled = noB.disabled = true;
-    sb.rpc("card_review", { card: c.id, ok: ok }).then(function(r){
-      if (r.error) { okB.disabled = noB.disabled = false; document.addEventListener("keydown", key); alertLine(r.error.message); return; }
+  main.appendChild(wrap);
+  var after = h("div", "after"); main.appendChild(after);
+  ask(face, q, function(ok){
+    /* Saved straight away, so leaving now loses nothing. */
+    var saved = sb.rpc("card_review", { card: c.id, ok: ok }).then(function(r){
+      if (r.error) { after.appendChild(h("p", "muted", "Couldn't save that: " + r.error.message)); return; }
       var i = all.findIndex(function(x){ return x.id === c.id; }); if (i >= 0) all[i] = r.data;
-      draw();
     });
+    if (c.note) face.appendChild(h("div", "note", c.note));
+    var sib = ok ? null : HEHRelated.sibling(c);
+    if (sib) {
+      var box = h("div", "face sib"); after.appendChild(box);
+      ask(box, sib, function(ok2){
+        if (window.HEHLearn && sib.fact) HEHLearn.record({ subject: sib.fact.subject, skill: sib.fact.skill, ok: ok2, front: sib.fact.front,
+                                                           back: sib.a, data: sib.fact.data, game: "cards" });
+        nextBtn(saved);
+      });
+    } else nextBtn(saved);
+  });
+  function nextBtn(saved){
+    var acts = h("div", "acts"), nx = h("button", "btn", queue.length > 1 ? "Next card" : "Done"); nx.type = "button";
+    nx.appendChild(h("kbd", null, "Enter"));
+    nx.onclick = function(){ nx.disabled = true; saved.then(draw); };
+    acts.appendChild(nx); after.appendChild(acts); nx.focus();
   }
-  okB.onclick = function(){ mark(true); }; noB.onclick = function(){ mark(false); };
-  function alertLine(t){ var m = h("p", "muted", "Couldn't save that: " + t); acts.appendChild(m); }
+}
+
+/* Draw one question into a card face and call done(right) once answered. */
+var offKeys = null;
+function ask(face, q, done){
+  if (offKeys) offKeys();
+  face.appendChild(h("div", "form", q.form));
+  face.appendChild(h("div", "front", q.q));
+  var area = h("div", "qarea"); face.appendChild(area);
+  var finished = false;
+  function finish(ok, given){
+    if (finished) return; finished = true; if (offKeys) offKeys();
+    var v = h("div", "verdict " + (ok ? "good" : "bad"));
+    v.appendChild(h("b", null, ok ? "Right!" : "Not quite."));
+    if (!ok || q.kind === "type") v.appendChild(document.createTextNode(" " + (q.kind === "tf" ? q.answerText : "It's " + q.a + ".")));
+    if (ok && q.kind === "type" && HEHRelated.norm(given) !== HEHRelated.norm(q.a)) v.appendChild(document.createTextNode(" Close enough \u2014 it's spelt " + q.a + "."));
+    face.appendChild(v);
+    done(ok);
+  }
+  if (q.kind === "mc" || q.kind === "tf") {
+    var grid = h("div", "qopts" + (q.kind === "tf" ? " two" : "")), bs = [];
+    q.opts.forEach(function(o, i){
+      var b = h("button", "qopt"); b.type = "button";
+      b.appendChild(h("kbd", null, q.kind === "tf" ? o.charAt(0) : "ABCD"[i])); b.appendChild(document.createTextNode(o));
+      b.onclick = function(){
+        var ok = q.check(q.kind === "tf" ? o === "True" : o);
+        bs.forEach(function(x){ x[0].disabled = true; if (x[1] === q.a) x[0].classList.add("right"); else if (x[0] === b) x[0].classList.add("wrong"); });
+        finish(ok, o);
+      };
+      bs.push([b, o]); grid.appendChild(b);
+    });
+    area.appendChild(grid);
+    keys(function(e){
+      var k = e.key.toUpperCase(), i = q.kind === "tf" ? "TF".indexOf(k) : "ABCD".indexOf(k);
+      if (i < 0 && q.kind === "mc") i = "1234".indexOf(e.key);
+      if (i >= 0 && bs[i] && !bs[i][0].disabled) bs[i][0].click();
+    });
+    bs[0][0].focus();
+  } else if (q.kind === "type") {
+    var form = h("form", "typed"), inp = h("input"); inp.type = "text"; inp.autocomplete = "off"; inp.setAttribute("aria-label", "Your answer");
+    inp.setAttribute("autocapitalize", "off"); inp.spellcheck = false;
+    var go = h("button", "btn", "Check"); go.type = "submit";
+    form.appendChild(inp); form.appendChild(go); area.appendChild(form);
+    form.onsubmit = function(e){ e.preventDefault(); if (!inp.value.trim()) return; inp.disabled = go.disabled = true; var ok = q.check(inp.value); inp.classList.add(ok ? "right" : "wrong"); finish(ok, inp.value); };
+    setTimeout(function(){ inp.focus(); }, 30);
+  } else {
+    var acts = h("div", "acts"), show = h("button", "btn", "Show answer"); show.type = "button"; show.appendChild(h("kbd", null, "Space"));
+    acts.appendChild(show); area.appendChild(acts);
+    show.onclick = function(){
+      show.remove(); area.appendChild(h("div", "back", q.a));
+      var okB = h("button", "ok", "Knew it"), noB = h("button", "no", "Didn't");
+      okB.type = noB.type = "button"; noB.appendChild(h("kbd", null, "1")); okB.appendChild(h("kbd", null, "2"));
+      var a2 = h("div", "acts"); a2.appendChild(noB); a2.appendChild(okB); area.appendChild(a2);
+      okB.onclick = function(){ a2.remove(); finished = true; if (offKeys) offKeys(); done(true); };
+      noB.onclick = function(){ a2.remove(); finished = true; if (offKeys) offKeys(); done(false); };
+      keys(function(e){ if (e.key === "1") noB.click(); else if (e.key === "2") okB.click(); });
+      okB.focus();
+    };
+    keys(function(e){ if (e.key === " ") { e.preventDefault(); show.click(); } });
+    show.focus();
+  }
+}
+function keys(fn){
+  if (offKeys) offKeys();
+  function k(e){ if (e.target && e.target.tagName === "INPUT") return; fn(e); }
+  document.addEventListener("keydown", k);
+  offKeys = function(){ document.removeEventListener("keydown", k); offKeys = null; };
 }
 
 load();
