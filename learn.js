@@ -69,11 +69,46 @@
         state = "on";
         writeQ(readQ().slice(batch.length));
         fire("recorded", r.data);
+        if (batch.some(function (it) { return it.ok; })) pounds();
         if (readQ().length) return flush();
       }, function () { sending = false; });
     });
   }
   function soon() { if (!timer) timer = setTimeout(flush, 1500); }
+
+  /* Launchpad Pounds. Right answers are counted on the server as they're
+     filed; this asks the profile function whether that earned a Pound
+     (20 right in a subject = 1, at most 2 per subject and 5 a day) and
+     says so. Once on arrival for a starting figure, then not more than
+     every 15 seconds. The real site only - the lab has no Pounds. */
+  var lastLP = null, lpAt = 0, lpWait = null;
+  function pounds() {
+    if (!sb || !sb.functions || document.documentElement.classList.contains("lab")) return;
+    var gap = Date.now() - lpAt;
+    if (gap < 15000) {
+      if (!lpWait) lpWait = setTimeout(function () { lpWait = null; pounds(); }, 15000 - gap);
+      return;
+    }
+    lpAt = Date.now();
+    sb.functions.invoke("profile", { body: { action: "pounds", had: lastLP } }).then(function (r) {
+      var d = r && r.data;
+      if (!d || d.error || typeof d.pounds !== "number") return;
+      if (lastLP !== null && d.pounds > lastLP) coin(d.pounds - lastLP, d.pounds);
+      lastLP = d.pounds;
+      fire("pounds", d);
+    }, function () {});
+  }
+  function coin(n, total) {
+    var t = document.createElement("div");
+    t.setAttribute("role", "status");
+    t.textContent = "+🪙" + n + " Launchpad Pound" + (n === 1 ? "" : "s") + "! You have " + total + ".";
+    t.style.cssText = "position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:99999;padding:12px 18px;border-radius:999px;" +
+      "background:linear-gradient(90deg,#d97706,#db2777);color:#fff;font:700 15px/1.2 system-ui,sans-serif;box-shadow:0 12px 30px -10px rgba(0,0,0,.5);" +
+      "pointer-events:none;transition:opacity .4s";
+    document.body.appendChild(t);
+    setTimeout(function () { t.style.opacity = "0"; }, 3200);
+    setTimeout(function () { t.remove(); }, 3700);
+  }
 
   var listeners = {};
   function fire(name, data) { (listeners[name] || []).forEach(function (f) { try { f(data); } catch (e) {} }); }
@@ -83,7 +118,7 @@
        same sign-in would refresh the same token twice. */
     use: function (client) {
       sb = client;
-      who().then(function () { if (readQ().length) soon(); });
+      who().then(function (id) { if (readQ().length) soon(); if (id) pounds(); });
       return HEHLearn;
     },
     /* For pages that don't make their own client (the flash cards, the
