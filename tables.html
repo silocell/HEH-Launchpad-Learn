@@ -111,7 +111,8 @@ select,input[type=number]{font:inherit;padding:8px 10px;border:1px solid var(--r
 .xbtn:hover{background:rgba(255,255,255,.26)}
 .xbtn:focus-visible{outline:3px solid #fde68a;outline-offset:2px}
 </style>
-<script src="https://civilinitiatives.org/games-gate.js?b=20261024a"></script>
+<script src="https://civilinitiatives.org/auth-store.js?b=20261026a"></script>
+<script src="https://civilinitiatives.org/games-gate.js?b=20261027a"></script>
 </head>
 <body>
 <div class="labbar">Lab — things here are being tried out and may break <a href="https://civilinitiatives.org/">back to the Launchpad</a></div>
@@ -130,7 +131,6 @@ select,input[type=number]{font:inherit;padding:8px 10px;border:1px solid var(--r
 <main id="main"><div class="center muted">Loading…</div></main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js"></script>
-<script src="https://civilinitiatives.org/auth-store.js?b=20261026a"></script>
 <script>
 (function(){
 "use strict";
@@ -375,6 +375,10 @@ function play(r){
 
 function results(r){
   S = Object.assign(S, r); setCoins();
+  /* The round's reply says what dropped, but not the whole collection, so
+     the Collection tab kept the old list until a reload - the new Numling
+     was saved, it just wasn't shown. Fetch the saved state again now. */
+  api({ action:"state" }).then(function(s){ S = Object.assign(S, s); setCoins(); }).catch(function(){});
   main.textContent = "";
   var c = h("div", "card center");
   c.appendChild(h("div", "big", r.right + " right"));
