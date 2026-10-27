@@ -141,12 +141,16 @@ var sb = window.HEHLearn ? HEHLearn.connect() : null;
 function loadProgress(){
   var jobs = [];
   if (window.HEHLearn) jobs.push(HEHLearn.load("geo").then(function(d){ if (d && d.best) best = d.best; }));
-  if (sb) jobs.push(sb.from("learn_skills").select("skill,mastery,last_at").eq("subject", "geography").then(function(r){
-    (r.data || []).forEach(function(row){
-      var key = ORDER.filter(function(k){ return TOPICS[k].name === row.skill; })[0];
-      if (key) known[key] = HEHLearn.now(row);
+  /* Only ask the server when someone is signed in - signed out, it just says no. */
+  if (sb) jobs.push(HEHLearn.signedIn().then(function(yes){
+    if (!yes) return;
+    return sb.from("learn_skills").select("skill,mastery,last_at").eq("subject", "geography").then(function(r){
+      (r.data || []).forEach(function(row){
+        var key = ORDER.filter(function(k){ return TOPICS[k].name === row.skill; })[0];
+        if (key) known[key] = HEHLearn.now(row);
+      });
     });
-  }, function(){}));
+  }).catch(function(){}));
   return Promise.all(jobs).catch(function(){});
 }
 
