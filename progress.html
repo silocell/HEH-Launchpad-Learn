@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Progress</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<script>
+try{ var t = JSON.parse(localStorage.getItem("hl.theme")); if(t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t); }catch(e){}
+if (/^lab\./i.test(location.hostname) || /^\/HEH-(Homework|Launchpad)-Lab(\/|$)/i.test(location.pathname)) document.documentElement.classList.add("lab");
+</script>
+<style>
+:root{ --bg:#f3f5fb; --card:#fff; --ink:#151a2d; --soft:#5b6380; --rule:#e2e6f2; --bar:#141a33; --a1:#4f46e5;
+  --m1:#dc2626; --m2:#f59e0b; --m3:#84cc16; --m4:#16a34a; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#0e1120; --card:#171b2e; --ink:#e7eaf6; --soft:#9aa3c2; --rule:#272d47; --bar:#0a0d1a; --a1:#818cf8;
+  --m1:#f87171; --m2:#fbbf24; --m3:#a3e635; --m4:#4ade80; } }
+:root[data-theme="dark"]{ --bg:#0e1120; --card:#171b2e; --ink:#e7eaf6; --soft:#9aa3c2; --rule:#272d47; --bar:#0a0d1a; --a1:#818cf8;
+  --m1:#f87171; --m2:#fbbf24; --m3:#a3e635; --m4:#4ade80; }
+*{box-sizing:border-box} [hidden]{display:none!important} html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+.labbar{display:none;background:#7c3aed;color:#fff;font:700 .72rem system-ui,sans-serif;letter-spacing:.06em;text-align:center;padding:5px 12px;text-transform:uppercase}
+html.lab .labbar{display:block}
+.top{background:var(--bar);color:#fff;display:flex;align-items:center;gap:14px;padding:12px 18px;white-space:nowrap}
+.top b{font-size:1.1rem} .top .sp{flex:1} .top a{color:#c7cbe0;font-size:.85rem;text-decoration:none} .top a:hover{color:#fff}
+main{max-width:1000px;margin:0 auto;padding:20px 16px 60px}
+h1{margin:0 0 14px;font-size:1.6rem} h2{margin:0;font-size:1.15rem}
+.muted{color:var(--soft)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}
+.tile{background:var(--card);border:1px solid var(--rule);border-radius:14px;padding:14px 16px;text-decoration:none;color:var(--ink)}
+.tile b{display:block;font-size:1.8rem;line-height:1.1;font-variant-numeric:tabular-nums}
+.tile span{color:var(--soft);font-size:.88rem}
+a.tile:hover{border-color:var(--a1)}
+.next{background:var(--card);border:1px solid var(--rule);border-left:4px solid var(--a1);border-radius:12px;padding:14px 16px;margin-bottom:18px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.next .sp{flex:1}
+.btn{border:0;border-radius:10px;padding:9px 16px;color:#fff;background:var(--a1);text-decoration:none;font-weight:700;font-size:.92rem}
+.subjects{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;align-items:start}
+.subj{background:var(--card);border:1px solid var(--rule);border-radius:16px;padding:16px}
+.subj header{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
+.subj header .sp{flex:1}
+.pct{font-weight:800;font-size:1.3rem;font-variant-numeric:tabular-nums}
+.meter{height:10px;border-radius:999px;background:var(--rule);overflow:hidden;margin-bottom:12px}
+.meter i{display:block;height:100%;border-radius:999px}
+.skill{display:grid;grid-template-columns:1fr 90px;gap:2px 10px;align-items:center;padding:7px 0;border-top:1px solid var(--rule);font-size:.9rem}
+.skill small{grid-column:1/-1;color:var(--soft);font-size:.76rem}
+.mini{height:6px;border-radius:999px;background:var(--rule);overflow:hidden} .mini i{display:block;height:100%}
+.more{background:none;border:0;color:var(--a1);font:600 .85rem system-ui;padding:8px 0 0;cursor:pointer}
+.games{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-top:24px}
+.game{background:var(--card);border:1px solid var(--rule);border-radius:14px;padding:14px;text-decoration:none;color:var(--ink)}
+.game:hover{border-color:var(--a1)} .game b{display:block} .game span{color:var(--soft);font-size:.86rem}
+details{margin-top:26px;color:var(--soft);font-size:.9rem} summary{cursor:pointer;font-weight:600}
+details p{max-width:44rem}
+.empty{background:var(--card);border:1px solid var(--rule);border-radius:16px;padding:28px;text-align:center}
+.empty .big{font-size:2.4rem}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js"></script>
+<script src="https://civilinitiatives.org/auth-store.js?b=20261026a"></script>
+<script src="learn.js?b=20261027a"></script>
+</head>
+<body>
+<div class="labbar">Lab</div>
+<div class="top"><b>📈 My Progress</b><div class="sp"></div><a href="cards.html">Cards</a><a href="./">Games</a></div>
+<main id="main"><p class="muted">Loading…</p></main>
+<script>
+(function(){
+"use strict";
+var main = document.getElementById("main");
+function h(t, c, x){ var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+var SUBJ = {
+  maths:     { name:"Maths",     icon:"🔢", play:[["Times Table Tycoon","tables.html"],["Level Up","levelup.html"]] },
+  english:   { name:"English",   icon:"📖", play:[["Word Dragons","dragons.html"],["Level Up","levelup.html"]] },
+  science:   { name:"Science",   icon:"🧪", play:[["Level Up","levelup.html"]] },
+  history:   { name:"History",   icon:"⚔️", play:[["Battle Stories","history.html"]] },
+  geography: { name:"Geography", icon:"🧭", play:[["Map Quest","geo.html"]] }
+};
+var ORDER = ["maths","english","science","history","geography"];
+var sb = window.HEHLearn ? HEHLearn.connect() : null;
+
+function colour(m){ return m >= .8 ? "var(--m4)" : m >= .6 ? "var(--m3)" : m >= .4 ? "var(--m2)" : "var(--m1)"; }
+function ago(t){
+  var d = Math.floor((Date.now() - new Date(t).getTime()) / 864e5);
+  return d <= 0 ? "today" : d === 1 ? "yesterday" : d + " days ago";
+}
+function fn(name, body){
+  return sb.functions.invoke(name, { body: body }).then(function(r){ return r.error || (r.data && r.data.error) ? null : r.data; }, function(){ return null; });
+}
+
+function empty(big, text, link){
+  main.textContent = "";
+  var p = h("div", "empty"); p.appendChild(h("div", "big", big)); p.appendChild(h("p", null, text));
+  if (link) { var a = h("a", "btn", link[0]); a.href = link[1]; p.appendChild(a); }
+  main.appendChild(p);
+}
+
+function load(){
+  if (!sb) return empty("😕", "Couldn't start. Check your connection and reload.");
+  HEHLearn.signedIn().then(function(yes){
+    if (!yes) return empty("🔒", "Sign in on the Launchpad first.", ["Go to the Launchpad", "https://civilinitiatives.org/"]);
+    return HEHLearn.flush().then(function(){
+      return Promise.all([
+        sb.from("learn_skills").select("subject,skill,seen,correct,mastery,last_at"),
+        sb.from("flashcards").select("box,due_at,subject"),
+        sb.from("game_saves").select("game,data"),
+        fn("levelup", { action:"state" }),
+        fn("tables",  { action:"state" }),
+        fn("dragons", { action:"state" })
+      ]);
+    }).then(draw);
+  });
+}
+
+function draw(res){
+  var skillsR = res[0], cardsR = res[1], savesR = res[2], lu = res[3], tt = res[4], dr = res[5];
+  var ready = !skillsR.error;
+  var skills = ready ? (skillsR.data || []) : [], cards = cardsR.error ? [] : (cardsR.data || []);
+  var saves = {}; (savesR.error ? [] : (savesR.data || [])).forEach(function(s){ saves[s.game] = s.data || {}; });
+  main.textContent = "";
+  main.appendChild(h("h1", null, "My progress"));
+
+  /* ---- the headline numbers ---- */
+  var now = Date.now();
+  var due = cards.filter(function(c){ return new Date(c.due_at).getTime() <= now; }).length;
+  var secure = skills.filter(function(s){ return HEHLearn.now(s) >= .8; }).length;
+  var answered = skills.reduce(function(n, s){ return n + s.seen; }, 0);
+  var right = skills.reduce(function(n, s){ return n + s.correct; }, 0);
+  var tiles = h("div", "tiles");
+  function tile(big, small, href){ var t = h(href ? "a" : "div", "tile"); if (href) t.href = href; t.appendChild(h("b", null, big)); t.appendChild(h("span", null, small)); tiles.appendChild(t); }
+  tile(due, due === 1 ? "flash card to review" : "flash cards to review", "cards.html");
+  tile(secure + " / " + skills.length, "skills secure");
+  tile(answered, "questions answered");
+  tile(answered ? Math.round(100 * right / answered) + "%" : "–", "answered right");
+  main.appendChild(tiles);
+
+  if (!ready) {
+    var w = h("div", "empty"); w.appendChild(h("div", "big", "🛠️"));
+    w.appendChild(h("p", null, "Progress tracking isn't switched on yet. Your answers are being kept and will appear here once it is."));
+    main.appendChild(w);
+  }
+
+  /* ---- what to do next: the weakest skill that's been tried ---- */
+  var tried = skills.filter(function(s){ return s.seen >= 2; }).sort(function(a, b){ return HEHLearn.now(a) - HEHLearn.now(b); });
+  if (due || tried.length) {
+    var nx = h("div", "next");
+    if (due) {
+      nx.appendChild(h("span", null, "🃏 Start with your " + due + " flash card" + (due === 1 ? "" : "s") + "."));
+      nx.appendChild(h("span", "sp")); var a = h("a", "btn", "Review"); a.href = "cards.html"; nx.appendChild(a);
+    } else {
+      var weak = tried[0], S = SUBJ[weak.subject] || { name: weak.subject, play: [] };
+      nx.appendChild(h("span", null, "Practise next: " + weak.skill + " (" + S.name + ") — " + HEHLearn.level(HEHLearn.now(weak)) + "."));
+      nx.appendChild(h("span", "sp"));
+      if (S.play[0]) { var b = h("a", "btn", S.play[0][0]); b.href = S.play[0][1]; nx.appendChild(b); }
+    }
+    main.appendChild(nx);
+  }
+
+  /* ---- one card per subject ---- */
+  var grid = h("div", "subjects");
+  ORDER.concat(Object.keys(groupBy(skills)).filter(function(k){ return ORDER.indexOf(k) < 0; })).forEach(function(k){
+    var list = skills.filter(function(s){ return s.subject === k; });
+    var S = SUBJ[k] || { name: k, icon: "📚", play: [] };
+    var card = h("section", "subj");
+    var hd = h("header"); hd.appendChild(h("h2", null, S.icon + " " + S.name)); hd.appendChild(h("span", "sp"));
+    var cardsHere = cards.filter(function(c){ return c.subject === k && new Date(c.due_at).getTime() <= now; }).length;
+    if (!list.length) {
+      hd.appendChild(h("span", "muted", "not started"));
+      card.appendChild(hd);
+      if (S.play[0]) { var p = h("a", "btn", "Try " + S.play[0][0]); p.href = S.play[0][1]; card.appendChild(p); }
+      grid.appendChild(card); return;
+    }
+    /* Subject score: each skill counts by how much you've practised it,
+       so one lucky answer doesn't outweigh fifty. */
+    var wsum = 0, msum = 0;
+    list.forEach(function(s){ var w = Math.min(s.seen, 20); wsum += w; msum += w * HEHLearn.now(s); });
+    var m = wsum ? msum / wsum : .5;
+    hd.appendChild(h("span", "pct", Math.round(m * 100) + "%"));
+    card.appendChild(hd);
+    var meter = h("div", "meter"), fill = h("i"); fill.style.width = Math.round(m * 100) + "%"; fill.style.background = colour(m); meter.appendChild(fill); card.appendChild(meter);
+    list.sort(function(a, b){ return HEHLearn.now(a) - HEHLearn.now(b); });
+    list.forEach(function(s, i){
+      var r = h("div", "skill"); var mm = HEHLearn.now(s);
+      r.appendChild(h("span", null, s.skill));
+      var mini = h("div", "mini"), f = h("i"); f.style.width = Math.round(mm * 100) + "%"; f.style.background = colour(mm); mini.appendChild(f); r.appendChild(mini);
+      r.appendChild(h("small", null, HEHLearn.level(mm) + " · " + s.correct + "/" + s.seen + " right · " + ago(s.last_at)));
+      if (i >= 5) r.hidden = true;
+      card.appendChild(r);
+    });
+    if (list.length > 5) {
+      var more = h("button", "more", "Show all " + list.length); more.type = "button";
+      more.onclick = function(){ card.querySelectorAll(".skill").forEach(function(x){ x.hidden = false; }); more.remove(); };
+      card.appendChild(more);
+    }
+    if (cardsHere) { var c = h("p", "muted", "🃏 " + cardsHere + " card" + (cardsHere === 1 ? "" : "s") + " due"); c.style.margin = "10px 0 0"; card.appendChild(c); }
+    grid.appendChild(card);
+  });
+  main.appendChild(grid);
+
+  /* ---- each game's own record ---- */
+  var games = h("div", "games");
+  function g(name, href, line){ if (!line) return; var a = h("a", "game"); a.href = href; a.appendChild(h("b", null, name)); a.appendChild(h("span", null, line)); games.appendChild(a); }
+  if (lu) g("🚀 Level Up", "levelup.html", "Level " + lu.level + " · " + lu.pts + " points" + (lu.streak > 1 ? " · " + lu.streak + "-day streak" : ""));
+  if (tt && tt.catalogue) {
+    var found = {}; (tt.cards || []).forEach(function(c){ found[c.kind] = 1; });
+    var mastered = Object.keys(tt.tables || {}).filter(function(k){ return tt.tables[k].mastered; }).length;
+    g("✖️ Times Table Tycoon", "tables.html", Object.keys(found).length + " of " + Object.keys(tt.catalogue).length + " Numlings · best " + tt.best + " · " + mastered + (mastered === 1 ? " table" : " tables") + " mastered");
+  }
+  if (dr && dr.dragons) {
+    var top = dr.dragons.reduce(function(n, d){ return Math.max(n, d.level || 0); }, 0);
+    g("🐉 Word Dragons", "dragons.html", dr.dragons.length + " dragon" + (dr.dragons.length === 1 ? "" : "s") + (top ? " · highest level " + top : ""));
+  }
+  var hb = saves.history && saves.history.best && saves.history.best.hastings;
+  g("⚔️ Battle Stories", "history.html", hb != null ? "Hastings 1066 · best " + hb + "/10" : "Not played yet");
+  var gb = saves.geo && saves.geo.best, gk = gb ? Object.keys(gb) : [];
+  g("🧭 Map Quest", "geo.html", gk.length ? gk.length + " topic" + (gk.length === 1 ? "" : "s") + " played · best " + Math.max.apply(null, gk.map(function(k){ return gb[k]; })) + "/10" : "Not played yet");
+  main.appendChild(h("h2", null, "Games")).style.marginTop = "26px";
+  main.appendChild(games);
+
+  var how = h("details");
+  how.appendChild(h("summary", null, "How this is worked out"));
+  how.appendChild(h("p", null, "Every answer in every learning game updates one score per skill. A right answer moves it 30% of the way towards 100%; a wrong one 30% of the way towards 0. Time away fades it back towards 50% — halfway every 30 days — because that's what memory does. 80% and above counts as secure."));
+  how.appendChild(h("p", null, "A wrong answer becomes a flash card. Get it right when it comes back and it moves up a box, so you see it again after 1, 3, 7 and then 16 days. Get it wrong and it starts again."));
+  main.appendChild(how);
+}
+function groupBy(list){ var o = {}; list.forEach(function(s){ o[s.subject] = 1; }); return o; }
+
+load();
+})();
+</script>
+</body>
+</html>

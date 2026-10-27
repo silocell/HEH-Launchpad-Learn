@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Map Quest</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<script>
+try{ var t = JSON.parse(localStorage.getItem("hl.theme")); if(t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t); }catch(e){}
+if (/^lab\./i.test(location.hostname) || /^\/HEH-(Homework|Launchpad)-Lab(\/|$)/i.test(location.pathname)) document.documentElement.classList.add("lab");
+</script>
+<style>
+/* Map Quest - Year 7 geography. Every fact below was checked by hand.
+   Where a place has a well-known wrong answer (Sydney for Australia,
+   Istanbul for Turkey) that wrong answer is one of the options, so you
+   can't pass by ruling things out on sight. */
+:root{ --bg:#eef6f6; --card:#fff; --ink:#0f2a2e; --soft:#557074; --rule:#d5e6e6; --bar:#0b3a40; --a1:#0e7490; --a2:#0f766e; --good:#15803d; --bad:#b91c1c; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#0a1a1c; --card:#102427; --ink:#e3f2f2; --soft:#8fb0b3; --rule:#1f3a3e; --bar:#061214; --good:#4ade80; --bad:#f87171; } }
+:root[data-theme="dark"]{ --bg:#0a1a1c; --card:#102427; --ink:#e3f2f2; --soft:#8fb0b3; --rule:#1f3a3e; --bar:#061214; --good:#4ade80; --bad:#f87171; }
+*{box-sizing:border-box} [hidden]{display:none!important} html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+button{font:600 15px/1.2 inherit;cursor:pointer;font-family:inherit}
+.labbar{display:none;background:#7c3aed;color:#fff;font:700 .72rem system-ui,sans-serif;letter-spacing:.06em;text-align:center;padding:5px 12px;text-transform:uppercase}
+html.lab .labbar{display:block}
+.top{background:var(--bar);color:#ccfbf1;display:flex;align-items:center;gap:12px;padding:10px 18px;white-space:nowrap}
+.brand{font-weight:800;font-size:1.1rem} .top .sp{flex:1} .top a{color:#99f6e4;font-size:.85rem;text-decoration:none}
+main{max-width:860px;margin:0 auto;padding:18px 16px 60px}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:16px;padding:20px}
+h1{margin:0 0 6px;font-size:1.6rem} .muted{color:var(--soft)}
+.topics{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:14px}
+.topic{display:flex;flex-direction:column;gap:6px;text-align:left;border:2px solid var(--rule);background:var(--card);color:var(--ink);border-radius:14px;padding:14px}
+.topic:hover{border-color:var(--a1)} .topic b{font-size:1.05rem}
+.topic small{color:var(--soft);font-weight:400}
+.bar{height:6px;border-radius:999px;background:var(--rule);overflow:hidden} .bar i{display:block;height:100%;background:var(--a1)}
+.topic.weak{border-color:color-mix(in srgb,var(--a1) 55%,var(--rule))}
+.btn{border:0;border-radius:12px;padding:11px 20px;color:#fff;background:linear-gradient(90deg,var(--a1),var(--a2))}
+.ghost{border:1px solid var(--rule);background:transparent;color:var(--ink);border-radius:12px;padding:9px 14px}
+.head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.dots{display:flex;gap:4px;flex:1} .dots i{flex:1;height:8px;border-radius:999px;background:var(--rule)}
+.dots i.ok{background:var(--good)} .dots i.no{background:var(--bad)} .dots i.now{background:var(--a1)}
+.kicker{font:800 .74rem system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--a1)}
+.qtext{font-size:1.3rem;font-weight:700;margin:6px 0 16px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px} @media (max-width:560px){ .opts{grid-template-columns:1fr} }
+.opt{border:2px solid var(--rule);background:var(--card);color:var(--ink);border-radius:14px;padding:13px;text-align:left;font-weight:500}
+.opt:hover:not(:disabled){border-color:var(--a1)}
+.opt kbd{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;background:var(--rule);font:700 .75rem system-ui;margin-right:8px}
+.opt.right{border-color:var(--good);background:color-mix(in srgb,var(--good) 13%,var(--card))}
+.opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,var(--card));text-decoration:line-through}
+.fb{margin-top:14px;padding:14px;border-radius:12px;background:color-mix(in srgb,var(--a1) 9%,var(--card))}
+.compass{display:block;margin:0 auto 10px;width:150px;height:150px}
+.big{font-size:2.2rem;font-weight:800;margin:4px 0}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.missed{margin:10px 0 0;padding-left:18px} .missed li{margin:3px 0}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important} }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js"></script>
+<script src="https://civilinitiatives.org/auth-store.js?b=20261026a"></script>
+<script src="learn.js?b=20261027a"></script>
+</head>
+<body>
+<div class="labbar">Lab</div>
+<div class="top"><div class="brand">🧭 Map Quest</div><div class="sp"></div><span id="best"></span><a href="./">Games</a></div>
+<main id="main"></main>
+<script>
+(function(){
+"use strict";
+var main = document.getElementById("main");
+function h(t, c, x){ var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+function shuffle(a){ a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+function pick(a){ return a[Math.floor(Math.random() * a.length)]; }
+
+/* ---------------- the facts ----------------
+   [place, answer, the wrong answer people usually give (optional)] */
+var EUROPE = [
+  ["France","Paris"],["Germany","Berlin"],["Spain","Madrid","Barcelona"],["Italy","Rome","Milan"],
+  ["Portugal","Lisbon","Porto"],["the Netherlands","Amsterdam","Rotterdam"],["Belgium","Brussels"],
+  ["Ireland","Dublin","Belfast"],["Poland","Warsaw","Kraków"],["Greece","Athens"],["Austria","Vienna"],
+  ["Switzerland","Bern","Zürich"],["Sweden","Stockholm"],["Norway","Oslo"],["Denmark","Copenhagen"],
+  ["Finland","Helsinki"],["the Czech Republic","Prague"],["Hungary","Budapest"],["Romania","Bucharest"],
+  ["Ukraine","Kyiv"],["Croatia","Zagreb"],["Iceland","Reykjavík"]
+];
+var WORLD = [
+  ["Japan","Tokyo","Kyoto"],["China","Beijing","Shanghai"],["India","New Delhi","Mumbai"],
+  ["the USA","Washington, D.C.","New York"],["Canada","Ottawa","Toronto"],["Australia","Canberra","Sydney"],
+  ["Brazil","Brasília","Rio de Janeiro"],["Argentina","Buenos Aires"],["Egypt","Cairo"],["Kenya","Nairobi"],
+  ["Nigeria","Abuja","Lagos"],["Mexico","Mexico City"],["Russia","Moscow"],["Turkey","Ankara","Istanbul"],
+  ["South Korea","Seoul"],["New Zealand","Wellington","Auckland"],["Peru","Lima"],["Ghana","Accra"],
+  ["Pakistan","Islamabad","Karachi"],["Morocco","Rabat","Casablanca"],["Chile","Santiago"],["Thailand","Bangkok"]
+];
+var CONTINENT = [
+  ["Kenya","Africa"],["Egypt","Africa"],["Nigeria","Africa"],["Brazil","South America"],["Argentina","South America"],
+  ["Peru","South America"],["Japan","Asia"],["India","Asia"],["China","Asia"],["Canada","North America"],
+  ["Mexico","North America"],["Poland","Europe"],["Portugal","Europe"],["New Zealand","Oceania"],["Fiji","Oceania"]
+];
+var CONTINENTS = ["Africa","Antarctica","Asia","Europe","North America","Oceania","South America"];
+var OCEANS = ["Pacific","Atlantic","Indian","Southern","Arctic"];
+
+/* Each topic makes one question at a time: { q, a, opts, why } */
+var TOPICS = {
+  uk: { name:"The UK", icon:"🇬🇧", make: function(){
+    return pick([
+      function(){ var c = pick([["England","London"],["Scotland","Edinburgh"],["Wales","Cardiff"],["Northern Ireland","Belfast"]]);
+        return { q:"What is the capital of " + c[0] + "?", a:c[1], opts:["London","Edinburgh","Cardiff","Belfast"], why:"The UK has four countries: England (London), Scotland (Edinburgh), Wales (Cardiff) and Northern Ireland (Belfast)." }; },
+      function(){ var m = pick([["the UK","Ben Nevis"],["Wales","Snowdon (Yr Wyddfa)"],["England","Scafell Pike"],["Northern Ireland","Slieve Donard"]]);
+        return { q:"What is the highest mountain in " + m[0] + "?", a:m[1], opts:["Ben Nevis","Snowdon (Yr Wyddfa)","Scafell Pike","Slieve Donard"],
+                 why:"Ben Nevis (1,345 m, Scotland) is the highest in the UK. Snowdon is highest in Wales, Scafell Pike in England, Slieve Donard in Northern Ireland." }; },
+      function(){ return { q:"Which is the longest river in the UK?", a:"River Severn", opts:["River Severn","River Thames","River Trent","River Tay"],
+                 why:"The Severn (about 354 km) rises in Wales and reaches the sea at the Bristol Channel. The Thames is the longest wholly in England." }; },
+      function(){ return { q:"Which river flows through London?", a:"River Thames", opts:["River Thames","River Severn","River Mersey","River Tyne"], why:"The Thames flows east through London to the North Sea." }; },
+      function(){ return { q:"Which range of hills is called ‘the backbone of England’?", a:"The Pennines", opts:["The Pennines","The Cotswolds","The Chilterns","The Cairngorms"],
+                 why:"The Pennines run down the middle of northern England. The Cairngorms are in Scotland." }; },
+      function(){ return { q:"Which sea lies between Great Britain and Ireland?", a:"The Irish Sea", opts:["The Irish Sea","The North Sea","The English Channel","The Celtic Sea"],
+                 why:"The Irish Sea is to the west of Great Britain. The North Sea is to the east, and the English Channel separates England from France." }; },
+      function(){ return { q:"What separates England from France?", a:"The English Channel", opts:["The English Channel","The Irish Sea","The North Sea","The Bay of Biscay"], why:"The English Channel. At its narrowest, the Strait of Dover, it is about 33 km wide." }; },
+      function(){ return { q:"What is the largest lake in the UK by area?", a:"Lough Neagh", opts:["Lough Neagh","Loch Ness","Windermere","Loch Lomond"],
+                 why:"Lough Neagh in Northern Ireland covers the most area. Loch Ness holds the most water, because it is so deep." }; }
+    ])();
+  }},
+  europe: { name:"Capitals of Europe", icon:"🏰", make: function(){ return capitalQ(EUROPE); } },
+  world:  { name:"World capitals", icon:"🌍", make: function(){ return capitalQ(WORLD); } },
+  continents: { name:"Continents & oceans", icon:"🌊", make: function(){
+    return pick([
+      function(){ var c = pick(CONTINENT); return { q:"Which continent is " + c[0] + " in?", a:c[1], opts:[c[1]].concat(shuffle(CONTINENTS.filter(function(x){ return x !== c[1]; })).slice(0, 3)), why:c[0] + " is in " + c[1] + "." }; },
+      function(){ return { q:"Which is the largest ocean?", a:"Pacific", opts:OCEANS.slice(0, 4), why:"The Pacific is the largest ocean - bigger than all the land on Earth put together." }; },
+      function(){ return { q:"Which is the smallest ocean?", a:"Arctic", opts:["Arctic","Indian","Southern","Atlantic"], why:"The Arctic Ocean, around the North Pole, is the smallest of the five." }; },
+      function(){ return { q:"Which ocean lies between the UK and the USA?", a:"Atlantic", opts:["Atlantic","Pacific","Arctic","Indian"], why:"The Atlantic separates Europe and Africa from the Americas." }; },
+      function(){ return { q:"Which ocean surrounds Antarctica?", a:"Southern", opts:["Southern","Arctic","Pacific","Indian"], why:"The Southern Ocean surrounds Antarctica. The Arctic Ocean is at the other end of the world." }; },
+      function(){ return { q:"Which is the largest continent?", a:"Asia", opts:["Asia","Africa","North America","Europe"], why:"Asia is the largest continent by area and by population." }; },
+      function(){ return { q:"How many continents are there?", a:"7", opts:["7","5","6","8"], why:"Africa, Antarctica, Asia, Europe, North America, Oceania and South America." }; },
+      function(){ return { q:"Which imaginary line divides the Earth into northern and southern halves?", a:"The Equator", opts:["The Equator","The Prime Meridian","The Tropic of Cancer","The Arctic Circle"],
+                 why:"The Equator (0° latitude). The Prime Meridian (0° longitude) runs north-south through Greenwich in London." }; },
+      function(){ return { q:"Where is the world's highest mountain, Everest?", a:"The Himalayas, in Asia", opts:["The Himalayas, in Asia","The Andes, in South America","The Alps, in Europe","The Rockies, in North America"],
+                 why:"Mount Everest (8,849 m) is in the Himalayas, on the border of Nepal and China." }; }
+    ])();
+  }},
+  compass: { name:"Compass directions", icon:"🧭", make: function(){
+    var P = ["north","north-east","east","south-east","south","south-west","west","north-west"];
+    return pick([
+      function(){ var i = Math.floor(Math.random() * 8), o = P[(i + 4) % 8];
+        return { q:"What direction is opposite " + P[i] + "?", a:o, opts:[o].concat(shuffle(P.filter(function(x){ return x !== o; })).slice(0, 3)), why:"Opposite directions are half a turn (180°) apart on the compass.", rose:true }; },
+      function(){ var i = Math.floor(Math.random() * 8), turn = pick([[2,"90° clockwise"],[6,"90° anticlockwise"],[1,"45° clockwise"],[4,"180°"]]), o = P[(i + turn[0]) % 8];
+        return { q:"You face " + P[i] + " and turn " + turn[1] + ". Which way are you facing now?", a:o, opts:[o].concat(shuffle(P.filter(function(x){ return x !== o; })).slice(0, 3)),
+                 why:"Each step round the 8-point compass is 45°. Clockwise goes north → north-east → east.", rose:true }; }
+    ])();
+  }}
+};
+function capitalQ(list){
+  var c = pick(list), others = shuffle(list.filter(function(x){ return x !== c; }).map(function(x){ return x[1]; }));
+  var opts = [c[1]]; if (c[2]) opts.push(c[2]);
+  while (opts.length < 4) opts.push(others.shift());
+  return { q:"What is the capital of " + c[0] + "?", a:c[1], opts:opts,
+           why:"The capital of " + c[0] + " is " + c[1] + "." + (c[2] ? " " + c[2] + " is bigger or better known, which is why people guess it." : "") };
+}
+var ORDER = ["uk","europe","world","continents","compass"];
+
+/* ---------------- progress ---------------- */
+var known = {};      // topic -> mastery now, from the shared model
+var best = {};       // topic -> best score out of 10
+var sb = window.HEHLearn ? HEHLearn.connect() : null;
+
+function loadProgress(){
+  var jobs = [];
+  if (window.HEHLearn) jobs.push(HEHLearn.load("geo").then(function(d){ if (d && d.best) best = d.best; }));
+  if (sb) jobs.push(sb.from("learn_skills").select("skill,mastery,last_at").eq("subject", "geography").then(function(r){
+    (r.data || []).forEach(function(row){
+      var key = ORDER.filter(function(k){ return TOPICS[k].name === row.skill; })[0];
+      if (key) known[key] = HEHLearn.now(row);
+    });
+  }, function(){}));
+  return Promise.all(jobs).catch(function(){});
+}
+
+/* "Practise my weakest": the topic the model is least sure you know.
+   Topics never tried count as 0.5 ("not sure"), so new ones come up too. */
+function weakest(){
+  return ORDER.slice().sort(function(a, b){
+    var ma = known[a] == null ? 0.5 : known[a], mb = known[b] == null ? 0.5 : known[b];
+    return ma - mb || Math.random() - .5;
+  })[0];
+}
+
+/* ---------------- pages ---------------- */
+function home(){
+  main.textContent = "";
+  var c = h("div", "card");
+  c.appendChild(h("h1", null, "Map Quest"));
+  c.appendChild(h("p", "muted", "Ten questions a round."));
+  var w = weakest();
+  var go = h("button", "btn", "Practise my weakest: " + TOPICS[w].name); go.type = "button";
+  go.onclick = function(){ round(w); };
+  c.appendChild(go);
+  var g = h("div", "topics");
+  ORDER.forEach(function(k){
+    var t = TOPICS[k], b = h("button", "topic"); b.type = "button";
+    b.appendChild(h("b", null, t.icon + " " + t.name));
+    var m = known[k];
+    b.appendChild(h("small", null, (m == null ? "Not tried yet" : HEHLearn.level(m)) + (best[k] != null ? " · best " + best[k] + "/10" : "")));
+    var bar = h("div", "bar"), fill = h("i"); fill.style.width = Math.round(100 * (m == null ? 0 : m)) + "%"; bar.appendChild(fill); b.appendChild(bar);
+    if (k === w && m != null) b.classList.add("weak");
+    b.onclick = function(){ round(k); };
+    g.appendChild(b);
+  });
+  c.appendChild(g);
+  main.appendChild(c);
+}
+
+function rose(){
+  var NS = "http://www.w3.org/2000/svg", s = document.createElementNS(NS, "svg");
+  s.setAttribute("viewBox", "-72 -72 144 144"); s.setAttribute("class", "compass"); s.setAttribute("aria-hidden", "true");
+  s.innerHTML = '<circle r="54" fill="none" stroke="currentColor" stroke-opacity=".25" stroke-width="2"/>' +
+    '<path d="M0-46 8-8 46 0 8 8 0 46-8 8-46 0-8-8Z" fill="var(--a1)" fill-opacity=".85"/>' +
+    '<path d="M0-30 5-5 30 0 5 5 0 30-5 5-30 0-5-5Z" transform="rotate(45)" fill="var(--soft)" fill-opacity=".6"/>' +
+    '<text y="-58" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="800" fill="currentColor">N</text>' +
+    '<text x="62" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="800" fill="currentColor">E</text>' +
+    '<text y="62" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="800" fill="currentColor">S</text>' +
+    '<text x="-62" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="800" fill="currentColor">W</text>';
+  return s;
+}
+
+function round(topic){
+  var T = TOPICS[topic], n = 10, i = 0, score = 0, dots = [], missed = [], seen = {};
+  var again = [];      // got wrong this round: comes back once before the end
+  function next(){
+    var qn;
+    if (again.length && i >= 4 && i % 3 === 0) qn = again.shift();
+    else { for (var tries = 0; tries < 20; tries++) { qn = T.make(); if (!seen[qn.q]) break; } }
+    seen[qn.q] = true;
+    show(qn);
+  }
+  function show(qn){
+    main.textContent = "";
+    var c = h("div", "card");
+    var hd = h("div", "head"), ds = h("div", "dots");
+    for (var k = 0; k < n; k++) { var d = h("i"); d.className = dots[k] === 1 ? "ok" : dots[k] === 0 ? "no" : k === i ? "now" : ""; ds.appendChild(d); }
+    hd.appendChild(h("span", "kicker", T.icon + " " + T.name)); hd.appendChild(ds);
+    var quit = h("button", "ghost", "Stop"); quit.type = "button"; quit.onclick = function(){ off(); home(); }; hd.appendChild(quit);
+    c.appendChild(hd);
+    if (qn.rose) c.appendChild(rose());
+    c.appendChild(h("div", "qtext", qn.q));
+    var opts = h("div", "opts"), bs = [];
+    shuffle(qn.opts).forEach(function(o, k){
+      var b = h("button", "opt"); b.type = "button"; b.appendChild(h("kbd", null, "ABCD"[k])); b.appendChild(document.createTextNode(o));
+      b.onclick = function(){ answer(o); }; bs.push([b, o]); opts.appendChild(b);
+    });
+    c.appendChild(opts);
+    main.appendChild(c);
+    function key(e){ var x = "ABCD".indexOf(e.key.toUpperCase()); if (x < 0) x = "1234".indexOf(e.key); if (x >= 0 && bs[x] && !bs[x][0].disabled) bs[x][0].click(); }
+    function off(){ document.removeEventListener("keydown", key); }
+    document.addEventListener("keydown", key);
+    function answer(o){
+      off();
+      var ok = o === qn.a;
+      bs.forEach(function(x){ x[0].disabled = true; if (x[1] === qn.a) x[0].classList.add("right"); else if (x[1] === o) x[0].classList.add("wrong"); });
+      dots[i] = ok ? 1 : 0; if (ok) score++; else { missed.push(qn); again.push(qn); }
+      if (window.HEHLearn) HEHLearn.record({ subject:"geography", skill:T.name, ok:ok, front:qn.q, back:qn.a, note:qn.why, game:"geo" });
+      var fb = h("div", "fb"); fb.appendChild(h("b", null, ok ? "Yes! " : "Not quite - it's " + qn.a + ". ")); fb.appendChild(document.createTextNode(qn.why));
+      c.appendChild(fb);
+      var nx = h("button", "btn", i + 1 < n ? "Next" : "See how you did"); nx.type = "button"; nx.style.marginTop = "12px";
+      nx.onclick = function(){ i++; if (i < n) next(); else done(); };
+      c.appendChild(nx); nx.focus();
+    }
+  }
+  function done(){
+    var prev = best[topic];
+    if (prev == null || score > prev) best[topic] = score;
+    if (window.HEHLearn) { HEHLearn.save("geo", { best:best }); HEHLearn.flush(); }
+    main.textContent = "";
+    var c = h("div", "card");
+    c.appendChild(h("div", "kicker", T.icon + " " + T.name));
+    c.appendChild(h("div", "big", score + " / " + n));
+    c.appendChild(h("p", null, (prev == null || score > prev ? "🏆 New best! " : "") + (score === n ? "Perfect round." : missed.length + " to look at again.")));
+    if (missed.length) {
+      var ul = h("ul", "missed");
+      var u = {}; missed.forEach(function(m){ if (!u[m.q]) { u[m.q] = 1; ul.appendChild(h("li", null, m.q + " → " + m.a)); } });
+      c.appendChild(ul);
+    }
+    var row = h("div", "row");
+    var a = h("button", "btn", "Play again"); a.type = "button"; a.onclick = function(){ round(topic); };
+    var b = h("button", "ghost", "Choose a topic"); b.type = "button"; b.onclick = function(){ loadProgress().then(home); };
+    var f = h("a", "ghost", "Flash cards"); f.href = "cards.html"; f.style.textDecoration = "none";
+    row.appendChild(a); row.appendChild(b); row.appendChild(f); c.appendChild(row);
+    main.appendChild(c); a.focus();
+  }
+  next();
+}
+
+main.appendChild(h("p", "muted", "Loading…"));
+loadProgress().then(home);
+})();
+</script>
+</body>
+</html>

@@ -28,6 +28,9 @@ h1{margin:0 0 4px} .muted{color:var(--soft)}
 .game p{margin:4px 0 6px;color:var(--soft);font-size:.9rem}
 .tags{display:flex;gap:6px;flex-wrap:wrap}
 .tag{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:999px;background:var(--rule);color:var(--soft)}
+.mine{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.pill{background:var(--card);border:1px solid var(--rule);border-radius:999px;padding:9px 16px;color:var(--ink);text-decoration:none;font-weight:700}
+.pill:hover{border-color:#6366f1}
 footer{max-width:1000px;margin:0 auto;padding:0 16px 40px;color:var(--soft);font-size:.85rem}
 footer a{color:inherit}
 @media (prefers-reduced-motion: reduce){ .game{transition:none} .game:hover{transform:none} }
@@ -37,8 +40,8 @@ footer a{color:inherit}
 <div class="top"><b>🚀 Learning Games</b><div class="sp"></div><a href="https://civilinitiatives.org/games.html">← back to the Launchpad</a></div>
 <main>
   <h1>Learning Games</h1>
-  <p class="muted">Games that are school work underneath. Part of Homework Launchpad.</p>
-  <div class="note">These four keep your points, your level and your progress, so they need you to be signed in to the Launchpad first. Open one without signing in and it will send you back.</div>
+  <p class="muted">Sign in to the Launchpad first. Your progress follows you to any device.</p>
+  <div class="mine"><a class="pill" href="progress.html">📈 My progress</a><a class="pill" href="cards.html">🃏 Flash cards</a></div>
   <div class="grid" id="list"></div>
 </main>
 <footer>
@@ -53,7 +56,9 @@ var GAMES = [
   { icon:"🐉", bg:"linear-gradient(135deg,#059669,#0ea5e9)", name:"Word Dragons", url:"dragons.html",
     says:"Hatch and grow dragons by doing English. Keep them healthy, then battle someone by email.", tags:["English"] },
   { icon:"⚔️", bg:"linear-gradient(135deg,#b45309,#7c2d12)", name:"Battle Stories", url:"history.html",
-    says:"Watch a battle re-enacted, then explain why it happened. Episode 1: Hastings, 1066.", tags:["History"] }
+    says:"Watch a battle re-enacted, then explain why it happened. Episode 1: Hastings, 1066.", tags:["History"] },
+  { icon:"🧭", bg:"linear-gradient(135deg,#0e7490,#0f766e)", name:"Map Quest", url:"geo.html",
+    says:"Capitals, the UK, continents, oceans and the compass. Practises what you're weakest at.", tags:["Geography"] }
 ];
 var list = document.getElementById("list");
 function h(t, c, x){ var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
