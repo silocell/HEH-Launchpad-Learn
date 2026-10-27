@@ -77,6 +77,7 @@ input[type=email],select{font:inherit;padding:10px 12px;border:1px solid var(--r
 .xbtn:focus-visible{outline:3px solid #fde68a;outline-offset:2px}
 </style>
 <script src="https://civilinitiatives.org/auth-store.js?b=20261026a"></script>
+<script src="learn.js?b=20261027a"></script>
 <script src="https://civilinitiatives.org/games-gate.js?b=20261027a"></script>
 </head>
 <body>
@@ -106,6 +107,7 @@ if (LAB) {
 var sb = null;
 try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth:{ persistSession:true, autoRefreshToken:true,
              storage:(window.HEHAuth && window.HEHAuth.storage) || undefined } }); } catch (e) {}
+if (window.HEHLearn && sb) HEHLearn.use(sb);
 var main = document.getElementById("main"), S = null, tab = "nest";
 var COL = { fire:["#f97316","#fed7aa","#b91c1c"], stone:["#78716c","#e7e5e4","#44403c"], storm:["#6366f1","#c7d2fe","#3730a3"], ice:["#22d3ee","#e0f7fa","#0e7490"] };
 var autoLesson = false;
@@ -234,6 +236,7 @@ function lesson(d){
           bs.forEach(function(x){ x.disabled = true; });
           api({ action:"check", id:L.id, i:i, pick:o }).then(function(r){
             S = Object.assign(S, r);
+            if (window.HEHLearn) HEHLearn.record({ subject:"english", skill:SKILL[d.element] || "English", ok:!!r.right, front:q.q, back:r.answer, note:r.explain, game:"dragons" });
             bs.forEach(function(x){ if (x.textContent === r.answer) x.classList.add("right"); else if (x === b && !r.right) x.classList.add("wrong"); });
             if (r.right) right++;
             var fb = h("div", "fb " + (r.right ? "good" : "bad"));

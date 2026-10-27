@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flash Cards</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<script>
+try{ var t = JSON.parse(localStorage.getItem("hl.theme")); if(t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t); }catch(e){}
+if (/^lab\./i.test(location.hostname) || /^\/HEH-(Homework|Launchpad)-Lab(\/|$)/i.test(location.pathname)) document.documentElement.classList.add("lab");
+</script>
+<style>
+/* Flash cards. Nobody writes these: a wrong answer in any learning game
+   makes one. Leitner boxes - right moves a card up a box and it comes
+   back later; wrong sends it to box 1. */
+:root{ --bg:#f5f3ff; --card:#fff; --ink:#1e1b3a; --soft:#625f86; --rule:#e4e0f7; --bar:#1e1b4b; --a1:#6d28d9; --a2:#4f46e5; --good:#15803d; --bad:#b91c1c; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#0f0d1f; --card:#18152d; --ink:#ebe8fb; --soft:#a4a0c8; --rule:#2a2648; --bar:#0a0816; --good:#4ade80; --bad:#f87171; } }
+:root[data-theme="dark"]{ --bg:#0f0d1f; --card:#18152d; --ink:#ebe8fb; --soft:#a4a0c8; --rule:#2a2648; --bar:#0a0816; --good:#4ade80; --bad:#f87171; }
+*{box-sizing:border-box} [hidden]{display:none!important} html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+button{font:600 15px/1.2 system-ui,-apple-system,"Segoe UI",sans-serif;cursor:pointer}
+.labbar{display:none;background:#7c3aed;color:#fff;font:700 .72rem system-ui,sans-serif;letter-spacing:.06em;text-align:center;padding:5px 12px;text-transform:uppercase}
+html.lab .labbar{display:block}
+.top{background:var(--bar);color:#e0e7ff;display:flex;align-items:center;gap:12px;padding:10px 18px;white-space:nowrap}
+.brand{font-weight:800;font-size:1.1rem} .top .sp{flex:1} .top a{color:#c7d2fe;font-size:.85rem;text-decoration:none}
+main{max-width:720px;margin:0 auto;padding:18px 16px 60px}
+.panel{background:var(--card);border:1px solid var(--rule);border-radius:16px;padding:20px}
+.muted{color:var(--soft)} h1{margin:0 0 6px;font-size:1.5rem}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+.chip{border:1px solid var(--rule);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 12px;font-size:.88rem}
+.chip[aria-pressed="true"]{background:var(--a1);border-color:var(--a1);color:#fff}
+.boxes{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:10px 0 16px}
+.boxes div{border:1px solid var(--rule);border-radius:10px;padding:8px 4px;text-align:center;font-size:.78rem;color:var(--soft)}
+.boxes b{display:block;font-size:1.25rem;color:var(--ink)}
+.flash{perspective:1200px;margin:8px 0}
+.face{min-height:220px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:10px;
+  background:var(--card);border:2px solid var(--rule);border-radius:20px;padding:26px 20px;box-shadow:0 14px 34px -22px rgba(30,27,75,.5)}
+.front{font-size:1.45rem;font-weight:700}
+.back{font-size:1.6rem;font-weight:800;color:var(--a1)}
+.note{font-size:.92rem;color:var(--soft);max-width:34rem}
+.meta{font:700 .72rem system-ui;letter-spacing:.07em;text-transform:uppercase;color:var(--soft)}
+.acts{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.btn{border:0;border-radius:12px;padding:12px 22px;color:#fff;background:linear-gradient(90deg,var(--a1),var(--a2))}
+.ok{border:0;border-radius:12px;padding:12px 22px;color:#fff;background:var(--good)}
+.no{border:0;border-radius:12px;padding:12px 22px;color:#fff;background:var(--bad)}
+.ghost{border:1px solid var(--rule);background:transparent;color:var(--ink);border-radius:12px;padding:10px 16px;text-decoration:none;display:inline-block}
+.empty{text-align:center;padding:30px 10px}
+.empty .big{font-size:2.6rem}
+kbd{font:700 .7rem system-ui;border:1px solid var(--rule);border-radius:5px;padding:1px 5px;margin-left:6px;opacity:.75}
+@keyframes flip{from{transform:rotateX(70deg);opacity:.3}to{transform:none;opacity:1}}
+.face.turn{animation:flip .28s ease-out}
+@media (prefers-reduced-motion: reduce){ .face.turn{animation:none} }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js"></script>
+<script src="https://civilinitiatives.org/auth-store.js?b=20261026a"></script>
+<script src="learn.js?b=20261027a"></script>
+</head>
+<body>
+<div class="labbar">Lab</div>
+<div class="top"><div class="brand">🃏 Flash Cards</div><div class="sp"></div><a href="progress.html">Progress</a><a href="./">Games</a></div>
+<main id="main"><p class="muted">Loading…</p></main>
+<script>
+(function(){
+"use strict";
+var main = document.getElementById("main");
+function h(t, c, x){ var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+var SUBJ = { maths:"🔢 Maths", english:"📖 English", science:"🧪 Science", history:"⚔️ History", geography:"🧭 Geography" };
+var sb = window.HEHLearn ? HEHLearn.connect() : null;
+var all = [], subject = "all", queue = [];
+
+function say(big, text, link){
+  main.textContent = "";
+  var p = h("div", "panel empty"); p.appendChild(h("div", "big", big)); p.appendChild(h("p", null, text));
+  if (link) { var a = h("a", "ghost", link[0]); a.href = link[1]; p.appendChild(a); }
+  main.appendChild(p);
+}
+
+function load(){
+  if (!sb) return say("😕", "Couldn't start. Check your connection and reload.");
+  return HEHLearn.signedIn().then(function(yes){
+    if (!yes) return say("🔒", "Sign in on the Launchpad first.", ["Go to the Launchpad", "https://civilinitiatives.org/"]);
+    return HEHLearn.flush().then(function(){
+      return sb.from("flashcards").select("id,subject,skill,game,front,back,note,box,due_at,reviews,lapses").order("due_at").limit(400);
+    }).then(function(r){
+      if (r.error) {
+        if (/PGRST205|PGRST202|42P01|does not exist|Could not find/.test(r.error.message + (r.error.code || "")))
+          return say("🛠️", "Flash cards aren't switched on yet. Your wrong answers are being kept and will turn into cards once they are.");
+        return say("😕", "Couldn't load your cards: " + r.error.message);
+      }
+      all = r.data || []; draw();
+    });
+  });
+}
+
+function due(c){ return new Date(c.due_at).getTime() <= Date.now(); }
+
+function draw(){
+  main.textContent = "";
+  var p = h("div", "panel");
+  var mine = all.filter(function(c){ return subject === "all" || c.subject === subject; });
+  queue = mine.filter(due).sort(function(a, b){ return a.box - b.box || new Date(a.due_at) - new Date(b.due_at); });
+  p.appendChild(h("h1", null, queue.length ? queue.length + " to review" : "All caught up"));
+  var chips = h("div", "chips"), subs = {};
+  all.forEach(function(c){ subs[c.subject] = (subs[c.subject] || 0) + (due(c) ? 1 : 0); });
+  [["all", "Everything"]].concat(Object.keys(subs).sort().map(function(s){ return [s, SUBJ[s] || s]; })).forEach(function(s){
+    var b = h("button", "chip", s[1] + (s[0] !== "all" && subs[s[0]] ? " · " + subs[s[0]] : "")); b.type = "button";
+    b.setAttribute("aria-pressed", String(subject === s[0]));
+    b.onclick = function(){ subject = s[0]; draw(); };
+    chips.appendChild(b);
+  });
+  if (Object.keys(subs).length > 1) p.appendChild(chips);
+  var boxes = h("div", "boxes"), names = ["New", "1 day", "3 days", "1 week", "Learnt"];
+  for (var i = 1; i <= 5; i++) {
+    var n = mine.filter(function(c){ return c.box === i; }).length, d = h("div");
+    d.appendChild(h("b", null, n)); d.appendChild(document.createTextNode(names[i - 1])); boxes.appendChild(d);
+  }
+  if (mine.length) p.appendChild(boxes);
+  main.appendChild(p);
+  if (!all.length) return say("✨", "No cards yet. Get something wrong in a learning game and it turns up here.", ["Play a learning game", "./"]);
+  if (!queue.length) {
+    var next = mine.filter(function(c){ return !due(c); }).sort(function(a, b){ return new Date(a.due_at) - new Date(b.due_at); })[0];
+    var e = h("div", "panel empty"); e.style.marginTop = "12px";
+    e.appendChild(h("div", "big", "🎉"));
+    e.appendChild(h("p", null, next ? "Next card is due " + when(next.due_at) + "." : "Nothing left in this subject."));
+    main.appendChild(e);
+    return;
+  }
+  card();
+}
+
+function when(t){
+  var ms = new Date(t).getTime() - Date.now(), hrs = ms / 36e5;
+  if (hrs < 1) return "in under an hour";
+  if (hrs < 24) return "in " + Math.round(hrs) + " hour" + (Math.round(hrs) === 1 ? "" : "s");
+  var d = Math.round(hrs / 24); return d === 1 ? "tomorrow" : "in " + d + " days";
+}
+
+function card(){
+  var c = queue[0];
+  var wrap = h("div", "flash"), face = h("div", "face turn");
+  face.appendChild(h("div", "meta", (SUBJ[c.subject] || c.subject) + (c.skill ? " · " + c.skill : "") + " · box " + c.box));
+  face.appendChild(h("div", "front", c.front));
+  wrap.appendChild(face);
+  var acts = h("div", "acts");
+  var show = h("button", "btn", "Show answer"); show.type = "button"; show.appendChild(h("kbd", null, "Space"));
+  acts.appendChild(show);
+  main.appendChild(wrap); main.appendChild(acts);
+  show.focus();
+  function key(e){
+    if (e.key === " " || e.key === "Enter") { e.preventDefault(); if (!show.hidden) show.click(); }
+    else if (show.hidden && (e.key === "1" || e.key.toLowerCase() === "n")) noB.click();
+    else if (show.hidden && (e.key === "2" || e.key.toLowerCase() === "y")) okB.click();
+  }
+  document.addEventListener("keydown", key);
+  var okB = h("button", "ok", "Got it"), noB = h("button", "no", "Didn't know");
+  okB.type = noB.type = "button"; okB.appendChild(h("kbd", null, "2")); noB.appendChild(h("kbd", null, "1"));
+  show.onclick = function(){
+    show.hidden = true;
+    face.classList.remove("turn"); void face.offsetWidth; face.classList.add("turn");
+    face.appendChild(h("div", "back", c.back));
+    if (c.note) face.appendChild(h("div", "note", c.note));
+    acts.appendChild(noB); acts.appendChild(okB); okB.focus();
+  };
+  function mark(ok){
+    document.removeEventListener("keydown", key);
+    okB.disabled = noB.disabled = true;
+    sb.rpc("card_review", { card: c.id, ok: ok }).then(function(r){
+      if (r.error) { okB.disabled = noB.disabled = false; document.addEventListener("keydown", key); alertLine(r.error.message); return; }
+      var i = all.findIndex(function(x){ return x.id === c.id; }); if (i >= 0) all[i] = r.data;
+      draw();
+    });
+  }
+  okB.onclick = function(){ mark(true); }; noB.onclick = function(){ mark(false); };
+  function alertLine(t){ var m = h("p", "muted", "Couldn't save that: " + t); acts.appendChild(m); }
+}
+
+load();
+})();
+</script>
+</body>
+</html>

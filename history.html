@@ -67,6 +67,8 @@ canvas{display:block;width:100%;aspect-ratio:16/9;height:auto}
 </style>
 <script src="https://civilinitiatives.org/auth-store.js?b=20261026a"></script>
 <script src="https://civilinitiatives.org/games-gate.js?b=20261027a"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js"></script>
+<script src="learn.js?b=20261027a"></script>
 </head>
 <body>
 <div class="labbar">Lab — things here are being tried out and may break <a href="https://civilinitiatives.org/">back to the Launchpad</a></div>
@@ -81,6 +83,29 @@ var calm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").m
 function h(t, c, x){ var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
 function read(k, d){ try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
 function store(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+/* Your score and answers go to your account, so they follow you to any
+   device - the same server the other games use. */
+(function(){
+  var lab = document.documentElement.classList.contains("lab");
+  try {
+    var sb = window.supabase.createClient(lab ? "https://hehs.duckdns.org" : "https://hehs-live.duckdns.org",
+      lab ? "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkyNzcxNTQzLCJleHAiOjIxMDgxMzE1NDN9.MFpgmA0d-KISwuCicZMUhnaEpVHY-Sw_jFp3Muck6FM" : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkyODMyMjkwLCJleHAiOjIxMDgxOTIyOTB9.7gFhQa5RBwVtiOPLO7Qf2-aVEbkd5xgpLiN1J06Gybo",
+      { auth:{ persistSession:true, autoRefreshToken:true, storage:(window.HEHAuth && window.HEHAuth.storage) || undefined } });
+    if (window.HEHLearn) HEHLearn.use(sb);
+  } catch (e) {}
+})();
+function saveBest(){
+  if (!window.HEHLearn) return;
+  HEHLearn.save("history", { best:{ hastings: read("hl.hist.best.hastings", 0) } });
+}
+if (window.HEHLearn) HEHLearn.load("history").then(function(d){
+  var there = d && d.best && d.best.hastings, here = read("hl.hist.best.hastings", null);
+  if (there != null && (here == null || there > here)) {
+    store("hl.hist.best.hastings", there);
+    var el = document.getElementById("best"); if (el) el.textContent = "Best: " + there + "/10";
+  } else if (here != null && (there == null || here > there)) saveBest();
+});
 
 /* ====================================================================
    Episode 1: Hastings, 1066. Ten scenes. Each scene: a view (map or
@@ -580,6 +605,7 @@ function showQuestion(){
     var b = h("button", "opt", sc.opts[oi]); bs.push([b, oi]);
     b.onclick = function(){
       var ok = oi === sc.a; done[idx] = ok;
+      if (window.HEHLearn) HEHLearn.record({ subject:"history", skill:"Hastings 1066", ok:ok, front:sc.q, back:sc.opts[sc.a], note:sc.why, game:"history" });
       bs.forEach(function(x){ x[0].disabled = true; if (x[1] === sc.a) x[0].classList.add("right"); else if (x[0] === b) x[0].classList.add("wrong"); });
       var fb = h("div", "fb"); fb.appendChild(h("b", null, ok ? "Yes! " : "Not quite. ")); fb.appendChild(document.createTextNode(sc.why));
       if (sc.note) fb.appendChild(h("div", "note", "Historians disagree: " + sc.note));
@@ -615,7 +641,7 @@ function watch(id, title){
 function finish(){
   try { speechSynthesis.cancel(); } catch (e) {}
   var score = done.filter(Boolean).length, best = read("hl.hist.best.hastings", 0);
-  if (score > best) store("hl.hist.best.hastings", score);
+  if (score > best) { store("hl.hist.best.hastings", score); saveBest(); }
   main.textContent = "";
   var c = h("div", "card");
   c.appendChild(h("div", "kicker", "Hastings, 1066 · finished"));

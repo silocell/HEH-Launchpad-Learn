@@ -175,6 +175,7 @@ canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:40}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js"></script>
 <script src="https://civilinitiatives.org/auth-store.js?b=20261026a"></script>
+<script src="learn.js?b=20261027a"></script>
 <script>
 (function(){
 "use strict";
@@ -192,6 +193,7 @@ if (LAB) {
 var sb = null;
 try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth:{ persistSession:true, autoRefreshToken:true,
              storage:(window.HEHAuth && window.HEHAuth.storage) || undefined } }); } catch (e) {}
+if (window.HEHLearn && sb) HEHLearn.use(sb);
 
 var main = document.getElementById("main");
 var BADGE = { "a-rocket":"🚀", "a-star":"⭐", "a-bolt":"⚡", "a-owl":"🦉", "a-crown":"👑", "a-dragon":"🐉" };
@@ -440,6 +442,7 @@ function drawQ(task, q, dots){
     btns.forEach(function(b){ b.disabled = true; });
     api({ action:"answer", id:q.id, pick:chosen, ms:Math.round(performance.now() - started) }).then(function(r){
       if (offKeys) offKeys();
+      if (window.HEHLearn) HEHLearn.record({ subject:q.subject, skill:q.topic, ok:!!r.right, front:q.q, back:r.answer, note:r.explain, game:"levelup" });
       S = Object.assign(S || {}, r); setTop(); bump("ptsChip");
       btns.forEach(function(b){
         var t = b.lastChild.textContent;

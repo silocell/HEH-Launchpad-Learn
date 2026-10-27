@@ -112,6 +112,7 @@ select,input[type=number]{font:inherit;padding:8px 10px;border:1px solid var(--r
 .xbtn:focus-visible{outline:3px solid #fde68a;outline-offset:2px}
 </style>
 <script src="https://civilinitiatives.org/auth-store.js?b=20261026a"></script>
+<script src="learn.js?b=20261027a"></script>
 <script src="https://civilinitiatives.org/games-gate.js?b=20261027a"></script>
 </head>
 <body>
@@ -148,6 +149,7 @@ if (LAB) {
 var sb = null;
 try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth:{ persistSession:true, autoRefreshToken:true,
              storage:(window.HEHAuth && window.HEHAuth.storage) || undefined } }); } catch (e) {}
+if (window.HEHLearn && sb) HEHLearn.use(sb);
 
 var main = document.getElementById("main");
 var S = null, tab = "play", focus = "mixed";
@@ -365,6 +367,10 @@ function play(r){
   function finish(){
     if (ended) return; ended = true; abortRound = null; clearInterval(tick); clearTimeout(autoT); document.removeEventListener("keydown", key);
     main.textContent = ""; main.appendChild(h("div", "center muted", "Marking…"));
+    if (window.HEHLearn) HEHLearn.record(answers.map(function(a, k){
+      var p = r.questions[k], t = focus !== "mixed" ? Number(focus) : Math.max(p[0], p[1]);
+      return { subject:"maths", skill:"×" + t + " table", ok:a.v === p[0] * p[1], front:p[0] + " × " + p[1], back:String(p[0] * p[1]), game:"tycoon" };
+    }));
     var wait = Math.max(0, dur + 300 - (performance.now() - t0));     // the server checks a whole minute passed
     setTimeout(function(){
       api({ action:"finish", id:r.id, answers:answers }).then(results).catch(function(e){ toast(e.message); if (e.data && e.data.coins != null) S = Object.assign(S, e.data); load(); });
