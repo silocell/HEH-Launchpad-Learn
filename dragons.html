@@ -77,7 +77,7 @@ input[type=email],select{font:inherit;padding:10px 12px;border:1px solid var(--r
 .xbtn:focus-visible{outline:3px solid #fde68a;outline-offset:2px}
 </style>
 <script src="https://civilinitiatives.org/auth-store.js?b=20261026a"></script>
-<script src="learn.js?b=20261027a"></script>
+<script src="learn.js?b=20261027b"></script>
 <script src="https://civilinitiatives.org/games-gate.js?b=20261027a"></script>
 </head>
 <body>
@@ -236,7 +236,7 @@ function lesson(d){
           bs.forEach(function(x){ x.disabled = true; });
           api({ action:"check", id:L.id, i:i, pick:o }).then(function(r){
             S = Object.assign(S, r);
-            if (window.HEHLearn) HEHLearn.record({ subject:"english", skill:SKILL[d.element] || "English", ok:!!r.right, front:q.q, back:r.answer, note:r.explain, game:"dragons" });
+            if (window.HEHLearn) HEHLearn.record({ subject:"english", skill:SKILL[d.element] || "English", ok:!!r.right, front:q.q, back:r.answer, note:r.explain, game:"dragons", data:{ k:"mc", opts:q.options } });
             bs.forEach(function(x){ if (x.textContent === r.answer) x.classList.add("right"); else if (x === b && !r.right) x.classList.add("wrong"); });
             if (r.right) right++;
             var fb = h("div", "fb " + (r.right ? "good" : "bad"));

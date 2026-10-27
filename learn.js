@@ -116,6 +116,9 @@
         if (it.back != null && it.back !== "") o.back = clip(it.back, 200);
         if (it.note) o.note = clip(it.note, 400);
         if (it.game) o.game = clip(it.game, 20);
+        /* The fact behind the question, so the flash card can ask it a
+           different way each day. Small, or not at all. */
+        if (it.data) { try { var d = JSON.stringify(it.data); if (d.length <= 1500) o.data = it.data; } catch (e) {} }
         return o;
       });
       if (!clean.length) return;
