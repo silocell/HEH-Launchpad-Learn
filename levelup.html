@@ -264,7 +264,7 @@ function drawHome(){
   var allDone = true;
   S.tasks.forEach(function(t, i){
     var done = t.done >= t.of; if (!done) allDone = false;
-    list.appendChild(taskBtn(t.key, String(i + 1), t.name, t.topic + (done ? " · " + t.right + "/" + t.of + " right" : " · " + t.done + "/" + t.of), t.done / t.of, done));
+    list.appendChild(taskBtn(t.key, String(i + 1), t.name, (t.topic || "Mixed topics") + (done ? " · " + t.right + "/" + t.of + " right" : " · " + t.done + "/" + t.of), t.done / t.of, done));
   });
   list.appendChild(taskBtn("free", "∞", "Free practice", allDone ? "It picks what you need most" : "Mixed questions, picked for you", 0, false));
   tc.appendChild(list);
