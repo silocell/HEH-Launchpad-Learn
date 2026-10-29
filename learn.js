@@ -210,3 +210,25 @@
 
   window.HEHLearn = HEHLearn;
 })();
+
+/* Tablets: tapping a button twice quickly used to zoom the page (iPad
+   Safari's double-tap zoom). touch-action: manipulation turns that off
+   while keeping pinch-to-zoom; the touchend fallback covers older iPads,
+   and still counts the second tap as a click. */
+(function () {
+  var st = document.createElement("style");
+  st.textContent = "html,body{touch-action:manipulation}" +
+    "button,a,input,select,label,[role=button],[onclick]{touch-action:manipulation;-webkit-tap-highlight-color:transparent}";
+  document.head.appendChild(st);
+  var last = 0;
+  document.addEventListener("touchend", function (e) {
+    var now = Date.now(), quick = now - last < 350;
+    last = now;
+    if (!quick || e.touches.length) return;
+    var t = e.target;
+    if (t.closest && t.closest("input,textarea,select,[contenteditable]")) return;
+    e.preventDefault();                       /* stop the zoom... */
+    var el = t.nodeType === 1 ? t : t.parentElement;
+    if (el && el.click) el.click();           /* ...but keep the tap */
+  }, { passive: false });
+})();
