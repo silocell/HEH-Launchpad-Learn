@@ -58,6 +58,25 @@ html.lab .labbar{display:block}
 @media (max-width:520px){ .top{gap:8px;padding:10px 12px} .top a.back{display:none} .chip{padding:5px 9px} #shopBtn{padding:6px 10px!important} }
 
 main{max-width:980px;margin:0 auto;padding:22px 16px 60px}
+
+/* the daily chest */
+.chest{display:flex;align-items:center;gap:16px;margin-bottom:18px;padding:16px 18px;border-radius:18px;
+  background:linear-gradient(135deg,color-mix(in srgb,var(--gold) 22%,var(--card)),var(--card));border:1px solid color-mix(in srgb,var(--gold) 45%,var(--rule))}
+.chest .box{font-size:2.6rem;line-height:1;flex:none}
+.chest.ready .box{animation:wobble 1.6s ease-in-out infinite}
+.chest.locked{background:var(--card);border-color:var(--rule)}
+.chest.locked .box{filter:grayscale(1);opacity:.6}
+.chest .txt{flex:1;min-width:0}
+.chest .txt b{display:block;font-size:1.05rem}
+.chest .txt small{color:var(--soft)}
+.chest .run{font-weight:800;color:var(--gold);white-space:nowrap}
+@keyframes wobble{0%,70%,100%{transform:rotate(0)}75%{transform:rotate(-12deg)}85%{transform:rotate(10deg)}92%{transform:rotate(-5deg)}}
+.prize .em{font-size:4rem;display:block;margin:4px 0 8px}
+.prize .em.shake{animation:shake .5s linear 3}
+@keyframes shake{0%,100%{transform:translateX(0) rotate(0)}25%{transform:translateX(-6px) rotate(-8deg)}75%{transform:translateX(6px) rotate(8deg)}}
+.prize .amt{font-size:2.4rem;font-weight:900;color:var(--gold);margin:4px 0}
+@media (prefers-reduced-motion:reduce){ .chest.ready .box,.prize .em.shake{animation:none} }
+@media (max-width:520px){ .chest{flex-wrap:wrap} .chest .btn{width:100%} }
 .card{background:var(--card);border:1px solid var(--rule);border-radius:16px;padding:18px}
 h1{font-size:1.5rem;margin:0 0 2px}
 h2{font-size:1rem;margin:0 0 10px;text-transform:uppercase;letter-spacing:.06em;color:var(--soft)}
@@ -256,6 +275,8 @@ function drawHome(){
   main.appendChild(hello);
   requestAnimationFrame(function(){ fill.style.width = Math.round(100 * S.into / S.need) + "%"; });
 
+  main.appendChild(chestCard());
+
   var grid = h("div", "grid");
   var left = h("div"), right = h("div");
   var tc = h("div", "card");
@@ -321,6 +342,60 @@ function drawHome(){
   grid.appendChild(left); grid.appendChild(right);
   main.appendChild(grid);
 }
+/* ---------------- the daily chest ----------------
+   Finish all three tasks and a mystery chest opens: a random handful of
+   pence, sometimes a big win, very rarely a jackpot - plus a bonus for
+   every day in a row. The server rolls it, once a day. */
+function chestCard(){
+  var c = S.chest || { ready:false, opened:false, run:0 };
+  var left = S.tasks.filter(function(t){ return t.done < t.of; }).length;
+  var card = h("div", "chest " + (c.opened ? "opened" : c.ready ? "ready" : "locked"));
+  card.appendChild(h("div", "box", c.opened ? "📭" : "🎁"));
+  var t = h("div", "txt");
+  if (c.opened) {
+    t.appendChild(h("b", null, "Today's chest gave you +" + c.got + "p" + (c.what === "jackpot" ? " — JACKPOT!" : c.what === "big" ? " — big win!" : "")));
+    t.appendChild(h("small", null, "A new chest comes tomorrow. Keep the run going for a bigger bonus."));
+  } else if (c.ready) {
+    t.appendChild(h("b", null, "Your chest is ready!"));
+    t.appendChild(h("small", null, "Could be a few pence, could be the 1000p jackpot."));
+  } else {
+    t.appendChild(h("b", null, "Today's mystery chest"));
+    t.appendChild(h("small", null, "Finish " + (left === S.tasks.length ? "all three tasks" : left + " more task" + (left === 1 ? "" : "s")) + " to open it. Up to 1000p inside."));
+  }
+  card.appendChild(t);
+  if (c.run > 0) card.appendChild(h("span", "run", "📅 " + c.run + "-day run"));
+  if (c.ready) {
+    var b = h("button", "btn", "Open it"); b.type = "button";
+    b.onclick = function(){ openChest(b); };
+    card.appendChild(b);
+  }
+  return card;
+}
+function openChest(b){
+  if (b) b.disabled = true;
+  dropKeyHandlers();
+  var v = h("div", "veil"), s = h("div", "sheet party prize");
+  var em = h("div", "em shake", "🎁"); s.appendChild(em);
+  var msg = h("h3", null, "Opening\u2026"); s.appendChild(msg);
+  v.appendChild(s); document.body.appendChild(v);
+  var shook = new Promise(function(r){ setTimeout(r, 1500); });
+  Promise.all([api({ action:"chest" }), shook]).then(function(x){
+    var r = x[0], p = r.prize; S = r; setTop(); bump("ptsChip");
+    em.classList.remove("shake");
+    em.textContent = p.what === "jackpot" ? "💎" : p.what === "big" ? "🤑" : p.what === "good" ? "✨" : "🪙";
+    msg.textContent = p.what === "jackpot" ? "JACKPOT!" : p.what === "big" ? "Big win!" : p.what === "good" ? "Nice chest!" : "Chest opened!";
+    s.appendChild(h("div", "amt", "+" + p.got + "p"));
+    if (p.runBonus) s.appendChild(h("p", "muted", p.base + "p from the chest + " + p.runBonus + "p for a " + p.run + "-day run 🔥"));
+    else s.appendChild(h("p", "muted", "Open one tomorrow too and the run bonus starts: +20p a day, up to +200p."));
+    var ok = h("button", "btn", "Spend it in the shop"); ok.type = "button";
+    ok.onclick = function(){ v.remove(); drawHome(); document.getElementById("shopBtn").click(); };
+    var later = h("button", "ghost", "Later"); later.type = "button"; later.style.marginLeft = "8px";
+    later.onclick = function(){ v.remove(); drawHome(); };
+    s.appendChild(ok); s.appendChild(later);
+    confetti(); if (p.what === "jackpot" || p.what === "big") setTimeout(confetti, 700);
+  }).catch(function(e){ v.remove(); toast(e.message); if (b) b.disabled = false; else home(); });
+}
+
 function greeting(){
   var hr = new Date().getHours();
   return hr < 12 ? "Good morning!" : hr < 18 ? "Good afternoon!" : "Good evening!";
@@ -503,7 +578,11 @@ function taskParty(name, bonus, dots){
   s.appendChild(h("div", "em", right === dots.length ? "🏆" : right >= 3 ? "🎉" : "💪"));
   s.appendChild(h("h3", null, name + " done!"));
   s.appendChild(h("p", null, right + " out of " + dots.length + " right. Task bonus: +" + bonus + "p."));
-  var b = h("button", "btn", "Back to tasks"); b.type = "button"; b.onclick = function(){ v.remove(); home(); };
+  var allDone = S && S.chest && S.chest.ready;
+  if (allDone) s.appendChild(h("p", null, "🎁 That was the last one — today's chest is ready!"));
+  var b = h("button", "btn", allDone ? "Open today's chest" : "Back to tasks"); b.type = "button";
+  /* not home() at the same time: two saves at once could lose the chest */
+  b.onclick = function(){ v.remove(); if (allDone) openChest(null); else home(); };
   s.appendChild(b); v.appendChild(s); document.body.appendChild(v); b.focus();
 }
 
@@ -512,8 +591,8 @@ function taskParty(name, bonus, dots){
 function memoryCheck(then){
   var m = pickOf(mem.slice(0, -1).length ? mem.slice(0, -1) : mem);
   var v = h("div", "veil"), s = h("div", "sheet");
-  s.appendChild(h("h3", null, "🧠 Memory check"));
-  s.appendChild(h("p", "muted", "What was your answer to " + m.code + "?"));
+  s.appendChild(h("h3", null, "🧠 Quick recall"));
+  s.appendChild(h("p", "muted", "Remember this one from earlier (" + m.code + ")? Totally optional."));
   s.appendChild(h("p", null, m.q));
   var opts = h("div", "opts");
   m.options.forEach(function(o){
@@ -527,7 +606,11 @@ function memoryCheck(then){
     };
     opts.appendChild(b);
   });
-  s.appendChild(opts); v.appendChild(s); document.body.appendChild(v);
+  s.appendChild(opts);
+  var skip = h("button", "linkish", "Skip"); skip.type = "button"; skip.style.marginTop = "12px";
+  skip.onclick = function(){ v.remove(); then(); };
+  s.appendChild(skip);
+  v.appendChild(s); document.body.appendChild(v);
 }
 
 /* ---------------- shop ---------------- */
