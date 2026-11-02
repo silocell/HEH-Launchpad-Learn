@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Battle Stories</title>
+<meta name="description" content="Battle Stories: watch Hastings, Agincourt, Bosworth and the Spanish Armada happen, then explain why.">
 <link rel="icon" type="image/png" href="/favicon.png">
 <script>
 try{ var m = document.cookie.match(/(?:^|; )hl_theme=(dark|light|system)/), t = m ? m[1] : JSON.parse(localStorage.getItem("hl.theme")); /* the cookie is shared by every *.civilinitiatives.org site */
@@ -98,10 +99,15 @@ function store(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch 
 })();
 function saveBest(){
   if (!window.HEHLearn) return;
-  HEHLearn.save("history", { best:{ hastings: read("hl.hist.best.hastings", 0) } });
+  var best = {}; ["hastings", "agincourt", "bosworth", "armada"].forEach(function(id){ var v = read("hl.hist.best." + id, null); if (v != null) best[id] = v; });
+  HEHLearn.save("history", { best:best });
 }
 if (window.HEHLearn) HEHLearn.load("history").then(function(d){
-  var there = d && d.best && d.best.hastings, here = read("hl.hist.best.hastings", null);
+  var mine = (d && d.best) || {}, newer = false;
+  ["agincourt", "bosworth", "armada"].forEach(function(id){ var th = mine[id], hr = read("hl.hist.best." + id, null);
+    if (th != null && (hr == null || th > hr)) store("hl.hist.best." + id, th); else if (hr != null && (th == null || hr > th)) newer = true; });
+  var there = mine.hastings, here = read("hl.hist.best.hastings", null);
+  if (newer) saveBest();
   if (there != null && (here == null || there > here)) {
     store("hl.hist.best.hastings", there);
     var el = document.getElementById("best"); if (el) el.textContent = "Best: " + there + "/10";
@@ -451,26 +457,653 @@ function drawCrown(t){
   var a = seg(t, .3, 2.5); g.globalAlpha = a; g.fillStyle = "#facc15";
   g.beginPath(); g.moveTo(400, 290); g.lineTo(400, 210); g.lineTo(440, 250); g.lineTo(480, 180); g.lineTo(520, 250); g.lineTo(560, 210); g.lineTo(560, 290); g.closePath(); g.fill();
   g.fillStyle = "#dc2626"; [[440,270],[480,265],[520,270]].forEach(function(p){ g.beginPath(); g.arc(p[0], p[1], 8, 0, 7); g.fill(); });
-  g.fillStyle = "#fde68a"; g.font = "bold 34px Georgia"; var s = "25 December 1066"; g.fillText(s, 480 - g.measureText(s).width / 2, 360);
-  g.font = "italic 22px Georgia"; s = "Westminster Abbey"; g.fillText(s, 480 - g.measureText(s).width / 2, 395);
+  var cr = SCENES[idx].crown || ["25 December 1066", "Westminster Abbey"];
+  g.fillStyle = "#fde68a"; g.font = "bold 34px Georgia"; var s = cr[0]; g.fillText(s, 480 - g.measureText(s).width / 2, 360);
+  g.font = "italic 22px Georgia"; s = cr[1]; g.fillText(s, 480 - g.measureText(s).width / 2, 395);
   g.globalAlpha = 1;
 }
+
+/* ====================================================================
+   Episodes 2-4: Agincourt (1415), Bosworth (1485) and the Spanish
+   Armada (1588). Written with Claude in November 2026 from the standard
+   Key Stage 3 accounts - unlike Episode 1, NOT checked line by line by
+   a person, so a teacher's eye is welcome. Where historians disagree,
+   the scene says so in its note, as Hastings does.
+   ==================================================================== */
+
+/* A map like Hastings', but for any stretch of coast: Britain, northern
+   France and the Low Countries, and Ireland, drawn from real positions. */
+function mapKit(b){
+  var LAT0 = b.lat0, LAT1 = b.lat1, LON0 = b.lon0, LON1 = b.lon1;
+  var TOP = 14, BOT = 424, CX = 480;
+  var YS = (BOT - TOP) / (LAT1 - LAT0);
+  var XS = YS * Math.cos((LAT0 + LAT1) / 2 * Math.PI / 180);
+  var MIDLON = (LON0 + LON1) / 2;
+  function P(lat, lon){ return [CX + (lon - MIDLON) * XS, BOT - (lat - LAT0) * YS]; }
+  var BRITAIN = [
+    [50.07,-5.72],[49.96,-5.20],[50.20,-4.78],[50.37,-4.14],[50.58,-3.46],[50.52,-2.45],
+    [50.72,-1.88],[50.73,-0.80],[50.74,0.24],[51.13,1.33],[51.38,1.44],[51.60,0.95],
+    [52.00,1.08],[52.48,1.75],[52.93,1.30],[52.92,0.15],[53.30,0.10],[53.58,0.11],
+    [54.12,-0.08],[54.49,-0.61],[54.63,-1.15],[55.01,-1.42],[55.45,-1.60],[55.77,-2.00],
+    [56.06,-2.60],[56.37,-2.80],[56.70,-2.46],[57.15,-2.09],[57.69,-2.00],[57.60,-3.90],
+    [57.85,-4.00],[58.44,-3.09],[58.64,-3.07],[58.55,-4.40],[58.62,-5.00],[58.10,-5.35],
+    [57.90,-5.16],[57.30,-5.70],[56.82,-5.10],[56.40,-5.90],[55.80,-5.70],[55.31,-5.80],
+    [55.60,-4.90],[55.46,-4.63],[54.90,-4.95],[54.63,-4.86],[54.85,-3.60],[54.40,-3.40],
+    [54.10,-3.23],[53.70,-3.05],[53.45,-3.02],[53.33,-3.83],[53.30,-4.60],[52.90,-4.50],
+    [52.80,-4.75],[52.40,-4.10],[52.10,-4.60],[51.88,-5.31],[51.70,-4.90],[51.60,-3.95],
+    [51.48,-3.18],[51.21,-3.47],[51.08,-4.20],[50.99,-4.53],[50.60,-4.90],[50.42,-5.08]
+  ];
+  /* France and the Low Countries, west to east, then closed off inland. */
+  var CONTINENT = [
+    [48.60,-4.60],[48.63,-1.51],[49.30,-1.60],[49.64,-1.62],[49.40,-1.10],[49.35,-0.30],
+    [49.49,0.11],[49.75,0.60],[49.92,1.08],[50.18,1.62],[50.30,1.55],[50.95,1.85],[51.05,2.40],
+    [51.33,3.20],[51.45,3.60],[51.75,3.80],[52.10,4.25],[52.95,4.75],[53.40,5.60],[53.55,7.00],
+    [53.90,8.60],[54.50,8.80],[55.50,8.10],[56.60,8.10],[57.10,8.60],[57.60,10.50],[57.10,12.0],
+    [48.60,12.0],[48.60,-4.60]
+  ];
+  var IRELAND = [
+    [55.38,-7.37],[55.22,-6.15],[54.65,-5.70],[54.35,-5.50],[54.00,-6.35],[53.35,-6.10],
+    [52.98,-6.00],[52.17,-6.36],[52.13,-7.00],[51.80,-8.30],[51.45,-9.82],[52.15,-10.45],
+    [52.56,-9.93],[53.15,-9.50],[53.40,-10.20],[53.95,-10.10],[54.30,-10.00],[54.30,-8.60],
+    [54.65,-8.75],[55.15,-8.28]
+  ];
+  function land(pts){
+    g.beginPath();
+    pts.forEach(function(p, i){ var q = P(p[0], p[1]); i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]); });
+    g.closePath(); g.fill(); g.stroke();
+  }
+  g.fillStyle = "#7fb3d5"; g.fillRect(0, 0, W, H);
+  g.fillStyle = "#a8c686"; g.strokeStyle = "#5c7a45"; g.lineWidth = 2;
+  land(BRITAIN); land(CONTINENT); land(IRELAND);
+  var k = {
+    P: P,
+    sea: function(lat, lon, name){ var q = P(lat, lon); g.fillStyle = "#2b4a63"; g.font = "italic 15px Georgia"; g.fillText(name, q[0], q[1]); },
+    town: function(lat, lon, name, colour, left){
+      var q = P(lat, lon);
+      g.fillStyle = colour || "#3b2a1a"; g.beginPath(); g.arc(q[0], q[1], 5, 0, 7); g.fill();
+      g.font = "bold 15px system-ui"; var w = g.measureText(name).width;
+      g.strokeStyle = "rgba(255,255,255,.85)"; g.lineWidth = 3;
+      var tx = left ? q[0] - 9 - w : q[0] + 9;
+      tx = Math.max(4, Math.min(W - w - 4, tx));
+      g.strokeText(name, tx, q[1] + 5); g.fillText(name, tx, q[1] + 5);
+      g.lineWidth = 2; g.strokeStyle = "#5c7a45";
+    },
+    route: function(pts, p, colour, dash){
+      if (p <= 0) return;
+      var px = pts.map(function(c){ return P(c[0], c[1]); });
+      g.save(); g.strokeStyle = colour; g.lineWidth = 5; g.setLineDash(dash ? [12, 8] : []); g.lineCap = "round";
+      var total = 0, L = [];
+      for (var i = 1; i < px.length; i++) { var d = Math.hypot(px[i][0]-px[i-1][0], px[i][1]-px[i-1][1]); L.push(d); total += d; }
+      var want = total * p; g.beginPath(); g.moveTo(px[0][0], px[0][1]);
+      for (var j = 1; j < px.length && want > 0; j++) {
+        var f = Math.min(1, want / L[j-1]);
+        g.lineTo(px[j-1][0] + (px[j][0]-px[j-1][0]) * f, px[j-1][1] + (px[j][1]-px[j-1][1]) * f);
+        want -= L[j-1];
+      }
+      g.stroke(); g.restore();
+    },
+    crown: function(lat, lon, label, colour, a){
+      if (a <= 0) return;
+      var q = P(lat, lon), x = q[0], y = q[1];
+      g.globalAlpha = a; g.fillStyle = colour;
+      g.beginPath(); g.moveTo(x-20, y+9); g.lineTo(x-20, y-9); g.lineTo(x-10, y); g.lineTo(x, y-15); g.lineTo(x+10, y); g.lineTo(x+20, y-9); g.lineTo(x+20, y+9); g.closePath(); g.fill();
+      g.font = "bold 16px system-ui"; var w = g.measureText(label).width;
+      var tx = Math.max(6, Math.min(W - w - 6, x - w / 2)), ty = Math.min(BOT + 6, y + 32);
+      g.fillStyle = "#fff"; g.strokeStyle = "rgba(0,0,0,.55)"; g.lineWidth = 3; g.strokeText(label, tx, ty); g.fillText(label, tx, ty);
+      g.globalAlpha = 1; g.lineWidth = 2; g.strokeStyle = "#5c7a45";
+    },
+    note: function(lat, lon, words, a){
+      var q = P(lat, lon); g.globalAlpha = a == null ? 1 : a;
+      g.font = "bold 15px system-ui"; var w = g.measureText(words).width;
+      var x = Math.max(6, Math.min(W - w - 6, q[0] - w / 2));
+      g.fillStyle = "#fff"; g.strokeStyle = "rgba(0,0,0,.55)"; g.lineWidth = 3; g.strokeText(words, x, q[1]); g.fillText(words, x, q[1]);
+      g.globalAlpha = 1; g.lineWidth = 2; g.strokeStyle = "#5c7a45";
+    },
+    ring: function(lat, lon, t0, t, colour){
+      if (t < t0) return; var q = P(lat, lon), r = 10 + 26 * Math.min(1, (t - t0) / .8);
+      g.strokeStyle = colour || "#facc15"; g.lineWidth = 4; g.beginPath(); g.arc(q[0], q[1], r, 0, 7); g.stroke(); g.lineWidth = 2; g.strokeStyle = "#5c7a45";
+    },
+    cross: function(lat, lon, a){
+      if (a <= 0) return; var q = P(lat, lon); g.globalAlpha = a; g.strokeStyle = "#b91c1c"; g.lineWidth = 5;
+      g.beginPath(); g.moveTo(q[0]-10, q[1]-10); g.lineTo(q[0]+10, q[1]+10); g.moveTo(q[0]+10, q[1]-10); g.lineTo(q[0]-10, q[1]+10); g.stroke();
+      g.globalAlpha = 1; g.lineWidth = 2; g.strokeStyle = "#5c7a45";
+    },
+    fire: function(lat, lon, a){
+      if (a <= 0) return; var q = P(lat, lon); g.globalAlpha = a;
+      g.fillStyle = "#f97316"; g.beginPath(); g.arc(q[0], q[1] - 3, 6, 0, 7); g.fill();
+      g.fillStyle = "#facc15"; g.beginPath(); g.arc(q[0], q[1] - 5, 3, 0, 7); g.fill(); g.globalAlpha = 1;
+    }
+  };
+  return k;
+}
+
+/* People on a field for the new episodes. Each unit has a side colour
+   and a kind: foot (a square), arch (a triangle), mam (a man-at-arms,
+   a circle with a shield), cav (a rider), lead (a leader with a flag). */
+function drawUnit2(u){
+  if (u.a <= 0.02) return;
+  g.globalAlpha = u.a;
+  var c = u.col;
+  if (u.kind === "cav") { g.fillStyle = "#5b3a1e"; g.beginPath(); g.ellipse(u.x, u.y + 2, 9, 5, 0, 0, 7); g.fill(); g.fillStyle = c; g.beginPath(); g.arc(u.x, u.y - 2, 4.5, 0, 7); g.fill(); }
+  else if (u.kind === "arch") { g.fillStyle = c; g.beginPath(); g.moveTo(u.x, u.y - 5); g.lineTo(u.x + 5, u.y + 4); g.lineTo(u.x - 5, u.y + 4); g.fill(); }
+  else if (u.kind === "mam") { g.fillStyle = c; g.beginPath(); g.arc(u.x, u.y, 5, 0, 7); g.fill(); g.fillStyle = "#d1d5db"; g.beginPath(); g.arc(u.x, u.y + 5, 4, 0, Math.PI); g.fill(); }
+  else if (u.kind === "lead") {
+    g.fillStyle = "#facc15"; g.fillRect(u.x - 2, u.y - 28, 3, 30);
+    g.fillStyle = u.flag || c; g.beginPath(); g.moveTo(u.x + 1, u.y - 28); g.lineTo(u.x + 22, u.y - 22); g.lineTo(u.x + 1, u.y - 14); g.fill();
+    g.fillStyle = c; g.beginPath(); g.arc(u.x, u.y + 4, 7, 0, 7); g.fill();
+    g.fillStyle = "#facc15"; g.fillRect(u.x - 5, u.y - 6, 10, 4);
+  }
+  else { g.fillStyle = c; g.fillRect(u.x - 4, u.y - 4, 8, 8); }
+  g.globalAlpha = 1;
+}
+function label(x, y, words){ g.fillStyle = "rgba(255,255,255,.8)"; g.font = "bold 13px system-ui"; g.fillText(words, x, y); }
+function shots(t0, from, n, toY, high, spread){
+  var s = units.filter(function(u){ return u.kind === "arch" && u.a > .5 && (!from || from(u)); });
+  for (var i = 0; i < n && s.length; i++) {
+    var u = s[Math.floor(Math.random() * s.length)];
+    arrows.push({ t0: t0 + Math.random() * 1.2, d: 1.1, x0: u.x, y0: u.y, x1: u.x + (Math.random() * (spread || 60) - (spread || 60) / 2), y1: toY + Math.random() * 30, arc: high ? 150 : 50 });
+  }
+}
+function drawArrows(t){
+  arrows.forEach(function(ar){
+    var p = Math.min(1, (t - ar.t0) / ar.d); if (p < 0 || p >= 1 && t - ar.t0 > ar.d + 1.2) return;
+    var x = ar.x0 + (ar.x1 - ar.x0) * p, y = ar.y0 + (ar.y1 - ar.y0) * p - Math.sin(Math.PI * p) * ar.arc;
+    var q = Math.max(0, p - .05), x2 = ar.x0 + (ar.x1 - ar.x0) * q, y2 = ar.y0 + (ar.y1 - ar.y0) * q - Math.sin(Math.PI * q) * ar.arc;
+    g.strokeStyle = "#2b1a0d"; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x2, y2); g.lineTo(x, y); g.stroke();
+  });
+}
+function placeAll(){ units.forEach(function(u){ u.x = u.hx; u.y = u.hy; u.a = u.dead ? 0 : 1; }); }
+function arriveAll(t){ units.forEach(function(u){ var p = seg(t, u.top ? .3 : 2, u.top ? 4 : 6); u.x = u.hx + (u.x0 - u.hx) * (1 - p); u.y = u.hy + (u.y0 - u.hy) * (1 - p); u.a = 1; }); }
+function startOffscreen(){ units.forEach(function(u){ u.x0 = u.hx + (Math.random() * 40 - 20); u.y0 = u.top ? -30 - Math.random() * 40 : 600 + Math.random() * 80; }); }
+function grass(){
+  var sky = g.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, "#5f8f4e"); sky.addColorStop(.5, "#6d9a55"); sky.addColorStop(1, "#86ad62");
+  g.fillStyle = sky; g.fillRect(0, 0, W, H);
+}
+function wood(cx, cy, rx, ry){ g.fillStyle = "#2f5a26"; for (var i = 0; i < 14; i++) { g.beginPath(); g.arc(cx + Math.cos(i * 2.4) * rx * .7, cy + Math.sin(i * 1.7) * ry * .8, 20 + (i % 3) * 6, 0, 7); g.fill(); } }
+
+/* ---------- Episode 2: Agincourt, 1415 ---------- */
+var AG_SCENES = [
+  { title:"August 1415 - Henry sails to France", view:"map", dur:9,
+    text:"Henry V of England claims the crown of France, as his great-grandfather Edward III had. He crosses the Channel and lays siege to the port of Harfleur. It takes over a month to capture, and disease - dysentery - spreads through his army.",
+    q:"Why was Henry's army much weaker after the siege of Harfleur?",
+    opts:["Disease had killed or sickened many of his soldiers","The French had captured his ships","Half his men had gone home for the harvest","He had left most of them in England"], a:0,
+    why:"Dysentery spread through the camp during the siege. Thousands died or were too ill to fight and were sent home, so Henry marched on with a much smaller army." },
+  { title:"October - the march to Calais", view:"map", dur:10,
+    text:"Henry marches his tired army north towards Calais, a town England already held, to get home. A French army blocks the crossings of the River Somme, so the English have to march far inland to find a way over - in the rain, and short of food.",
+    q:"Where was Henry trying to reach on his march?",
+    opts:["Calais, which England already held","Paris, to be crowned","Normandy, to start another siege","Spain, to find allies"], a:0,
+    why:"Calais was English, so from there the army could sail safely home. Every extra mile around the Somme left the soldiers hungrier and more tired." },
+  { title:"24 October - trapped near Agincourt", view:"map", dur:9,
+    text:"Near the village of Agincourt, a much bigger French army stands across the road to Calais. Both armies camp for the night in pouring rain. Between them is a narrow, newly ploughed field with woods on both sides.",
+    q:"How did the narrow field between two woods help the English?",
+    opts:["The bigger French army couldn't spread out and had to come straight at them","It hid the English from view","It gave the English a hill to stand on","It meant the French could use their cannon"], a:0,
+    why:"With woods on both sides, the French could not use their numbers to get around the English. They had to attack head-on, crammed together, into a narrow gap.",
+    note:"Nobody knows the exact size of either army. Older books say the French outnumbered the English four or five to one; some historians now think it was closer to two to one." },
+  { title:"25 October, morning - the stakes", view:"field", dur:11, kind:"ag-stakes",
+    text:"It is St Crispin's Day. Most of Henry's army are archers with longbows. They move forward until the French are in range, hammer sharpened wooden stakes into the ground pointing at the enemy, and start shooting.",
+    q:"What were the sharpened stakes for?",
+    opts:["To stop horses charging into the archers","To build a fence around the camp","To use as spears","To mark where the archers should stand"], a:0,
+    why:"A horse will not run onto a row of sharpened stakes. Behind them, the lightly armoured archers were safe from a cavalry charge." },
+  { title:"The French cavalry charge", view:"field", dur:12, kind:"ag-charge",
+    text:"French knights on horseback charge at the archers on the edges of the English line. Arrows hit the horses, the stakes stop them, and the wounded, panicking horses turn and gallop back - straight into their own men walking up behind.",
+    q:"Why did the French cavalry charge fail?",
+    opts:["Arrows and stakes stopped the horses, which turned back into their own men","The knights got lost in the woods","The English had more knights","The horses refused to leave the camp"], a:0,
+    why:"Horses were hit by arrows and couldn't get past the stakes. As they fled back they churned up the mud and knocked over the French soldiers coming up behind." },
+  { title:"Into the mud", view:"field", dur:12, kind:"ag-mud",
+    text:"Now the French men-at-arms walk forward in heavy armour, through ploughed mud churned up by the horses. They are tired before they arrive. The field narrows, and men pushing from behind squash the front ranks so tightly they can hardly lift their weapons.",
+    q:"Why was the mud such a problem for the French men-at-arms?",
+    opts:["In heavy armour it wore them out, and packed together they could hardly fight","It hid the English stakes","It made their bows too wet to use","It stopped the English cannon working"], a:0,
+    why:"Walking through deep mud in armour is exhausting. Squeezed together by the woods and the men behind them, many could barely swing a weapon, and men who fell found it hard to get up." },
+  { title:"The archers join in", view:"field", dur:11, kind:"ag-melee",
+    text:"As their arrows run out, the English archers drop their bows and join the fight with swords, axes and the mallets they used for the stakes. Lightly dressed, they move easily around the trapped, exhausted knights. Many French nobles are taken prisoner.",
+    q:"Why could the lightly armoured archers fight knights in armour?",
+    opts:["The knights were stuck, exhausted and squashed together in the mud","The archers had better armour","The knights had no weapons","The French had already gone home"], a:0,
+    why:"Moving freely over the mud, the archers could pick on knights who were trapped, tired or had fallen over.",
+    note:"Later in the battle, fearing a new French attack, Henry ordered many prisoners to be killed. Historians argue about whether this was a necessary decision in battle or a crime even by the standards of the time." },
+  { title:"Evening - a famous victory", view:"field", dur:10, kind:"ag-win",
+    text:"The French army breaks up and leaves the field. The English have lost a few hundred men. The French have lost thousands, including many of the most important nobles in France.",
+    q:"How did the losses on each side compare?",
+    opts:["A few hundred English dead, and thousands of French","About the same on each side","Thousands of English, a few hundred French","Nobody on either side was killed"], a:0,
+    why:"It was one of the most one-sided victories of the Middle Ages, though the exact numbers are still argued about." },
+  { title:"1420 - the Treaty of Troyes", view:"crown", dur:8, crown:["21 May 1420", "The Treaty of Troyes"],
+    text:"Five years later, after more fighting, the Treaty of Troyes names Henry as the next King of France, and he marries the French king's daughter, Catherine of Valois. But Henry dies in 1422, just before the French king, so he never wears the French crown.",
+    q:"What did Henry V get from the Treaty of Troyes in 1420?",
+    opts:["He was named heir to the French throne and married Catherine","He was crowned King of France that day","He gave Calais back to France","He became Duke of Normandy only"], a:0,
+    why:"Henry was to become King of France when Charles VI died - but Henry died first, in 1422, aged 35." }
+];
+function agMap(t, i){
+  var k = mapKit({ lat0:48.9, lat1:52.4, lon0:-2.4, lon1:3.6 });
+  k.sea(50.1, -1.6, "The Channel"); k.sea(49.15, -1.0, "Normandy");
+  k.town(50.90, -1.40, "Southampton", null, true); k.town(49.51, 0.20, "Harfleur", null, true);
+  k.town(50.95, 1.85, "Calais", "#b91c1c", true); k.town(50.46, 2.13, "Agincourt", null, true);
+  if (i === 0) {
+    k.route([[50.85,-1.30],[50.3,-0.6],[49.55,0.15]], seg(t, .5, 3.5), "#b91c1c");
+    k.ring(49.51, 0.20, 4, t, "#facc15");
+    if (t > 4.5) k.note(49.05, 0.6, "Siege of Harfleur: August - September", seg(t, 4.5, 5.3));
+  } else if (i === 1) {
+    k.town(50.18, 1.62, "River Somme", "#1d4ed8");
+    k.route([[49.51,0.20],[49.95,0.9],[50.12,1.55],[49.95,2.2],[49.80,2.95],[50.15,2.6],[50.42,2.15]], seg(t, .5, 7), "#b91c1c", true);
+    k.cross(50.15, 1.75, seg(t, 2.2, 2.8));
+    if (t > 2.6) k.note(50.55, 0.6, "Crossings blocked - a long way round", seg(t, 2.6, 3.4));
+    k.route([[49.20,2.80],[49.75,2.45],[50.35,2.20]], seg(t, 3, 7.5), "#1d4ed8");
+  } else {
+    k.route([[49.80,2.95],[50.15,2.6],[50.42,2.15]], 1, "#b91c1c", true);
+    k.crown(50.78, 2.75, "French army", "#1d4ed8", seg(t, 1, 2.5));
+    k.ring(50.46, 2.13, 3, t, "#facc15");
+    if (t > 4) k.note(51.35, 2.0, "Calais is still about 40 miles away", seg(t, 4, 4.8));
+  }
+}
+/* English along the top (south), the French below; woods narrow the middle. */
+function agMake(){
+  units = []; arrows = [];
+  var x;
+  for (x = 370; x <= 590; x += 14) units.push({ side:"E", kind:"mam", col:"#991b1b", top:true, hx:x, hy:130, grp:"c" });
+  [[250, 360], [600, 710], [395, 565]].forEach(function(r, i){
+    for (var xx = r[0]; xx <= r[1]; xx += 11) units.push({ side:"E", kind:"arch", col:"#dc2626", top:true, hx:xx, hy: i === 2 ? 112 : 140 + (xx % 22 ? 8 : 0), grp: i === 0 ? "L" : i === 1 ? "R" : "M" });
+  });
+  units.push({ side:"E", kind:"lead", col:"#7f1d1d", flag:"#b91c1c", top:true, hx:480, hy:100, grp:"king" });
+  for (var row = 0; row < 3; row++) for (x = 300; x <= 660; x += 13) units.push({ side:"F", kind:"mam", col: row ? "#1e40af" : "#2563eb", hx:x, hy:400 + row * 16, grp:"foot" });
+  for (x = 200; x <= 290; x += 15) units.push({ side:"F", kind:"cav", col:"#1d4ed8", hx:x, hy:392, grp:"cavL" });
+  for (x = 670; x <= 760; x += 15) units.push({ side:"F", kind:"cav", col:"#1d4ed8", hx:x, hy:392, grp:"cavR" });
+  units.forEach(function(u){ u.a = 1; u.x = u.hx; u.y = u.hy; });
+}
+function agDraw(t, kind){
+  grass();
+  if (kind === "ag-mud" || kind === "ag-melee" || kind === "ag-win") { g.fillStyle = "rgba(101,67,33," + Math.min(.45, .2 + (kind === "ag-mud" ? t / 40 : .25)) + ")"; g.beginPath(); g.ellipse(480, 300, 230, 170, 0, 0, 7); g.fill(); }
+  wood(80, 260, 120, 230); wood(880, 260, 120, 230);
+  label(30, 30, "Tramecourt wood"); label(810, 30, "Agincourt wood"); label(20, 525, "French"); label(20, 175, "English");
+  if (kind !== "ag-stakes" || t > 5) {   /* the stakes, once they're in */
+    g.strokeStyle = "#78350f"; g.lineWidth = 3;
+    units.filter(function(u){ return u.kind === "arch" && u.grp !== "M" && u.a > .5; }).forEach(function(u, i){ if (i % 2) return; g.beginPath(); g.moveTo(u.x, u.y + 10); g.lineTo(u.x + 4, u.y + 20); g.stroke(); });
+  }
+  units.forEach(drawUnit2); drawArrows(t);
+  if (kind === "ag-win") { g.fillStyle = "rgba(40,10,40," + Math.min(.4, t / 25) + ")"; g.fillRect(0, 0, W, H); }
+  pending.forEach(function(b){ drawBubble(b[0], b[1], b[2]); }); pending = [];
+}
+function agAt(t, kind, first){
+  if (kind === "ag-stakes") {
+    arriveAll(t);
+    units.forEach(function(u){ if (u.side === "E") u.y += seg(t, 4, 6) * 40; });   /* the English move forward into range */
+    if (first) { arrows = []; shots(7, function(u){ return u.side === "E"; }, 50, 390, true, 80); shots(8.8, function(u){ return u.side === "E"; }, 50, 390, true, 80); }
+    if (t > 4.5 && t < 7) bubble(480, 95, "Hammer in the stakes!");
+    return;
+  }
+  placeAll();
+  units.forEach(function(u){ if (u.side === "E") u.y = u.hy + 40; });
+  if (kind === "ag-charge") {
+    if (first) { arrows = []; shots(1.2, function(u){ return u.side === "E" && u.grp !== "M"; }, 70, 250, true, 60); shots(3, function(u){ return u.side === "E" && u.grp !== "M"; }, 70, 230, false, 60); }
+    units.forEach(function(u){
+      if (u.grp === "cavL" || u.grp === "cavR") {
+        var go = seg(t, .5, 4) - seg(t, 5, 8.5), side = u.grp === "cavL" ? 1 : -1;
+        u.y = u.hy - go * 200; u.x = u.hx + go * 30 * side + seg(t, 5, 8.5) * side * 60;
+        u.y += seg(t, 5, 8.5) * 30;
+        if (t > 9) u.a = .6;
+      }
+      if (u.grp === "foot") { var tumble = seg(t, 7, 9); u.x = u.hx + Math.sin(u.hx) * 12 * tumble; u.y = u.hy + Math.cos(u.hx) * 8 * tumble; }
+    });
+    if (t > 5 && t < 8) bubble(480, 280, "The horses turn back!");
+  } else if (kind === "ag-mud") {
+    units.forEach(function(u){
+      if (u.grp === "cavL" || u.grp === "cavR") u.a = .4;
+      if (u.grp === "foot") {
+        var p = seg(t, .5, 9);
+        u.y = u.hy - p * 200 + Math.sin(t * 3 + u.hx) * 1.5;
+        u.x = 480 + (u.hx - 480) * (1 - .5 * p);   /* squeezed into the gap */
+      }
+    });
+    if (t > 7 && t < 11) bubble(480, 205, "Too tired and too squashed to fight");
+  } else if (kind === "ag-melee") {
+    units.forEach(function(u){
+      if (u.grp === "cavL" || u.grp === "cavR") u.a = .4;
+      if (u.grp === "foot") { u.y = u.hy - 200; u.x = 480 + (u.hx - 480) * .5; u.a = 1 - seg(t, 3 + (u.hx % 5), 9 + (u.hx % 3)) * .85; }
+      if (u.kind === "arch" && u.grp !== "M") {   /* round the sides of the trapped French */
+        var swing = seg(t, 1, 4), sideX = 480 + Math.sign(u.hx - 480) * (110 + (Math.abs(u.hx - 480) - 120) * .35);
+        u.x = u.hx + (sideX - u.hx) * swing; u.y = u.hy + 40 + (205 + (u.hx % 4) * 8 - (u.hy + 40)) * swing;
+      }
+    });
+    if (t > 2 && t < 5) bubble(480, 150, "Bows down - mallets out!");
+  } else if (kind === "ag-win") {
+    units.forEach(function(u){
+      if (u.side === "F") { u.y = u.hy + seg(t, .5, 6) * 140; u.a = (u.grp === "foot" ? .35 : .5) * (1 - seg(t, 4, 7)); }
+    });
+    if (t > 5) bubble(480, 260, "English: a few hundred dead  ·  French: thousands");
+  }
+}
+
+/* ---------- Episode 3: Bosworth, 1485 ---------- */
+var BO_SCENES = [
+  { title:"1483 - Richard takes the crown", view:"map", dur:9,
+    text:"King Edward IV dies. His son Edward, aged 12, should be the next king, and Edward's uncle Richard is put in charge until the boy grows up. Instead Richard is crowned himself, as Richard III. Edward and his younger brother - the 'Princes in the Tower' - are never seen again.",
+    q:"Who should have become king when Edward IV died in 1483?",
+    opts:["His son Edward, aged 12","His brother Richard","Henry Tudor","The Earl of Warwick"], a:0,
+    why:"Edward V was the rightful heir, but he was only 12. His uncle Richard took the throne instead.",
+    note:"Nobody knows for certain what happened to the Princes in the Tower. Many historians think Richard had them killed; others point to different suspects, including Henry Tudor's supporters." },
+  { title:"7 August 1485 - Henry Tudor lands", view:"map", dur:10,
+    text:"Henry Tudor, who has lived in exile in Brittany and France for years, has a claim to the throne through his mother. With French help he lands at Milford Haven in Wales and marches east, gathering supporters on the way.",
+    q:"Why did Henry Tudor land in Wales?",
+    opts:["He had Welsh family roots and hoped Welsh people would join him","Wales was ruled by France","Richard's army was in Wales","It was the only harbour in Britain"], a:0,
+    why:"The Tudors were a Welsh family, and Henry was born in Pembroke. He hoped to collect soldiers as he marched through Wales - and some did join him." },
+  { title:"The Stanleys watch", view:"map", dur:9,
+    text:"Two brothers, Lord Thomas Stanley and Sir William Stanley, bring thousands of soldiers near the battlefield - but they don't say whose side they're on. Lord Stanley is Henry's stepfather, but Richard is holding Stanley's son as a hostage.",
+    q:"Why were the Stanleys so important?",
+    opts:["Their large armies could decide the battle, and nobody knew which side they'd join","They were the two kings","They had the only cannons","They had already joined Richard"], a:0,
+    why:"Whichever side the Stanleys joined would probably win. Both Richard and Henry knew it, which is why Richard held Lord Stanley's son as a hostage." },
+  { title:"22 August, morning - the armies meet", view:"field", dur:10, kind:"bo-form",
+    text:"The armies meet near Market Bosworth in Leicestershire. Richard's army is much bigger and is led by an experienced soldier-king. Henry's smaller army is commanded in battle by the Earl of Oxford, while Henry stays at the back. The Stanleys wait to one side.",
+    q:"Who had the bigger army at Bosworth?",
+    opts:["Richard III","Henry Tudor","The Stanleys","They were exactly equal"], a:0,
+    why:"Richard had perhaps twice as many men as Henry. On paper, he should have won.",
+    note:"The exact site of the battle was only found in 2009, by archaeologists who dug up cannonballs - about two miles from where it had been marked for years." },
+  { title:"The vanguards clash", view:"field", dur:11, kind:"bo-clash",
+    text:"Henry's front line, led by Oxford, fights Richard's front line under the Duke of Norfolk. Oxford keeps his men together and they push hard; Norfolk is killed. At the back of Richard's army, the Earl of Northumberland and his men simply don't move.",
+    q:"What did the Earl of Northumberland's part of Richard's army do?",
+    opts:["Nothing - they stayed back and didn't fight","Charged and won the battle","Joined Henry straight away","Went home before the battle"], a:0,
+    why:"Northumberland never brought his men into the fight. Historians argue about whether he was betraying Richard, or simply couldn't reach the fighting." },
+  { title:"Richard's charge", view:"field", dur:12, kind:"bo-charge",
+    text:"Richard sees Henry at the back with only a small bodyguard. He gathers his knights and charges straight at him. He gets so close that he kills Henry's standard-bearer, William Brandon.",
+    q:"Why did Richard charge straight at Henry?",
+    opts:["Killing Henry would end the battle and the rebellion at once","He wanted to take Henry prisoner for money","He was trying to escape","He thought Henry was a Stanley"], a:0,
+    why:"Henry was the whole reason for the rebellion. If Henry died, his army had nothing left to fight for. It was a brave gamble - and it very nearly worked." },
+  { title:"Sir William Stanley moves", view:"field", dur:12, kind:"bo-stanley",
+    text:"Now Sir William Stanley makes his choice. His men charge in on Henry's side and surround Richard. Richard's horse gets stuck in marshy ground and he fights on foot until he is killed - the last King of England to die in battle.",
+    q:"What turned the battle at the very end?",
+    opts:["Sir William Stanley's men joined in on Henry's side","Henry killed Richard himself","Richard's army ran out of arrows","It started to snow"], a:0,
+    why:"Without Stanley's men, Richard's charge might have killed Henry. The Stanleys decided the battle - and the future of the crown." },
+  { title:"A crown on the battlefield", view:"crown", dur:8, crown:["22 August 1485", "Henry VII"],
+    text:"Henry Tudor becomes King Henry VII. Next year he marries Elizabeth of York, Edward IV's daughter, joining the families of Lancaster and York and ending the Wars of the Roses. The Tudor rose - red and white together - becomes his badge.",
+    q:"Why did Henry VII marry Elizabeth of York?",
+    opts:["To join the houses of Lancaster and York and end the Wars of the Roses","Because Richard had told him to","So that he could become King of France","Because she was from Wales"], a:0,
+    why:"Their marriage joined the two rival families. Their children - including the future Henry VIII - were both Lancaster and York.",
+    note:"The story that Richard's crown was found in a hawthorn bush and put on Henry's head on the battlefield is a famous legend, but it was written down much later." }
+];
+function boMap(t, i){
+  var k = mapKit({ lat0:50.4, lat1:54.4, lon0:-6.0, lon1:1.0 });
+  k.town(51.51, -0.13, "London"); k.town(52.62, -1.40, "Bosworth", "#b45309", true);
+  if (i === 0) {
+    k.crown(52.35, 0.2, "Edward V (aged 12)", "#9ca3af", seg(t, .5, 2) - seg(t, 4, 5.5));
+    k.crown(52.35, 0.2, "Richard III", "#7c2d12", seg(t, 4.5, 6));
+    if (t > 6) k.note(51.2, -0.2, "The princes vanish in the Tower", seg(t, 6, 6.8));
+  } else if (i === 1) {
+    k.town(51.71, -5.04, "Milford Haven", "#1d4ed8");
+    k.town(52.71, -2.75, "Shrewsbury", null, true);
+    k.route([[50.4,-5.9],[51.3,-5.5],[51.71,-5.04]], seg(t, .5, 2.5), "#1d4ed8");
+    k.route([[51.71,-5.04],[52.08,-4.66],[52.41,-4.08],[52.59,-3.85],[52.66,-3.15],[52.71,-2.75],[52.68,-1.83],[52.60,-1.45]], seg(t, 2.5, 8), "#1d4ed8", true);
+    k.town(52.95, -1.15, "Nottingham"); k.route([[52.95,-1.15],[52.64,-1.13],[52.62,-1.35]], seg(t, 4, 8), "#7c2d12", true);
+    if (t > 2.5) k.note(51.15, -4.1, "Henry lands, 7 August", seg(t, 2.5, 3.3));
+  } else {
+    k.crown(53.2, -0.4, "Richard", "#7c2d12", 1);
+    k.crown(52.15, -2.4, "Henry", "#1d4ed8", 1);
+    k.crown(53.3, -2.5, "Stanleys  ?", "#6b7280", seg(t, 1, 2.5));
+    if (t > 3) k.note(53.7, -1.4, "Whose side will they join?", seg(t, 3, 3.8));
+  }
+}
+/* Richard on the high ground at the top; Henry's army below; the Stanleys off to the right; a marsh on the left. */
+function boMake(){
+  units = []; arrows = [];
+  var x, row;
+  for (row = 0; row < 2; row++) for (x = 330; x <= 600; x += 13) units.push({ side:"R", kind: row ? "mam" : "foot", col:"#7c2d12", top:true, hx:x, hy:170 + row * 14, grp:"van" });
+  for (x = 380; x <= 560; x += 15) units.push({ side:"R", kind:"cav", col:"#9a3412", top:true, hx:x, hy:118, grp:"knights" });
+  units.push(boRichard = { side:"R", kind:"lead", col:"#7c2d12", flag:"#facc15", top:true, hx:470, hy:96, grp:"king" });
+  for (x = 360; x <= 560; x += 14) units.push({ side:"R", kind:"foot", col:"#a16207", top:true, hx:x, hy:52, grp:"north" });
+  for (row = 0; row < 2; row++) for (x = 340; x <= 580; x += 13) units.push({ side:"T", kind: row ? "mam" : "foot", col:"#1d4ed8", hx:x, hy:360 + row * 14, grp:"oxf" });
+  units.push(boHenry = { side:"T", kind:"lead", col:"#1e3a8a", flag:"#dc2626", hx:220, hy:470, grp:"henry" });
+  for (x = 190; x <= 250; x += 12) units.push({ side:"T", kind:"cav", col:"#2563eb", hx:x, hy:492, grp:"guard" });
+  units.push(boBrandon = { side:"T", kind:"foot", col:"#facc15", hx:250, hy:455, grp:"brandon" });
+  for (row = 0; row < 3; row++) for (x = 760; x <= 880; x += 14) units.push({ side:"S", kind: row === 0 ? "cav" : "foot", col:"#6b7280", hx:x, hy:300 + row * 16, grp:"stan" });
+  units.forEach(function(u){ u.a = 1; u.x = u.hx; u.y = u.hy; });
+}
+var boRichard = null, boHenry = null, boBrandon = null;
+function boDraw(t, kind){
+  grass();
+  g.fillStyle = "rgba(0,0,0,.08)"; for (var c = 0; c < 5; c++) { g.beginPath(); g.ellipse(470, 110 + c*12, 300 - c*12, 70, 0, 0, 7); g.fill(); }
+  g.fillStyle = "rgba(56,94,120,.45)"; g.beginPath(); g.ellipse(170, 300, 120, 70, -.3, 0, 7); g.fill();
+  label(110, 300, "marsh"); label(400, 30, "Richard III"); label(20, 525, "Henry Tudor"); label(780, 270, "The Stanleys");
+  units.forEach(drawUnit2); drawArrows(t);
+  pending.forEach(function(b){ drawBubble(b[0], b[1], b[2]); }); pending = [];
+}
+function boAt(t, kind, first){
+  if (kind === "bo-form") {
+    units.forEach(function(u){ var p = u.side === "S" ? seg(t, 5, 8) : seg(t, u.top ? .3 : 2, u.top ? 4 : 6);
+      var x0 = u.side === "S" ? 1000 : u.x0, y0 = u.side === "S" ? u.hy : u.y0;
+      u.x = u.hx + (x0 - u.hx) * (1 - p); u.y = u.hy + (y0 - u.hy) * (1 - p); u.a = 1; });
+    if (t > 8) bubble(820, 285, "We'll wait and see…");
+    return;
+  }
+  placeAll();
+  if (kind === "bo-clash") {
+    units.forEach(function(u){
+      if (u.grp === "oxf") u.y = u.hy - seg(t, .5, 4) * 150;
+      if (u.grp === "van") { u.y = u.hy + seg(t, .5, 4) * 30; if (u.kind === "mam" || u.hx % 3 === 0) u.a = 1 - seg(t, 5, 9) * .8; }
+    });
+    if (t > 4 && t < 7) bubble(470, 160, "Norfolk is killed");
+    if (t > 7.5) bubble(460, 40, "Northumberland doesn't move");
+  } else {
+    units.forEach(function(u){
+      if (u.grp === "oxf") u.y = u.hy - 150;
+      if (u.grp === "van") { u.y = u.hy + 30; if (u.kind === "mam" || u.hx % 3 === 0) u.a = .2; }
+    });
+  }
+  if (kind === "bo-charge") {
+    units.forEach(function(u){
+      if (u.grp === "knights" || u === boRichard) { var p = seg(t, 1, 7); u.x = u.hx + (240 - u.hx) * p + (u.hx - 470) * .25 * p; u.y = u.hy + (440 - u.hy) * p; }
+    });
+    if (t > 7.5) { boBrandon.a = 1 - seg(t, 7.5, 8.5); bubble(250, 440, "Henry's standard-bearer falls"); }
+  } else if (kind === "bo-stanley") {
+    boBrandon.a = 0;
+    units.forEach(function(u){
+      if (u.grp === "knights" || u === boRichard) { u.x = u.hx + (240 - u.hx) + (u.hx - 470) * .25; u.y = 440; u.x -= seg(t, 5, 8) * 40; u.y -= seg(t, 5, 8) * 120; }
+      if (u.grp === "stan") { var p = seg(t, .5, 5); u.x = u.hx + (330 - u.hx) * p + (u.hx - 820) * .3; u.y = u.hy + (370 - u.hy) * p; }
+      if (u.grp === "knights") u.a = 1 - seg(t, 6, 10) * .8;
+    });
+    if (t > 8) boRichard.a = 1 - seg(t, 8, 9);
+    if (t > 2 && t < 5.5) bubble(700, 290, "Sir William Stanley charges!");
+    if (t > 8.5) bubble(200, 290, "Richard is killed");
+  }
+}
+
+/* ---------- Episode 4: the Spanish Armada, 1588 ----------
+   Dates are the ones England used at the time (the Julian calendar);
+   Spain's calendar was already ten days ahead. */
+var AR_SCENES = [
+  { title:"1585-1588 - why Spain attacks", view:"map", dur:9,
+    text:"King Philip II of Spain is Catholic; Queen Elizabeth I of England is Protestant. England has been helping Protestant rebels in the Netherlands, which Spain rules, and English sailors like Francis Drake have been raiding Spanish treasure ships. In 1587 Elizabeth has the Catholic Mary, Queen of Scots, executed.",
+    q:"Which of these was one reason Philip II attacked England?",
+    opts:["England was helping Protestant rebels in the Spanish Netherlands","Elizabeth had invaded Spain","England had stolen Spain's navy","Philip wanted to become a Protestant"], a:0,
+    why:"Religion, money and the Netherlands all mattered. Elizabeth helping the Dutch rebels, Drake's raids and Mary's execution together pushed Philip to invade." },
+  { title:"1588 - the plan", view:"map", dur:10,
+    text:"The 'Invincible Armada' of about 130 ships, led by the Duke of Medina Sidonia, sails from Spain. The plan: sail up the English Channel, meet the Duke of Parma's army in the Spanish Netherlands, and carry it across to invade England.",
+    q:"What was the Armada's plan?",
+    opts:["Meet Parma's army in the Netherlands and carry it across to England","Sink the English fleet in Plymouth and go home","Sail around Scotland to attack from the north","Capture Calais from the French"], a:0,
+    why:"The ships were mainly there to carry and protect an invasion army. Everything depended on meeting Parma - which turned out to be the weak point." },
+  { title:"19 July - sighted off Cornwall", view:"map", dur:10,
+    text:"The Armada is spotted off the Lizard in Cornwall. A chain of beacon fires on hilltops carries the news across England in hours. The English fleet, led by Lord Howard of Effingham with Drake as second in command, sails out of Plymouth.",
+    q:"How did the news of the Armada spread so fast across England?",
+    opts:["A chain of beacon fires lit on hilltops","Messages sent by carrier pigeon","A newspaper printed in London","Church bells rung in every village"], a:0,
+    why:"Each beacon could be seen from the next one, so the warning travelled across the country far faster than a rider could.",
+    note:"The famous story that Drake insisted on finishing his game of bowls before sailing first appears long after 1588, and may not be true." },
+  { title:"Up the Channel - the crescent", view:"sea", dur:12, kind:"ar-crescent",
+    text:"The Armada sails up the Channel in a huge crescent, with its strongest warships on the outside protecting the slow supply ships in the middle. The English ships are faster and their guns fire further. They attack the edges for a week - but can't break the formation.",
+    q:"Why was the crescent formation so hard to attack?",
+    opts:["Strong warships on the outside protected the slower ships in the middle","It was too far out to sea","The English had no cannons","The ships were hidden by fog"], a:0,
+    why:"Any English ship that came close met the strongest Spanish warships. The slow, valuable ships stayed safe in the middle." },
+  { title:"28 July, midnight - fireships at Calais", view:"sea", dur:12, kind:"ar-fire",
+    text:"The Armada anchors off Calais to wait for Parma - but his army isn't ready. At midnight the English set eight old ships on fire and let the wind and tide carry them towards the Spanish fleet. In panic, the Spanish captains cut their anchor ropes and scatter in the dark.",
+    q:"Why were the fireships so effective?",
+    opts:["The Spanish cut their anchors to escape and the crescent broke apart","They sank most of the Armada","They blocked the harbour at Calais","They set fire to Parma's army"], a:0,
+    why:"Hardly any ships actually burned. What mattered was the panic: the tight formation was gone, and many ships had lost their anchors." },
+  { title:"29 July - the Battle of Gravelines", view:"sea", dur:12, kind:"ar-grav",
+    text:"At dawn, the scattered Spanish ships are off Gravelines. The English move in close and fire for hours. Several Spanish ships are lost. Then the wind blows the Armada north into the North Sea - away from Parma, with no way back.",
+    q:"After Gravelines, why couldn't the Armada go back to collect Parma's army?",
+    opts:["The wind blew it north, away from the Netherlands","Parma had already sailed to England","The English captured all its ships","Its sailors refused to fight"], a:0,
+    why:"Sailing ships needed the wind behind them. With it blowing north, the Armada could not get back - the invasion was over." },
+  { title:"August - September: the long way home", view:"map", dur:11,
+    text:"The only way back to Spain is all the way round the north of Scotland and down past Ireland. Short of food and water, battered and without many anchors, the ships run into terrible autumn storms. Many are wrecked on the Scottish and Irish coasts.",
+    q:"What sank most of the Spanish ships that were lost?",
+    opts:["Storms and wrecks on the way home","English guns at Gravelines","Fireships at Calais","The Scottish navy"], a:0,
+    why:"Far more ships were lost to storms and rocks on the long way home than in the fighting.",
+    note:"Nobody is sure exactly how many ships were lost. Around a third of the Armada never got back to Spain, and thousands of men died." },
+  { title:"9 August - Tilbury", view:"crown", dur:8, crown:["9 August 1588", "Elizabeth at Tilbury"],
+    text:"With an invasion still feared, Elizabeth visits her army at Tilbury and makes a famous speech: \"I know I have the body of a weak and feeble woman; but I have the heart and stomach of a king, and of a king of England too.\" After the victory, medals and paintings celebrate it.",
+    q:"How did Elizabeth use the defeat of the Armada?",
+    opts:["To make herself look strong and blessed by God, with speeches, medals and paintings","To make peace with Spain straight away","To become a Catholic","To give the navy to Philip II"], a:0,
+    why:"The victory became great propaganda. The 'Armada Portrait' shows Elizabeth with her hand on a globe, and a medal said God had blown the Spanish away." }
+];
+function arMap(t, i){
+  var k = mapKit({ lat0:48.6, lat1:59.6, lon0:-11.2, lon1:4.2 });
+  k.sea(56.6, 1.2, "North Sea"); k.sea(49.5, -4.6, "The Channel"); k.sea(53.2, -14, "");
+  k.town(51.51, -0.13, "London");
+  if (i === 0) {
+    k.crown(49.7, -9.6, "Philip II (Spain)", "#b45309", seg(t, .5, 2));
+    k.crown(53.4, -1.6, "Elizabeth I (England)", "#b91c1c", seg(t, 2.5, 4));
+    k.crown(53.1, 3.6, "Dutch rebels", "#ea580c", seg(t, 4.5, 6));
+    if (t > 6) k.note(48.75, 0.8, "Spain is off the map, to the south", seg(t, 6, 6.8));
+  } else if (i === 1) {
+    k.town(51.03, 2.37, "Parma's army", "#b45309");
+    k.route([[48.6,-8.0],[49.6,-5.6],[50.1,-2.5],[50.6,0.5],[51.0,1.9]], seg(t, .5, 6), "#b45309");
+    k.route([[51.03,2.37],[51.25,1.45]], seg(t, 6.5, 8.5), "#b45309", true);
+    if (t > 7) k.note(51.9, 1.2, "Then: invade England", seg(t, 7, 7.8));
+  } else if (i === 2) {
+    k.town(49.96, -5.20, "The Lizard", "#b45309", true); k.town(50.37, -4.14, "Plymouth");
+    var chain = [[50.15,-5.0],[50.5,-4.1],[50.7,-3.1],[50.95,-2.1],[51.15,-1.1],[51.45,-0.4],[51.95,-0.6],[52.5,-1.2],[53.2,-1.5],[54.0,-1.5],[54.9,-1.7]];
+    chain.forEach(function(c, j){ k.fire(c[0], c[1], seg(t, 1 + j * .55, 1.3 + j * .55)); });
+    if (t > 7) k.note(55.6, -2.2, "Beacons carry the warning north", seg(t, 7, 7.8));
+  } else {
+    k.route([[51.0,2.1],[53.5,2.6],[56.5,1.2],[58.9,-1.0],[59.3,-3.5],[59.0,-7.0],[57.6,-9.6],[55.4,-10.7],[53.2,-11.0],[51.3,-10.9],[48.6,-10.0]], seg(t, .5, 8), "#b45309", true);
+    [[55.2,-8.3],[54.3,-10.1],[53.4,-10.2],[52.5,-9.95],[57.6,-6.2],[51.6,-9.9]].forEach(function(c, j){ k.cross(c[0], c[1], seg(t, 4 + j * .6, 4.4 + j * .6)); });
+    if (t > 5) k.note(56.5, -12.0, "Storms wreck ships on the coasts", seg(t, 5, 5.8));
+  }
+}
+/* The sea, from above. The Armada sails left to right (east, up the Channel). */
+function arMake(){
+  units = []; arrows = [];
+  for (var j = -6; j <= 6; j++) {
+    var th = j / 6 * 1.15;
+    units.push({ side:"SP", kind:"ship", big: Math.abs(j) > 2, hx: 640 - 300 * (1 - Math.cos(th)), hy: 270 + 210 * Math.sin(th), a:1 });
+  }
+  [[600,260],[570,290],[585,240]].forEach(function(p){ units.push({ side:"SP", kind:"ship", big:false, store:true, hx:p[0], hy:p[1], a:1 }); });
+  for (var e = 0; e < 7; e++) units.push({ side:"EN", kind:"ship", big:false, hx: 90 + (e % 2) * 40, hy: 110 + e * 50, a:1 });
+  units.forEach(function(u){ u.x = u.hx; u.y = u.hy; u.r = 0; });
+}
+function ship(u, night){
+  if (u.a <= .02) return;
+  g.save(); g.globalAlpha = u.a; g.translate(u.x, u.y); g.rotate(u.r || 0);
+  var s = u.big ? 1.35 : 1;
+  g.fillStyle = "#5b3a1e"; g.beginPath(); g.ellipse(0, 0, 16 * s, 6 * s, 0, 0, 7); g.fill();
+  g.fillStyle = u.side === "SP" ? "#fde68a" : "#f8fafc";
+  g.fillRect(-3 * s, -14 * s, 7 * s, 12 * s);
+  if (u.side === "SP") { g.strokeStyle = "#b91c1c"; g.lineWidth = 2; g.beginPath(); g.moveTo(.5 * s, -12 * s); g.lineTo(.5 * s, -4 * s); g.moveTo(-2 * s, -8 * s); g.lineTo(3 * s, -8 * s); g.stroke(); }
+  else { g.fillStyle = "#dc2626"; g.fillRect(-.5 * s, -14 * s, 2 * s, 12 * s); g.fillRect(-3 * s, -9 * s, 7 * s, 2 * s); }
+  if (u.burn) { g.fillStyle = "#f97316"; g.beginPath(); g.arc(0, -10, 10 + Math.sin(u.burn * 9) * 2, 0, 7); g.fill(); g.fillStyle = "#facc15"; g.beginPath(); g.arc(0, -12, 5, 0, 7); g.fill(); }
+  g.restore();
+}
+function arDraw(t, kind){
+  var night = kind === "ar-fire";
+  var sea = g.createLinearGradient(0, 0, 0, H);
+  if (night) { sea.addColorStop(0, "#0b1530"); sea.addColorStop(1, "#13284d"); } else { sea.addColorStop(0, "#3d7cab"); sea.addColorStop(1, "#5a9bc7"); }
+  g.fillStyle = sea; g.fillRect(0, 0, W, H);
+  g.strokeStyle = night ? "rgba(255,255,255,.05)" : "rgba(255,255,255,.18)"; g.lineWidth = 2;
+  for (var w = 0; w < 14; w++) { var y = 30 + w * 38, off = (t * 12 + w * 37) % 80; g.beginPath(); for (var x = -80 + off; x < W; x += 80) { g.moveTo(x, y); g.quadraticCurveTo(x + 20, y - 6, x + 40, y); } g.stroke(); }
+  if (kind !== "ar-crescent") {   /* the French coast and Calais along the bottom right */
+    g.fillStyle = night ? "#334127" : "#a8c686"; g.beginPath(); g.moveTo(500, H); g.quadraticCurveTo(720, 470, W, 430); g.lineTo(W, H); g.closePath(); g.fill();
+    label(kind === "ar-fire" ? 840 : 780, 505, kind === "ar-fire" ? "Calais" : "Gravelines");
+  }
+  label(20, 30, "English"); label(780, 30, "Spanish Armada");
+  units.forEach(function(u){ ship(u, night); });
+  smoke.forEach(function(s){ var p = (t - s.t0) / 2.5; if (p < 0 || p > 1) return; g.fillStyle = "rgba(230,230,230," + (.7 * (1 - p)) + ")"; g.beginPath(); g.arc(s.x, s.y - p * 12, 6 + p * 16, 0, 7); g.fill(); });
+  if (kind === "ar-grav" && t > 7) {   /* the wind */
+    g.strokeStyle = "rgba(255,255,255,.85)"; g.lineWidth = 5; var p = seg(t, 7, 9);
+    g.beginPath(); g.moveTo(480, 470); g.lineTo(480, 470 - 340 * p); g.stroke();
+    g.beginPath(); g.moveTo(462, 470 - 340 * p + 20); g.lineTo(480, 470 - 340 * p); g.lineTo(498, 470 - 340 * p + 20); g.stroke();
+  }
+  pending.forEach(function(b){ drawBubble(b[0], b[1], b[2]); }); pending = [];
+}
+var smoke = [];
+function puff(t0, x, y){ smoke.push({ t0: t0, x: x, y: y }); }
+function arAt(t, kind, first){
+  units.forEach(function(u){ u.x = u.hx; u.y = u.hy; u.a = 1; u.r = 0; u.burn = 0; });
+  if (kind === "ar-crescent") {
+    if (first) { smoke = []; for (var i = 0; i < 16; i++) puff(2 + i * .55, 170 + Math.random() * 140, 120 + (i % 2) * 300 + Math.random() * 40); }
+    var drift = t * 10;
+    units.forEach(function(u, n){
+      if (u.side === "SP") u.x = u.hx + drift;
+      else { var dart = Math.sin(t * 1.3 + n) * .5 + .5; u.x = u.hx + 70 + dart * 80 + drift * .8; u.y = u.hy + (u.hy < 270 ? -10 : 10); }
+    });
+    if (t > 3 && t < 7) bubble(330, 255, "Faster ships, longer-range guns");
+    if (t > 8) bubble(640, 250, "…but the crescent holds");
+    return;
+  }
+  if (kind === "ar-fire") {
+    var tight = units.filter(function(u){ return u.side === "SP"; });
+    tight.forEach(function(u, n){ u.x = 700 + (n % 4) * 40; u.y = 180 + Math.floor(n / 4) * 55; });
+    units.filter(function(u){ return u.side === "EN"; }).forEach(function(u, n){
+      var p = seg(t, 1, 7); u.x = 60 + p * 560 + (n % 2) * 20; u.y = 150 + n * 42 + Math.sin(n) * 10; u.burn = t > 1 ? t : 0;
+    });
+    tight.forEach(function(u, n){
+      var go = seg(t, 6.5, 11), ang = (n * 2.39) % 6.28;
+      u.x += Math.cos(ang) * 150 * go + go * 60; u.y += Math.sin(ang) * 120 * go; u.r = Math.sin(t * 2 + n) * .2 * go;
+    });
+    if (t > 6.5 && t < 10) bubble(760, 140, "Cut the anchors!");
+    return;
+  }
+  if (kind === "ar-grav") {
+    if (first) { smoke = []; for (var j = 0; j < 22; j++) puff(1.5 + j * .25, 380 + Math.random() * 300, 140 + Math.random() * 230); }
+    units.filter(function(u){ return u.side === "SP"; }).forEach(function(u, n){
+      var ang = (n * 2.39) % 6.28;
+      u.x = 640 + Math.cos(ang) * 150 + 60; u.y = 250 + Math.sin(ang) * 120;
+      if (n % 5 === 2) u.a = 1 - seg(t, 4, 6.5);
+      u.y -= seg(t, 7.5, 11.5) * 330; u.x += seg(t, 7.5, 11.5) * 60;
+    });
+    units.filter(function(u){ return u.side === "EN"; }).forEach(function(u, n){ var p = seg(t, .3, 3); u.x = 120 + p * 330; u.y = 140 + n * 40; u.y -= seg(t, 8, 11.5) * 60; });
+    if (t > 8.5) bubble(480, 120, "The wind blows them north");
+  }
+}
+
+/* ---------- the list of episodes ---------- */
+var EPISODES = [
+  { id:"hastings", kicker:"Episode 1 · Year 7", title:"Hastings, 1066", skill:"Hastings 1066", mins:10, scenes:SCENES },
+  { id:"agincourt", kicker:"Episode 2 · Year 7", title:"Agincourt, 1415", skill:"Agincourt 1415", mins:9, scenes:AG_SCENES,
+    map:agMap, make:agMake, at:agAt, draw:agDraw, firstField:"ag-stakes",
+    whyQ:"So why did the English win at Agincourt? Which reason do you think mattered most?",
+    why:[["Weather and ground", "Rain turned the ploughed field to deep mud, and the woods squeezed the French into a narrow gap."],
+         ["Henry's tactics", "Thousands of longbowmen, stakes against cavalry, and a position where the bigger army couldn't get round him."],
+         ["French mistakes", "Too many men crammed in, no clear single commander, and attacking on foot in heavy armour through mud."]] },
+  { id:"bosworth", kicker:"Episode 3 · Year 7", title:"Bosworth, 1485", skill:"Bosworth 1485", mins:8, scenes:BO_SCENES,
+    map:boMap, make:boMake, at:boAt, draw:boDraw, firstField:"bo-form",
+    whyQ:"So why did Henry Tudor win, with the smaller army? Which reason do you think mattered most?",
+    why:[["Betrayal", "Sir William Stanley joined Henry at the decisive moment, and Northumberland never fought for Richard."],
+         ["Richard's gamble", "His charge at Henry nearly won the battle - but it left him exposed when the Stanleys moved."],
+         ["Henry's helpers", "French soldiers, Welsh supporters and the skilled Earl of Oxford leading his army in the fight."]],
+    extra:"In 2012, Richard III's skeleton was found buried under a car park in Leicester. It showed the wounds he received at Bosworth." },
+  { id:"armada", kicker:"Episode 4 · Year 7/8", title:"The Spanish Armada, 1588", skill:"Spanish Armada 1588", mins:8, scenes:AR_SCENES,
+    map:arMap, make:arMake, at:arAt, draw:arDraw, firstField:"ar-crescent", sea:true,
+    whyQ:"So why did the Armada fail? Historians usually weigh up these three. Which mattered most?",
+    why:[["Spanish problems", "The plan depended on meeting Parma's army, which wasn't ready - and the ships had nowhere safe to wait."],
+         ["English ships and tactics", "Faster ships, longer-range guns, and the fireships that broke up the crescent."],
+         ["The weather", "The wind blew the Armada north after Gravelines, and storms wrecked it on the way home."]] }
+];
+var EP = EPISODES[0];
+function bestKey(id){ return "hl.hist.best." + (id || EP.id); }
 
 /* ---------------- playing a scene ---------------- */
 var lastKind = null;
 function frame(now){
   var sc = SCENES[idx], t = (now - sceneStart) / 1000;
   if (calm) t = sc.dur;                                    // reduced motion: show where the scene ends up
-  if (sc.view === "map") drawMap(t, idx);
+  if (sc.view === "map") (EP.map || drawMap)(t, idx);
   else if (sc.view === "crown") drawCrown(t);
-  else { var first = lastKind !== sc.kind; lastKind = sc.kind; fieldAt(t, sc.kind, first); drawField(t, sc.kind); }
+  else { var first = lastKind !== sc.kind; lastKind = sc.kind;
+         if (EP.at) { EP.at(t, sc.kind, first); EP.draw(t, sc.kind); } else { fieldAt(t, sc.kind, first); drawField(t, sc.kind); } }
   if (t < sc.dur && playing && !calm) raf = requestAnimationFrame(frame);
   else { playing = false; showQuestion(); }
 }
 function playScene(i){
   idx = i; cancelAnimationFrame(raf); lastKind = null;
   var sc = SCENES[i];
-  if (sc.view === "field") {
+  if ((sc.view === "field" || sc.view === "sea") && EP.make) {
+    if (!units.length || sc.kind === EP.firstField) { EP.make(); if (!EP.sea) startOffscreen(); }
+    units.forEach(function(u){ u.dead = false; });
+  } else if (sc.view === "field") {
     if (!units.length || sc.kind === "form") makeArmies();
     units.forEach(function(u){ u.x0 = u.x; u.y0 = u.y; });
     // scenes after the chase start with the chasers gone
@@ -515,11 +1148,24 @@ var SAY_AS = [
   [/\bEaldred\b/g,       "Al-dred"],
   [/\bWitan\b/g,         "Wittan"],
   [/\bthegns?\b/gi,      "thanes"],
+  [/\bAgincourt\b/g,     "Adjin-court"],
+  [/\bHarfleur\b/g,      "Har-flur"],
+  [/\bTramecourt\b/g,    "Tram-coor"],
+  [/\bTroyes\b/g,        "Trwah"],
+  [/\bValois\b/g,        "Val-wah"],
+  [/\bMedina Sidonia\b/g, "Meh-deena Sid-onia"],
+  [/\bGravelines\b/g,    "Grav-leen"],
+  [/\bArmada\b/g,        "Ar-mah-da"],
+  [/\bAmbion\b/g,        "Am-bee-on"],
   /* Dates and numbers the voice otherwise reads as digits. */
   [/\b1066\b/g,          "ten sixty-six"],
   [/\b1415\b/g,          "fourteen fifteen"],
   [/\b1485\b/g,          "fourteen eighty-five"],
-  [/\b1588\b/g,          "fifteen eighty-eight"]
+  [/\b1588\b/g,          "fifteen eighty-eight"],
+  [/\b1420\b/g,          "fourteen twenty"],
+  [/\b1483\b/g,          "fourteen eighty-three"],
+  [/\b1587\b/g,          "fifteen eighty-seven"],
+  [/\b1585\b/g,          "fifteen eighty-five"]
 ];
 function forSpeaking(text){
   var out = text;
@@ -558,23 +1204,25 @@ function say(text){
 var capT, capX, capC, qbox, prog;
 function episodePage(){
   main.textContent = "";
-  var best = read("hl.hist.best.hastings", null);
   var intro = h("div", "card");
   intro.appendChild(h("div", "kicker", "Battle Stories"));
   intro.appendChild(h("h1", null, "Watch it happen. Then explain it."));
   intro.appendChild(h("p", null, "Each episode re-enacts a real battle in short animated scenes. After each scene there's a question - not just what happened, but why."));
   var eps = h("div", "episodes");
-  var e1 = h("button", "ep"); e1.appendChild(h("div", "kicker", "Episode 1 · Year 7")); e1.appendChild(h("b", null, "Hastings, 1066"));
-  e1.appendChild(h("small", null, "10 scenes · about 10 minutes" + (best != null ? " · best " + best + "/10" : "")));
-  e1.onclick = start; eps.appendChild(e1);
-  [["Episode 2", "Agincourt, 1415"], ["Episode 3", "The Spanish Armada, 1588"], ["Episode 4", "Bosworth, 1485"]].forEach(function(x){
-    var e = h("button", "ep soon"); e.disabled = true; e.appendChild(h("div", "kicker", x[0])); e.appendChild(h("b", null, x[1])); e.appendChild(h("small", null, "Coming soon")); eps.appendChild(e);
+  EPISODES.forEach(function(ep){
+    var best = read(bestKey(ep.id), null), n = ep.scenes.length;
+    var e = h("button", "ep"); e.appendChild(h("div", "kicker", ep.kicker)); e.appendChild(h("b", null, ep.title));
+    e.appendChild(h("small", null, n + " scenes · about " + ep.mins + " minutes" + (best != null ? " · best " + best + "/" + n : "")));
+    e.onclick = function(){ start(ep); }; eps.appendChild(e);
   });
   intro.appendChild(eps); main.appendChild(intro);
-  document.getElementById("best").textContent = best != null ? "Best: " + best + "/10" : "";
+  document.getElementById("best").textContent = "";
 }
-function start(){
-  main.textContent = ""; done = []; units = [];
+function start(ep){
+  if (ep && ep.id) EP = ep;
+  SCENES = EP.scenes;
+  main.textContent = ""; done = []; units = []; arrows = []; smoke = [];
+  var b0 = read(bestKey(), null); document.getElementById("best").textContent = b0 != null ? "Best: " + b0 + "/" + SCENES.length : "";
   var stage = h("div", "stage"); var c = h("canvas"); stage.appendChild(c);
   var cap = h("div", "caption"); capT = h("b"); capX = h("div"); capC = h("div", "clips"); cap.appendChild(capT); cap.appendChild(capX); cap.appendChild(capC); stage.appendChild(cap);
   main.appendChild(stage); setupCanvas(c);
@@ -606,7 +1254,7 @@ function showQuestion(){
     var b = h("button", "opt", sc.opts[oi]); bs.push([b, oi]);
     b.onclick = function(){
       var ok = oi === sc.a; done[idx] = ok;
-      if (window.HEHLearn) HEHLearn.record({ subject:"history", skill:"Hastings 1066", ok:ok, front:sc.q, back:sc.opts[sc.a], note:sc.why, game:"history", data:{ k:"mc", opts:sc.opts } });
+      if (window.HEHLearn) HEHLearn.record({ subject:"history", skill:EP.skill, ok:ok, front:sc.q, back:sc.opts[sc.a], note:sc.why, game:"history", data:{ k:"mc", opts:sc.opts } });
       bs.forEach(function(x){ x[0].disabled = true; if (x[1] === sc.a) x[0].classList.add("right"); else if (x[0] === b) x[0].classList.add("wrong"); });
       var fb = h("div", "fb"); fb.appendChild(h("b", null, ok ? "Yes! " : "Not quite. ")); fb.appendChild(document.createTextNode(sc.why));
       if (sc.note) fb.appendChild(h("div", "note", "Historians disagree: " + sc.note));
@@ -641,20 +1289,21 @@ function watch(id, title){
 
 function finish(){
   try { speechSynthesis.cancel(); } catch (e) {}
-  var score = done.filter(Boolean).length, best = read("hl.hist.best.hastings", 0);
-  if (score > best) { store("hl.hist.best.hastings", score); saveBest(); }
+  var score = done.filter(Boolean).length, best = read(bestKey(), 0);
+  if (score > best) { store(bestKey(), score); saveBest(); }
   main.textContent = "";
   var c = h("div", "card");
-  c.appendChild(h("div", "kicker", "Hastings, 1066 · finished"));
+  c.appendChild(h("div", "kicker", EP.title + " · finished"));
   c.appendChild(h("h1", null, score + " out of " + SCENES.length + (score === SCENES.length ? " - perfect!" : "")));
-  c.appendChild(h("p", null, "So why did William win? Historians usually sort the reasons into three groups. Which do you think mattered most?"));
+  c.appendChild(h("p", null, EP.whyQ || "So why did William win? Historians usually sort the reasons into three groups. Which do you think mattered most?"));
   var why = h("div", "why");
-  [["Luck", "Hardrada invaded first, so Harold had to fight two battles in three weeks. The wind changed at just the right time for William."],
+  (EP.why || [["Luck", "Hardrada invaded first, so Harold had to fight two battles in three weeks. The wind changed at just the right time for William."],
    ["William's skill", "He brought archers, foot soldiers and knights and used them together, kept his army calm when it panicked, and (perhaps) used feigned retreats."],
-   ["Harold's mistakes", "He rushed south instead of waiting for more men, and parts of his army left the shield wall."]].forEach(function(x){
+   ["Harold's mistakes", "He rushed south instead of waiting for more men, and parts of his army left the shield wall."]]).forEach(function(x){
     var d = h("div"); d.appendChild(h("b", null, x[0])); d.appendChild(h("p", null, x[1])); why.appendChild(d);
   });
   c.appendChild(why);
+  if (EP.extra) c.appendChild(h("p", null, EP.extra));
   c.appendChild(h("p", "note", "That's exactly the kind of 'which reason mattered most?' question you'll get in history essays."));
   var again = h("button", "btn", "Watch again"); again.onclick = start;
   var back = h("button", "ghost", "All episodes"); back.style.marginLeft = "8px"; back.onclick = episodePage;
