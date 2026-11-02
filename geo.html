@@ -135,6 +135,29 @@ function capitalQ(list){
 }
 var ORDER = ["uk","europe","world","continents","compass"];
 
+/* Extra questions written by Claude at the end of each month and kept
+   only when a second AI, not shown the answer, got the same one. When
+   there are some for a topic, about four in ten questions come from them;
+   the rest are still the hand-checked facts above. */
+var BANK = {};
+function loadBank(){
+  if (!sb) return Promise.resolve();
+  return HEHLearn.signedIn().then(function(yes){
+    if (!yes) return;
+    return sb.from("geo_bank").select("topic,item").order("made_at", { ascending:false }).limit(1500).then(function(r){
+      (r.data || []).forEach(function(row){
+        var it = row.item || {};
+        if (!it.q || !it.a || !it.opts || it.opts.length !== 4 || it.opts.indexOf(it.a) < 0) return;
+        (BANK[row.topic] = BANK[row.topic] || []).push({ q:it.q, a:it.a, opts:it.opts.slice(), why:it.why || "" });
+      });
+    });
+  }).catch(function(){});
+}
+ORDER.forEach(function(k){
+  var own = TOPICS[k].make;
+  TOPICS[k].make = function(){ var b = BANK[k]; return b && b.length && Math.random() < 0.4 ? pick(b) : own(); };
+});
+
 /* ---------------- progress ---------------- */
 var known = {};      // topic -> mastery now, from the shared model
 var best = {};       // topic -> best score out of 10
@@ -271,7 +294,7 @@ function round(topic){
 }
 
 main.appendChild(h("p", "muted", "Loading…"));
-loadProgress().then(home);
+Promise.all([loadProgress(), loadBank()]).then(home);
 })();
 </script>
 </body>
