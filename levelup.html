@@ -311,20 +311,7 @@ function drawHome(){
   var lc = h("div", "card learn");
   lc.appendChild(h("h2", null, "What it's learnt about you"));
   var ul = h("ul"); (S.insights || []).forEach(function(x){ ul.appendChild(h("li", null, x)); }); lc.appendChild(ul);
-  lc.appendChild(h("h2", null, "Subjects")).style.marginTop = "16px";
-  var sj = h("div", "subjects");
-  ["maths", "english", "science"].forEach(function(k){
-    var b = h("button", "subj", SUBJ_ICON[k] + " " + k[0].toUpperCase() + k.slice(1)); b.type = "button";
-    b.setAttribute("aria-pressed", S.subjects.indexOf(k) >= 0 ? "true" : "false");
-    b.onclick = function(){
-      var on = S.subjects.slice(), i = on.indexOf(k);
-      if (i >= 0) on.splice(i, 1); else on.push(k);
-      if (!on.length) return toast("Keep at least one subject.");
-      api({ action:"subjects", subjects:on }).then(function(s){ S = s; drawHome(); toast("Today's tasks changed to match."); }).catch(function(e){ toast(e.message); });
-    };
-    sj.appendChild(b);
-  });
-  lc.appendChild(sj);
+  lc.appendChild(h("p", "muted", "Questions are a random mix of maths, English and science.")).style.marginTop = "14px";
   lc.appendChild(h("p", "who-ai", "Questions written by " + S.ai.writer + ", checked by " + S.ai.checker + ". Spotted a wrong one? Report it."));
   right.appendChild(lc);
   if (S.tester) {
