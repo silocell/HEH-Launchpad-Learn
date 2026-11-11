@@ -198,6 +198,7 @@ canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:40}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js"></script>
 <script src="https://civilinitiatives.org/auth-store.js?b=20261026a"></script>
 <script src="learn.js?b=20261029a"></script>
+<script src="levelup-demo.js?b=20261111a"></script>
 <script>
 (function(){
 "use strict";
@@ -236,6 +237,7 @@ function h(tag, cls, text){ var e = document.createElement(tag); if (cls) e.clas
 function toast(msg){ var t = h("div", "toast", msg); document.body.appendChild(t); setTimeout(function(){ t.remove(); }, 2600); }
 
 function api(body){
+  if (window.LUDemo && LUDemo.on) return LUDemo.api(body);   // the demo answers for the server
   return sb.functions.invoke("levelup", { body: body }).then(function(r){
     if (r.error) {
       var ctx = r.error.context;
@@ -507,7 +509,7 @@ function drawQ(task, q, dots){
     btns.forEach(function(b){ b.disabled = true; });
     api({ action:"answer", id:q.id, pick:chosen, ms:Math.round(performance.now() - started) }).then(function(r){
       if (offKeys) offKeys();
-      if (window.HEHLearn) HEHLearn.record({ subject:q.subject, skill:q.topic, ok:!!r.right, front:q.q, back:r.answer, note:r.explain, game:"levelup", data:{ k:"mc", opts:q.options } });
+      if (window.HEHLearn && !(window.LUDemo && LUDemo.on)) HEHLearn.record({ subject:q.subject, skill:q.topic, ok:!!r.right, front:q.q, back:r.answer, note:r.explain, game:"levelup", data:{ k:"mc", opts:q.options } });
       S = Object.assign(S || {}, r); setTop(); bump("ptsChip");
       btns.forEach(function(b){
         var t = b.lastChild.textContent;
@@ -674,7 +676,9 @@ function showErr(e){
 /* Level Up runs on the real site too now: the levelup function and its
    tables are installed on the live server, so there is nothing to hold
    back. The lab still gets new features first. */
-if (!sb) {
+if (window.LUDemo && LUDemo.on) {
+  home();
+} else if (!sb) {
   showErr(new Error("Couldn't load. Check your connection."));
 } else {
   sb.auth.getSession().then(function(r){
