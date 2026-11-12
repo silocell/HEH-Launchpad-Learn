@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="https://civilinitiatives.org/site.js?b=20261111b"></script>
+<script src="https://civilinitiatives.org/site.js?b=20261112a"></script>
 <title>Learning Games</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <script>
@@ -19,6 +19,8 @@ body{background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-syste
 .top{background:var(--bar);color:#fff;display:flex;align-items:center;gap:12px;padding:12px 18px}
 .top b{font-size:1.15rem} .top .sp{flex:1} .top a{color:#c7cbe0;font-size:.85rem;text-decoration:none}
 .top a:hover{color:#fff}
+.top b,.top a{white-space:nowrap}
+@media (max-width:480px){ .top{padding:12px 14px} .top .long{display:none} }
 main{max-width:1000px;margin:0 auto;padding:22px 16px 60px}
 h1{margin:0 0 4px} .muted{color:var(--soft)}
 .note{margin-top:16px;background:var(--card);border:1px solid var(--rule);border-left:4px solid #6366f1;border-radius:10px;padding:12px 14px;font-size:.9rem;color:var(--soft)}
@@ -40,7 +42,7 @@ footer a{color:inherit}
 <link rel="stylesheet" href="https://civilinitiatives.org/glass.css?b=20261102a">
 </head>
 <body>
-<div class="top"><b>🚀 Learning Games</b><div class="sp"></div><a href="https://civilinitiatives.org/games.html">← back to the Launchpad</a></div>
+<div class="top"><b>🚀 Learning Games</b><div class="sp"></div><a href="https://civilinitiatives.org/games.html">← <span class="long">back to the </span>Launchpad</a></div>
 <main>
   <h1>Learning Games</h1>
   <p class="muted">Sign in to the Launchpad first. Your progress follows you to any device.</p>
