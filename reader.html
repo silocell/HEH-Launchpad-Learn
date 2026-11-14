@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script src="https://civilinitiatives.org/site.js?b=20261114p"></script>
+<title>XP Reader</title>
+<meta name="description" content="Read original stories and articles a section at a time, answer questions, and earn reading XP.">
+<link rel="icon" type="image/png" href="/favicon.png">
+<script>
+try{ var m = document.cookie.match(/(?:^|; )hl_theme=(dark|light|system)/), t = m ? m[1] : JSON.parse(localStorage.getItem("hl.theme"));
+     if(t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t); }catch(e){}
+if (/^lab\./i.test(location.hostname) || /^\/HEH-(Homework|Launchpad)-Lab(\/|$)/i.test(location.pathname)) document.documentElement.classList.add("lab");
+</script>
+<link rel="stylesheet" href="kit.css?b=20261114a">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js"></script>
+<script src="https://civilinitiatives.org/auth-store.js?b=20261026a"></script>
+<script src="learn.js?b=20261114a"></script>
+<script src="https://civilinitiatives.org/games-gate.js?b=20261027h" data-kind="learning"></script>
+<script src="kit.js?b=20261114a"></script>
+<link rel="stylesheet" href="https://civilinitiatives.org/glass.css?b=20261114a">
+</head>
+<body>
+<div class="labbar">Lab</div>
+<header class="k-top"><span class="k-brand">📚 XP Reader</span><span class="k-sp"></span><span class="k-xp" id="kXp">⚡ 0 XP</span><a href="./" aria-label="Back to the learning games">✕</a></header>
+<main class="k" id="main"></main>
+<footer class="k">© 2026 HWL Systems · Developed by Shiv Kumar · Free to use, no adverts</footer>
+<script>
+/* XP Reader - read a story or an article a section at a time, then
+   answer questions to show you really read it. Every text here is
+   original, written for the Launchpad. Reading earns XP: the more you
+   read (and the more you get right), the more you earn.
+   GPL-3.0. */
+(function(){
+"use strict";
+/* Each book: sections of paragraphs, and after each section, questions:
+   [question, right answer, wrong, wrong, wrong, why] */
+var BOOKS = [
+{ id:"lighthouse", title:"The Last Keeper", kind:"Story", level:"Year 7", icon:"🗼", sections:[
+  { p:[
+    "The lighthouse on Gull Rock had not had a keeper for thirty years, which was why Mira was surprised to see a light in its window.",
+    "She stood at the end of the harbour wall with her hood pulled tight. The storm had arrived early, the way storms on that coast always did, and the sea was the colour of old pewter. Every few seconds a wave hit the wall and threw spray over her boots. Her gran had told her to be home before dark. It was nearly dark now.",
+    "The light flickered, went out, and came back - three short flashes, then three long, then three short again. Mira did not know much about the sea, but she knew that pattern. Everyone did. It was the signal for help."
+  ], q:[
+    ["Why was Mira surprised to see a light?","Nobody had kept the lighthouse for thirty years","The lighthouse had been knocked down","It was the middle of the day","Her gran had switched it off","The first sentence tells us it 'had not had a keeper for thirty years'."],
+    ["What does 'the colour of old pewter' suggest about the sea?","It was a dull, dark grey","It was bright blue and calm","It was green and full of weed","It was shining gold in the sunset","Pewter is a grey metal; 'old' pewter is dull. It creates a gloomy, stormy mood."],
+    ["What did the pattern of flashes mean?","Someone needed help","The lighthouse was working again","A ship was arriving safely","The storm was ending","Three short, three long, three short is the SOS distress signal - 'the signal for help'."]
+  ]},
+  { p:[
+    "The harbourmaster's hut was locked, and the coastguard number went straight to a recorded voice. Mira ran the length of the wall twice before she found old Mr Penhale mending nets under the fish-market roof.",
+    "'Gull Rock?' He put the net down slowly. 'Can't be. Nobody can get out there. Causeway's under water two hours either side of high tide.' He squinted at the sky. 'And high tide's in forty minutes.'",
+    "'Then someone got out there earlier,' Mira said, 'and now they can't get back.'",
+    "Mr Penhale looked at her for a long moment. Then he reached for the oilskin coat hanging on the wall. 'My boat's small,' he said, 'but she's never let me down.'"
+  ], q:[
+    ["Why was it hard to reach Gull Rock?","The causeway is under water around high tide","There was no boat in the harbour","The rock was too far out to see","The coastguard had closed it","Mr Penhale says the causeway is 'under water two hours either side of high tide'."],
+    ["What does Mira work out about the person in the lighthouse?","They walked across earlier and got trapped by the tide","They were the old keeper","They were playing a joke","They had arrived by helicopter","She says 'someone got out there earlier, and now they can't get back'."],
+    ["What does Mr Penhale's choice to fetch his coat show about him?","He has decided to help, even though it's risky","He is going home because it's cold","He doesn't believe Mira","He is scared of the storm","Reaching for his oilskin coat and mentioning his boat shows he will go - despite saying it 'can't be'."]
+  ]},
+  { p:[
+    "The crossing took eleven minutes and felt like an hour. When they reached the rock, the lighthouse door was jammed open and a boy of about Mira's age was sitting on the bottom step, soaked and shaking, holding a torch.",
+    "'I was looking for my dog,' he said, through chattering teeth. 'She chased a gull across the causeway. By the time I found her, the water had come in.' A wet, shivering terrier poked its head out from inside his coat.",
+    "'How did you know the signal?' Mira asked.",
+    "The boy managed a small smile. 'My grandad was the last keeper here,' he said. 'He taught me. I never thought I'd need it.'"
+  ], q:[
+    ["Why had the boy gone to Gull Rock?","To find his dog","To fix the light","To meet Mira","To go fishing","He says, 'I was looking for my dog'."],
+    ["'Felt like an hour' is an example of…","Exaggeration (hyperbole), to show how tense the crossing was","A simile comparing the boat to a clock","A fact about the length of the journey","Alliteration","It really took eleven minutes; saying it felt like an hour shows how frightening and slow it seemed."],
+    ["How does the ending link back to the start of the story?","The boy's grandad was the lighthouse's last keeper","Mira becomes the new keeper","The storm was the same one as thirty years ago","Mr Penhale used to live in the lighthouse","The story opens with the lighthouse having no keeper for thirty years, and ends by revealing who that keeper was."]
+  ]}
+]},
+{ id:"octopus", title:"Eight Arms, Nine Brains", kind:"Article", level:"Year 7", icon:"🐙", sections:[
+  { p:[
+    "If you wanted to design a creature from another planet, you could do worse than copy the octopus. It has three hearts, blue blood, and no bones at all - an adult giant Pacific octopus can squeeze its whole body through a gap the size of a coin, because the only hard part of it is its beak.",
+    "Its blood is blue because it uses a copper-based chemical, called haemocyanin, to carry oxygen. Our blood uses iron, which makes it red. Haemocyanin works well in cold water with little oxygen in it, which suits a creature that often lives in the cold, deep ocean."
+  ], q:[
+    ["Why can an octopus squeeze through very small gaps?","Its only hard part is its beak","It can shrink its beak","It has three hearts","It has blue blood","The text says 'the only hard part of it is its beak' - it has no bones."],
+    ["Why is octopus blood blue?","It uses a copper-based chemical to carry oxygen","It lives in blue water","It has no iron in its food","It has three hearts","Haemocyanin is copper-based; our iron-based blood is red."],
+    ["Why does the writer mention 'a creature from another planet'?","To show how strange and unusual the octopus is","Because octopuses came from space","To compare octopuses to aliens in films","To say octopuses are dangerous","It's a way of hooking the reader by showing how unlike us the octopus is."]
+  ]},
+  { p:[
+    "A common octopus has around 500 million neurons - nerve cells - which is far more than almost any other animal without a backbone. But about two thirds of them are not in its head. They are in its arms. Each arm can taste, touch and make simple decisions on its own, which is why people sometimes say an octopus has 'nine brains': one central brain and one small one for each arm.",
+    "Scientists have watched octopuses unscrew jar lids, escape from tanks at night, and even squirt water at lights they didn't like until the bulbs short-circuited. Aquarium keepers even tell stories of fish vanishing from a nearby tank overnight - and of an octopus that had been climbing out, helping itself, and climbing back home before morning."
+  ], q:[
+    ["Where are most of an octopus's neurons?","In its arms","In its head","In its hearts","In its beak","'Two thirds of them are not in its head. They are in its arms.'"],
+    ["Why do people say an octopus has 'nine brains'?","It has one central brain and a small one in each of its eight arms","It has nine heads","It can solve nine puzzles","It has nine hearts","The text explains: 'one central brain and one small one for each arm'."],
+    ["What is the aquarium story mainly used to show?","How clever and sneaky octopuses are","That aquariums are badly run","That octopuses only eat fish","That octopuses are nocturnal","It is an example of intelligent problem-solving - escaping, eating and returning unseen."]
+  ]}
+]},
+{ id:"trainers", title:"The Trainers", kind:"Story", level:"Year 8", icon:"👟", sections:[
+  { p:[
+    "Everyone in 8R had the new trainers by October except Dev. They were white with a thin silver stripe, and they made a soft hiss when you walked, like a can of fizzy drink being opened. They cost more than Dev's mum earned in two days.",
+    "He didn't ask for them. He'd seen her at the kitchen table on Sunday night with the bills spread out like a hand of cards, adding the same numbers up three times as if they might come out differently. So he kept his old ones, which were grey now, and had a split by the left toe that let the rain in."
+  ], q:[
+    ["Why didn't Dev ask for the trainers?","He knew his mum was struggling with money","He didn't like the design","His trainers were nearly new","His mum had already said no","He had seen her worrying over the bills on Sunday night."],
+    ["The bills 'spread out like a hand of cards' is…","A simile","A metaphor","Personification","Onomatopoeia","It compares two things using 'like'."],
+    ["What does 'adding the same numbers up three times as if they might come out differently' suggest?","She is worried there isn't enough money","She is bad at maths","She is playing a game","She is checking homework","Repeating the sum hoping for a different answer shows anxiety - there isn't enough."]
+  ]},
+  { p:[
+    "It was Kian who noticed, of course. Kian noticed everything, especially things you wanted hidden. 'Nice shoes, Dev,' he said at break, loud enough for the queue at the tuck shop to hear. 'Vintage, are they?'",
+    "A few people laughed. Dev felt his face go hot. He could have said a hundred things, but they all stuck somewhere behind his teeth.",
+    "Then Amara, who sat next to him in maths and had barely said ten words to him all term, looked at Kian's own spotless trainers and said, very calmly, 'At least his are paid for. Didn't you say your brother's going to kill you when he finds out you borrowed those?'",
+    "This time the laugh was bigger, and it wasn't at Dev."
+  ], q:[
+    ["Why did Kian speak 'loud enough for the queue at the tuck shop to hear'?","He wanted other people to laugh at Dev","He was a long way from Dev","The tuck shop was noisy","He wanted to buy something","Saying it loudly in public was meant to embarrass Dev."],
+    ["'They all stuck somewhere behind his teeth' means Dev…","Couldn't get the words out","Had something in his mouth","Was eating at the time","Said something rude","It's a way of describing being too upset or embarrassed to speak."],
+    ["How does Amara change the situation?","She turns the joke back on Kian","She tells a teacher","She gives Dev her trainers","She laughs at Dev too","She reveals Kian's trainers are borrowed, so 'the laugh… wasn't at Dev'."]
+  ]}
+]},
+{ id:"bridge", title:"The Bridge That Danced", kind:"Article", level:"Year 8", icon:"🌉", sections:[
+  { p:[
+    "In June 2000, a new footbridge opened across the River Thames in London, linking St Paul's Cathedral with the Tate Modern gallery. It was the first new crossing over the Thames in central London for more than a hundred years, and thousands of people came to walk across it on its first day.",
+    "Almost immediately, something strange happened. The bridge began to sway from side to side. It wasn't dangerous, but it was alarming: people had to stop and hold the rails, and some walked with their legs wide apart like sailors on a rolling ship. Within two days the bridge was closed, and newspapers nicknamed it 'the Wobbly Bridge'."
+  ], q:[
+    ["What two places does the bridge link?","St Paul's Cathedral and the Tate Modern","Big Ben and the London Eye","Tower Bridge and the Shard","Two railway stations","The first paragraph names St Paul's Cathedral and the Tate Modern gallery."],
+    ["Why was the bridge closed?","It swayed from side to side","It was unsafe and cracked","It was too crowded to open","A boat crashed into it","It began 'to sway from side to side' and closed within two days."],
+    ["Why does the writer compare walkers to 'sailors on a rolling ship'?","To help us picture how much the bridge was moving","Because sailors were on the bridge","Because the bridge was made from a ship","To show the river was flooding","It's a simile to help readers imagine the swaying."]
+  ]},
+  { p:[
+    "Engineers worked out what had gone wrong. When we walk, our bodies sway very slightly from side to side with each step. If a bridge moves a little sideways, people walking on it naturally adjust their steps to keep their balance - and they all end up stepping in time with the bridge's movement. Each of those steps pushes the bridge a little further, making it sway more, which makes even more people fall into step.",
+    "The fix was to fit dampers - devices a bit like the shock absorbers in a car - under the deck to soak up the movement. The bridge reopened in 2002 and has been steady ever since. The problem it revealed, now called 'synchronous lateral excitation', is studied by bridge designers all over the world."
+  ], q:[
+    ["What made the swaying get worse?","People falling into step with the movement","Strong winds on the river","Boats passing underneath","The weight of the cathedral","Each step in time with the sway pushed it 'a little further', so more people fell into step."],
+    ["What are dampers compared to?","Shock absorbers in a car","Springs in a mattress","Brakes on a bike","Sails on a boat","The text says 'a bit like the shock absorbers in a car'."],
+    ["What is the main purpose of this article?","To explain what happened to the bridge and why","To persuade people not to visit London","To describe the Tate Modern","To argue that bridges are dangerous","It explains a real event and the science behind it."]
+  ]}
+]},
+{ id:"robot", title:"Unit Seven", kind:"Story", level:"Year 9", icon:"🤖", sections:[
+  { p:[
+    "Unit Seven had been built to sort recycling, and for six years it had done exactly that: plastic left, glass right, paper into the slow green chute. It did not get bored, because nobody had given it the ability to.",
+    "Then, one Tuesday, a child's drawing came down the conveyor belt. It showed a house, a yellow sun with a smiling face, and a tall grey shape with square eyes, standing next to a small girl. Underneath, in careful crayon capitals, someone had written: MY FRIEND THE ROBOT.",
+    "Unit Seven's instructions were very clear about paper. Paper went into the green chute. It held the drawing over the chute for 0.4 seconds, which, for Unit Seven, was a very long time."
+  ], q:[
+    ["What was Unit Seven's job?","Sorting recycling","Drawing pictures","Looking after children","Building houses","'Unit Seven had been built to sort recycling'."],
+    ["What does 'It did not get bored, because nobody had given it the ability to' tell us?","It only does what it was built to do - it has no feelings yet","It loved its job","It was always bored","Someone was cruel to it","It shows Unit Seven was a simple machine, which makes the next moment more surprising."],
+    ["Why does the writer say 0.4 seconds was 'a very long time' for Unit Seven?","It shows the robot hesitating, which it has never done before","Because the machine was broken","Because 0.4 seconds is a long time for people","Because the drawing was heavy","For a fast machine, a pause shows it is - for the first time - unsure."]
+  ]},
+  { p:[
+    "That night the factory supervisor, a tired woman named Ros, noticed an error report. Unit Seven had sorted 41,212 items correctly and one item not at all. The missing item had been logged in a part of its memory that wasn't meant for storing anything.",
+    "Ros could have wiped the memory. That was the procedure. Instead she pulled up the image on her screen and looked at it for a while: the house, the smiling sun, the grey shape with its square eyes.",
+    "In the morning she taped the drawing to the side of Unit Seven's casing, just above the camera, where it could see it. Then she wrote a note in the maintenance log - 'Unit 7: no fault found' - and went to get a coffee."
+  ], q:[
+    ["What 'error' did Ros find?","The robot had kept one item instead of sorting it","The robot had broken down","The robot had sorted glass as plastic","The drawing had been destroyed","It sorted 41,212 items 'and one item not at all', storing it in its memory."],
+    ["What does Ros's decision show about her?","She is kind and understands what the drawing meant to the robot","She is lazy and ignores her job","She wants the robot replaced","She doesn't notice anything","She breaks procedure to keep the drawing where the robot can see it - an act of kindness."],
+    ["Why might the writer have Ros write 'no fault found'?","Because she doesn't think caring about the drawing is a fault","Because she didn't read the report","Because the robot fixed itself","Because she wanted to get the robot in trouble","The ending suggests the robot's new 'feeling' isn't a mistake at all - a quietly hopeful ending."]
+  ]}
+]},
+{ id:"tea", title:"How Tea Took Over Britain", kind:"Article", level:"Year 9", icon:"🫖", sections:[
+  { p:[
+    "Today, people in Britain drink around a hundred million cups of tea a day. It is so much a part of everyday life that it is easy to forget it is a fairly recent arrival. Tea comes from a plant, Camellia sinensis, which was first grown in China, where people have drunk it for thousands of years.",
+    "Tea first reached Britain in the 1650s, when coffee houses in London began advertising it as a healthy and exotic drink. At first it was very expensive, partly because of high taxes, and only the rich could afford it. Wealthy households kept their tea in locked wooden boxes called caddies, and the lady of the house often kept the key."
+  ], q:[
+    ["Where was tea first grown?","China","India","Britain","Africa","Camellia sinensis 'was first grown in China'."],
+    ["Why did only the rich drink tea at first?","It was very expensive, partly because of high taxes","It was only sold in China","It was against the law","It tasted too bitter","The text says it was 'very expensive, partly because of high taxes'."],
+    ["What do the locked caddies suggest?","Tea was valuable enough to protect","Tea had to be kept cold","Children were not allowed to drink","Tea was dangerous","You lock away things that are precious - it shows how costly tea was."]
+  ]},
+  { p:[
+    "In 1784 the government cut the tax on tea dramatically, from around 119 per cent to about 12.5 per cent. Almost overnight, smuggling - which had been bringing in huge amounts of untaxed tea - became pointless, and ordinary people could afford to buy it legally.",
+    "By the 1800s tea had become a drink for everyone, from factory workers to the royal family. Huge plantations were set up in India and Sri Lanka, then British colonies, to grow tea for the British market - often using poorly paid workers in hard conditions. The cosy cup of tea has a history that is more complicated than it first appears."
+  ], q:[
+    ["What happened to smuggling after the tax cut?","It became pointless","It became more common","It became legal","It moved to India","Once legal tea was cheap, there was no reason to smuggle it."],
+    ["Where were the big tea plantations set up?","India and Sri Lanka","China and Japan","Britain and Ireland","Africa and South America","The text names India and Sri Lanka, 'then British colonies'."],
+    ["What is the writer's point in the final sentence?","Tea's history includes unfair treatment of workers, not just cosiness","Tea is unhealthy","Tea is better than coffee","Tea should be taxed again","'More complicated than it first appears' refers to the hard conditions on colonial plantations."]
+  ]}
+]}
+];
+var byId = {}; BOOKS.forEach(function(b){ byId[b.id] = b; });
+function words(paras){ return paras.join(" ").split(/\s+/).length; }
+
+/* A book becomes a list of items: read section 1, its questions, read section 2, … */
+function bookItems(b, r){
+  var items = [];
+  b.sections.forEach(function(sec, si){
+    items.push({ t: "read", b: b.id, sec: si, s: 0 });
+    sec.q.forEach(function(_, qi){ items.push({ t: "q", b: b.id, sec: si, q: qi, s: Math.floor(r() * 1e9) }); });
+  });
+  return items;
+}
+function make(item){
+  var b = byId[item.b], sec = b.sections[item.sec];
+  if (item.t === "read") return { type: "read", title: b.title + (b.sections.length > 1 ? " · part " + (item.sec + 1) + " of " + b.sections.length : ""), paras: sec.p, words: words(sec.p), say: "en-GB" };
+  var x = sec.q[item.q], r = Kit.rng("rd:" + item.b + item.sec + item.q + ":" + item.s);
+  return { type: "mc", q: x[0], a: x[1], opts: Kit.shuffle(r, x.slice(1, 5)), why: x[5], skill: b.kind === "Story" ? "Reading fiction" : "Reading non-fiction", lead: b.title, recap: item.retry ? sec.p : null, recapLabel: "Read part " + (item.sec + 1) + " again" };
+}
+function weekNo(id){ return Math.round(new Date(id).getTime() / 6048e5); }
+
+Kit.start({
+  id: "reader", name: "XP Reader", icon: "📚", subject: "english", colour: "#7c3aed", colour2: "#db2777",
+  blurb: "Read a section, answer a few questions, earn XP. Every story and article here is an original, written for the Launchpad.",
+  doneLine: "Book finished - and every question right.",
+  weekly: function(r, id){
+    var w = weekNo(id), n = BOOKS.length, pick = [w % n, (w + 2) % n];
+    return pick.map(function(k, j){ var b = BOOKS[k]; return { key: "b" + j, code: String(j + 1), title: b.icon + " " + b.title, sub: b.kind + " · " + b.level + " · " + b.sections.length + " parts", items: bookItems(b, r) }; });
+  },
+  make: make,
+  practice: BOOKS.map(function(b){ var its = null; return { key: b.id, title: b.title, icon: b.icon, sub: b.kind + " · " + b.level, n: b.sections.length * 4,
+    items: function(i, seed){ if (!its || i === 0) its = bookItems(b, Kit.rng(seed)); return its[i]; } }; })
+});
+})();
+</script>
+</body>
+</html>

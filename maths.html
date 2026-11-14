@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script src="https://civilinitiatives.org/site.js?b=20261114p"></script>
+<title>Brainstorm Maths</title>
+<meta name="description" content="Key Stage 3 maths homework and practice, different every time, with the working for every answer.">
+<link rel="icon" type="image/png" href="/favicon.png">
+<script>
+try{ var m = document.cookie.match(/(?:^|; )hl_theme=(dark|light|system)/), t = m ? m[1] : JSON.parse(localStorage.getItem("hl.theme"));
+     if(t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t); }catch(e){}
+if (/^lab\./i.test(location.hostname) || /^\/HEH-(Homework|Launchpad)-Lab(\/|$)/i.test(location.pathname)) document.documentElement.classList.add("lab");
+</script>
+<link rel="stylesheet" href="kit.css?b=20261114a">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js"></script>
+<script src="https://civilinitiatives.org/auth-store.js?b=20261026a"></script>
+<script src="learn.js?b=20261114a"></script>
+<script src="https://civilinitiatives.org/games-gate.js?b=20261027h" data-kind="learning"></script>
+<script src="kit.js?b=20261114a"></script>
+<link rel="stylesheet" href="https://civilinitiatives.org/glass.css?b=20261114a">
+</head>
+<body>
+<div class="labbar">Lab</div>
+<header class="k-top"><span class="k-brand">🧠 Brainstorm Maths</span><span class="k-sp"></span><span class="k-xp" id="kXp">⚡ 0 XP</span><a href="./" aria-label="Back to the learning games">✕</a></header>
+<main class="k" id="main"></main>
+<footer class="k">© 2026 HWL Systems · Developed by Shiv Kumar · Free to use, no adverts</footer>
+<script>
+/* Brainstorm Maths - Key Stage 3 maths, made fresh every time.
+   Every question is generated, so there's no answer list to share, and
+   every one comes with the working. Write your answers in your book: a
+   "notebook check" asks for one you did a few questions ago.
+   GPL-3.0. */
+(function(){
+"use strict";
+var I = Kit.int, P = Kit.pick, SH = Kit.shuffle;
+function gcd(a, b){ a = Math.abs(a); b = Math.abs(b); while (b) { var t = a % b; a = b; b = t; } return a; }
+function lcm(a, b){ return a / gcd(a, b) * b; }
+function frac(n, d){ var g = gcd(n, d); n /= g; d /= g; if (d < 0) { n = -n; d = -d; } return d === 1 ? String(n) : n + "/" + d; }
+function sgn(n){ return n < 0 ? "− " + (-n) : "+ " + n; }          // "+ 3" / "− 3" for building expressions
+function neg(n){ return n < 0 ? "−" + (-n) : String(n); }
+function term(c, v){ return c === 1 ? v : c === -1 ? "−" + v : neg(c) + v; }
+function money(n){ return "£" + (Math.round(n * 100) % 100 ? n.toFixed(2) : String(n)); }
+
+/* Each topic: make(r) -> question. r is a seeded random number source. */
+var T = {
+  times: { title:"Times tables", icon:"✖️", make:function(r){
+    var a = I(r, 2, 12), b = I(r, 2, 12);
+    if (r() < .3) return { type:"num", q:(a*b) + " ÷ " + a + " = ?", a:b, skill:"Times tables", why:a + " × " + b + " = " + (a*b) + ", so " + (a*b) + " ÷ " + a + " = " + b + "." };
+    return { type:"num", q:a + " × " + b + " = ?", a:a*b, skill:"Times tables", why:a + " × " + b + " = " + (a*b) + "." };
+  }},
+  rounding: { title:"Rounding", icon:"🎯", make:function(r){
+    if (r() < .5) {
+      var to = P(r, [10, 100, 1000]), n = I(r, 1000, 99999), ans = Math.round(n / to) * to;
+      return { type:"num", q:"Round " + n.toLocaleString("en-GB") + " to the nearest " + to.toLocaleString("en-GB") + ".", a:ans, skill:"Rounding",
+        why:"Look at the digit after the " + (to === 10 ? "tens" : to === 100 ? "hundreds" : "thousands") + " place: 5 or more rounds up, 4 or less rounds down.", steps:["Nearest " + to + ": " + n + " is between " + Math.floor(n / to) * to + " and " + (Math.floor(n / to) + 1) * to + ".", "It's closer to " + ans + "."] };
+    }
+    var dp = P(r, [1, 2]), x = I(r, 1000, 99999) / 1000, a2 = Number(x.toFixed(dp));
+    return { type:"num", q:"Round " + x + " to " + dp + " decimal place" + (dp > 1 ? "s" : "") + ".", a:a2, shown:a2.toFixed(dp), skill:"Rounding",
+      why:"Keep " + dp + " digit" + (dp > 1 ? "s" : "") + " after the decimal point, then look at the next digit: 5 or more rounds up." };
+  }},
+  negatives: { title:"Negative numbers", icon:"➖", make:function(r){
+    var a = I(r, -12, 12) || 3, b = I(r, -12, 12) || -4, op = P(r, ["+", "−", "×"]);
+    var ans = op === "+" ? a + b : op === "−" ? a - b : a * b;
+    var why = op === "×" ? "Same signs multiply to a positive; different signs give a negative." : op === "−" && b < 0 ? "Taking away a negative is the same as adding: " + neg(a) + " − (" + neg(b) + ") = " + neg(a) + " + " + (-b) + "." : "Use a number line: start at " + neg(a) + " and move " + (op === "+" ? (b < 0 ? "left " + (-b) : "right " + b) : (b < 0 ? "right " + (-b) : "left " + b)) + ".";
+    return { type:"num", neg:true, q:neg(a) + " " + op + " " + (b < 0 ? "(" + neg(b) + ")" : b) + " = ?", a:ans, shown:neg(ans), skill:"Negative numbers", why:why, hint:"Use - for minus." };
+  }},
+  bidmas: { title:"Order of operations", icon:"🧮", make:function(r){
+    var a = I(r, 2, 9), b = I(r, 2, 9), c = I(r, 2, 9), k = I(r, 0, 3);
+    if (k === 0) return { type:"num", q:a + " + " + b + " × " + c + " = ?", a:a + b*c, skill:"Order of operations", why:"Multiply before you add (BIDMAS).", steps:[b + " × " + c + " = " + b*c, a + " + " + b*c + " = " + (a + b*c)] };
+    if (k === 1) return { type:"num", q:"(" + a + " + " + b + ") × " + c + " = ?", a:(a + b)*c, skill:"Order of operations", why:"Brackets first.", steps:[a + " + " + b + " = " + (a + b), (a + b) + " × " + c + " = " + (a + b)*c] };
+    if (k === 2) { var d = b * c; return { type:"num", q:a*10 + " − " + d + " ÷ " + c + " = ?", a:a*10 - b, skill:"Order of operations", why:"Divide before you subtract.", steps:[d + " ÷ " + c + " = " + b, a*10 + " − " + b + " = " + (a*10 - b)] }; }
+    return { type:"num", q:a + "² + " + b + " × " + c + " = ?", a:a*a + b*c, skill:"Order of operations", why:"Indices (powers) first, then multiply, then add.", steps:[a + "² = " + a*a, b + " × " + c + " = " + b*c, a*a + " + " + b*c + " = " + (a*a + b*c)] };
+  }},
+  simplify: { title:"Simplifying fractions", icon:"🍕", make:function(r){
+    var d0 = I(r, 2, 12), n0 = I(r, 1, d0 - 1); while (gcd(n0, d0) !== 1) n0 = I(r, 1, d0 - 1);
+    var k = I(r, 2, 9), n = n0 * k, d = d0 * k;
+    return { type:"text", q:"Write " + n + "/" + d + " in its simplest form.", a:n0 + "/" + d0, nospace:true, skill:"Simplifying fractions", ph:"e.g. 3/4",
+      why:"Divide the top and bottom by their highest common factor, " + gcd(n, d) + ".", steps:[n + " ÷ " + gcd(n, d) + " = " + n0, d + " ÷ " + gcd(n, d) + " = " + d0] };
+  }},
+  fracof: { title:"Fractions of amounts", icon:"🍰", make:function(r){
+    var d = P(r, [2, 3, 4, 5, 6, 8, 10]), n = I(r, 1, d - 1), unit = I(r, 2, 15), whole = d * unit;
+    return { type:"num", q:"What is " + n + "/" + d + " of " + whole + "?", a:n * unit, skill:"Fractions of amounts", why:"Divide by the bottom, multiply by the top.", steps:[whole + " ÷ " + d + " = " + unit, unit + " × " + n + " = " + n*unit] };
+  }},
+  fracadd: { title:"Adding fractions", icon:"➕", make:function(r){
+    var d1 = P(r, [2, 3, 4, 5, 6]), d2 = P(r, [2, 3, 4, 5, 6, 8]), n1 = I(r, 1, d1 - 1), n2 = I(r, 1, d2 - 1), L = lcm(d1, d2);
+    var top = n1 * (L / d1) + n2 * (L / d2), ans = frac(top, L);
+    return { type:"text", q:n1 + "/" + d1 + " + " + n2 + "/" + d2 + " = ?", a:ans, nospace:true, skill:"Adding fractions", ph:"simplest form, e.g. 7/6", hint:"Give your answer as a fraction in its simplest form (it can be top-heavy).",
+      why:"Make the denominators the same, add the tops, then simplify.", steps:["Common denominator: " + L, n1 + "/" + d1 + " = " + n1*(L/d1) + "/" + L + " and " + n2 + "/" + d2 + " = " + n2*(L/d2) + "/" + L, "Add: " + top + "/" + L + (ans !== top + "/" + L ? " = " + ans : "")] };
+  }},
+  percent: { title:"Percentages of amounts", icon:"💯", make:function(r){
+    var p = P(r, [10, 20, 25, 30, 40, 50, 5, 15, 35, 75]), base = P(r, [20, 40, 60, 80, 120, 200, 240, 360, 400, 500]), ans = p * base / 100;
+    var steps = p % 10 === 0 ? ["10% of " + base + " = " + base/10, p + "% = " + (p/10) + " × " + base/10 + " = " + ans] : p === 25 ? ["25% is a quarter: " + base + " ÷ 4 = " + ans] : p === 75 ? ["25% = " + base/4, "75% = 3 × " + base/4 + " = " + ans] : ["10% = " + base/10 + ", 5% = " + base/20, p + "% = " + ans];
+    return { type:"num", q:"What is " + p + "% of " + base + "?", a:ans, skill:"Percentages", why:"Find 10% (divide by 10), then build up.", steps:steps };
+  }},
+  pchange: { title:"Percentage change", icon:"📈", make:function(r){
+    var up = r() < .5, p = P(r, [10, 20, 25, 50, 5, 30]), base = P(r, [40, 60, 80, 120, 200, 300, 160]), ch = p * base / 100, ans = up ? base + ch : base - ch;
+    return { type:"num", q:(up ? "Increase " : "Decrease ") + money(base) + " by " + p + "%.", a:ans, shown:money(ans), unit:"", skill:"Percentage change", hint:"Just the number - no £ needed.",
+      why:"Work out " + p + "%, then " + (up ? "add it on." : "take it away."), steps:[p + "% of " + base + " = " + ch, base + (up ? " + " : " − ") + ch + " = " + ans] };
+  }},
+  ratio: { title:"Ratio", icon:"⚖️", make:function(r){
+    var a = I(r, 1, 6), b = I(r, 2, 7); while (gcd(a, b) !== 1 || a === b) b = I(r, 2, 7);
+    var unit = I(r, 2, 12), total = (a + b) * unit, big = r() < .5;
+    return { type:"num", q:"Share " + money(total) + " in the ratio " + a + " : " + b + ". How much is the " + (big ? "larger" : "smaller") + " share?", a:(big ? Math.max(a, b) : Math.min(a, b)) * unit, shown:money((big ? Math.max(a, b) : Math.min(a, b)) * unit), skill:"Ratio", hint:"Just the number.",
+      why:"Add the parts, find one part, then multiply.", steps:[a + " + " + b + " = " + (a + b) + " parts", total + " ÷ " + (a + b) + " = " + unit + " per part", a + " parts = " + a*unit + ", " + b + " parts = " + b*unit] };
+  }},
+  substitute: { title:"Substitution", icon:"🔤", make:function(r){
+    var x = I(r, -5, 6) || 2, y = I(r, -4, 5) || 3, p = I(r, 2, 5), q = I(r, 1, 4), k = I(r, 0, 2);
+    if (k === 0) return { type:"num", neg:true, q:"If x = " + neg(x) + " and y = " + neg(y) + ", work out " + p + "x + " + q + "y.", a:p*x + q*y, shown:neg(p*x + q*y), skill:"Substitution", why:"Put the numbers in place of the letters. " + p + "x means " + p + " × x.", steps:[p + " × " + neg(x) + " = " + neg(p*x), q + " × " + neg(y) + " = " + neg(q*y), neg(p*x) + " + " + neg(q*y) + " = " + neg(p*x + q*y)] };
+    if (k === 1) return { type:"num", neg:true, q:"If x = " + neg(x) + ", work out x² + " + p + ".", a:x*x + p, skill:"Substitution", why:"x² means x × x. A negative squared is positive.", steps:[neg(x) + " × " + neg(x) + " = " + x*x, x*x + " + " + p + " = " + (x*x + p)] };
+    return { type:"num", neg:true, q:"If a = " + neg(x) + " and b = " + neg(y) + ", work out " + p + "(a − b).", a:p*(x - y), shown:neg(p*(x - y)), skill:"Substitution", why:"Brackets first.", steps:[neg(x) + " − " + (y < 0 ? "(" + neg(y) + ")" : y) + " = " + neg(x - y), p + " × " + neg(x - y) + " = " + neg(p*(x - y))] };
+  }},
+  collect: { title:"Collecting like terms", icon:"🧲", make:function(r){
+    var a = I(r, 2, 9), b = I(r, 1, 9), c = I(r, 1, a - 1), d = I(r, 1, 9), plusD = r() < .6, A = a - c, B = plusD ? b + d : b - d;
+    var ans = term(A, "a") + (B === 0 ? "" : B > 0 ? "+" + term(B, "b") : term(B, "b"));
+    var alt = (B === 0 ? "" : term(B, "b")) + (B === 0 ? term(A, "a") : "+" + term(A, "a"));
+    return { type:"text", nospace:true, q:"Simplify " + a + "a + " + b + "b − " + c + "a " + (plusD ? "+ " : "− ") + d + "b", a:ans.replace(/−/g, "-"), accept:[ans, alt.replace(/−/g, "-"), alt], shown:ans, skill:"Collecting like terms", ph:"e.g. 3a + 2b",
+      why:"Add and subtract the a's together and the b's together.", steps:[a + "a − " + c + "a = " + term(A, "a"), b + "b " + (plusD ? "+ " : "− ") + d + "b = " + term(B, "b")] };
+  }},
+  expand: { title:"Expanding brackets", icon:"📦", make:function(r){
+    var k = I(r, 2, 9), b = I(r, 1, 12), minus = r() < .4, ans = k + "x" + (minus ? "-" : "+") + k*b;
+    return { type:"text", nospace:true, q:"Expand " + k + "(x " + (minus ? "− " : "+ ") + b + ")", a:ans, accept:[ans.replace("-", "−"), (minus ? "-" + k*b + "+" + k + "x" : k*b + "+" + k + "x")], shown:k + "x " + (minus ? "− " : "+ ") + k*b, skill:"Expanding brackets", ph:"e.g. 3x + 12",
+      why:"Multiply everything inside the bracket by " + k + ".", steps:[k + " × x = " + k + "x", k + " × " + b + " = " + k*b] };
+  }},
+  solve: { title:"Solving equations", icon:"🔑", make:function(r){
+    var x = I(r, -6, 12) || 4, a = I(r, 2, 9), b = I(r, 1, 20), minus = r() < .3, rhs = minus ? a*x - b : a*x + b;
+    return { type:"num", neg:true, q:"Solve " + a + "x " + (minus ? "− " : "+ ") + b + " = " + neg(rhs) + "   (x = ?)", a:x, shown:"x = " + neg(x), skill:"Solving equations", ph:"x =",
+      why:"Do the inverse to both sides: undo the " + (minus ? "subtract" : "add") + ", then undo the multiply.", steps:[(minus ? "Add " : "Subtract ") + b + ": " + a + "x = " + neg(minus ? rhs + b : rhs - b), "Divide by " + a + ": x = " + neg(x)] };
+  }},
+  sequences: { title:"Sequences", icon:"🔢", make:function(r){
+    var d = I(r, -5, 9) || 3, f = I(r, -5, 15), seq = [0, 1, 2, 3, 4].map(function(n){ return f + n*d; }), c = f - d;
+    if (r() < .5) return { type:"num", neg:true, q:"What is the next term?  " + seq.slice(0, 4).map(neg).join(", ") + ", …", a:seq[4], shown:neg(seq[4]), skill:"Sequences", why:"The terms go " + (d > 0 ? "up" : "down") + " by " + Math.abs(d) + " each time." };
+    var ans = term(d, "n") + (c === 0 ? "" : c > 0 ? "+" + c : String(c));
+    return { type:"text", nospace:true, q:"Find the nth term:  " + seq.slice(0, 4).map(neg).join(", ") + ", …", a:ans.replace(/−/g, "-"), accept:[ans], shown:ans, skill:"Sequences", ph:"e.g. 3n + 2",
+      why:"The difference is " + d + ", so it starts " + term(d, "n") + ". Then fix the start: the first term is " + neg(f) + ", and " + d + " × 1 = " + neg(d) + ", so " + (c >= 0 ? "add " + c : "subtract " + (-c)) + "." };
+  }},
+  angles: { title:"Angles", icon:"📐", make:function(r){
+    var k = I(r, 0, 2);
+    if (k === 0) { var a = I(r, 20, 100), b = I(r, 20, 160 - a); return { type:"num", q:"Two angles in a triangle are " + a + "° and " + b + "°. What is the third angle?", a:180 - a - b, unit:"°", skill:"Angles", why:"Angles in a triangle add up to 180°.", steps:["180 − " + a + " − " + b + " = " + (180 - a - b)] }; }
+    if (k === 1) { var c = I(r, 15, 165); return { type:"num", q:"Two angles sit on a straight line. One is " + c + "°. What is the other?", a:180 - c, unit:"°", skill:"Angles", why:"Angles on a straight line add up to 180°.", steps:["180 − " + c + " = " + (180 - c)] }; }
+    var p = I(r, 60, 140), q = I(r, 40, 150); return { type:"num", q:"Three angles meet at a point: " + p + "°, " + q + "° and x. What is x?", a:360 - p - q, unit:"°", skill:"Angles", why:"Angles around a point add up to 360°.", steps:["360 − " + p + " − " + q + " = " + (360 - p - q)] };
+  }},
+  area: { title:"Area & perimeter", icon:"⬛", make:function(r){
+    var k = I(r, 0, 3), w = I(r, 3, 15), l = I(r, 3, 20);
+    if (k === 0) return { type:"num", q:"A rectangle is " + l + " cm long and " + w + " cm wide. What is its area?", a:l*w, unit:"cm²", skill:"Area", why:"Area of a rectangle = length × width.", steps:[l + " × " + w + " = " + l*w] };
+    if (k === 1) return { type:"num", q:"A rectangle is " + l + " cm long and " + w + " cm wide. What is its perimeter?", a:2*(l + w), unit:"cm", skill:"Perimeter", why:"Perimeter is the distance all the way round: add all four sides.", steps:[l + " + " + w + " + " + l + " + " + w + " = " + 2*(l + w)] };
+    if (k === 2) { var bb = I(r, 2, 12) * 2, hh = I(r, 3, 14); return { type:"num", q:"A triangle has a base of " + bb + " cm and a perpendicular height of " + hh + " cm. What is its area?", a:bb*hh/2, unit:"cm²", skill:"Area", why:"Area of a triangle = base × height ÷ 2.", steps:[bb + " × " + hh + " = " + bb*hh, bb*hh + " ÷ 2 = " + bb*hh/2] }; }
+    var A = l*w; return { type:"num", q:"A rectangle has an area of " + A + " cm² and a width of " + w + " cm. How long is it?", a:l, unit:"cm", skill:"Area", why:"Length = area ÷ width.", steps:[A + " ÷ " + w + " = " + l] };
+  }},
+  averages: { title:"Averages & range", icon:"📊", make:function(r){
+    var n = 5, xs = []; for (var i = 0; i < n; i++) xs.push(I(r, 1, 20));
+    var k = I(r, 0, 3), sorted = xs.slice().sort(function(a, b){ return a - b; });
+    if (k === 0) { var sum = xs.reduce(function(a, b){ return a + b; }, 0); var fix = (5 - sum % 5) % 5; xs[0] += fix; sum += fix; sorted = xs.slice().sort(function(a, b){ return a - b; });
+      return { type:"num", q:"Find the mean of " + xs.join(", ") + ".", a:sum / n, skill:"Averages", why:"Mean = add them all up, then divide by how many there are.", steps:["Total = " + sum, sum + " ÷ " + n + " = " + sum/n] }; }
+    if (k === 1) return { type:"num", q:"Find the median of " + xs.join(", ") + ".", a:sorted[2], skill:"Averages", why:"Put them in order and take the middle one.", steps:["In order: " + sorted.join(", "), "The middle one is " + sorted[2]] };
+    if (k === 2) return { type:"num", q:"Find the range of " + xs.join(", ") + ".", a:sorted[4] - sorted[0], skill:"Averages", why:"Range = biggest − smallest.", steps:[sorted[4] + " − " + sorted[0] + " = " + (sorted[4] - sorted[0])] };
+    var m = I(r, 2, 15), ys = SH(r, [m, m, m, I(r, 1, 20), I(r, 1, 20)]); while (ys.filter(function(v){ return v !== m; }).some(function(v, j, arr){ return arr.indexOf(v) !== j; })) ys = SH(r, [m, m, m, I(r, 1, 20), I(r, 1, 20)]);
+    return { type:"num", q:"Find the mode of " + ys.join(", ") + ".", a:m, skill:"Averages", why:"The mode is the one that appears most often." };
+  }},
+  factors: { title:"HCF, LCM & primes", icon:"🔍", make:function(r){
+    var k = I(r, 0, 2);
+    if (k === 0) { var g = I(r, 2, 12), a = g * I(r, 2, 9), b = g * I(r, 2, 9); while (a === b) b = g * I(r, 2, 9); return { type:"num", q:"What is the highest common factor (HCF) of " + a + " and " + b + "?", a:gcd(a, b), skill:"HCF and LCM", why:"The HCF is the biggest number that goes into both.", steps:[a + " = " + gcd(a, b) + " × " + a/gcd(a, b), b + " = " + gcd(a, b) + " × " + b/gcd(a, b)] }; }
+    if (k === 1) { var a2 = I(r, 2, 12), b2 = I(r, 2, 15); while (a2 === b2) b2 = I(r, 2, 15); return { type:"num", q:"What is the lowest common multiple (LCM) of " + a2 + " and " + b2 + "?", a:lcm(a2, b2), skill:"HCF and LCM", why:"The LCM is the smallest number in both times tables.", steps:["Multiples of " + Math.max(a2, b2) + ": " + [1, 2, 3, 4, 5].map(function(i){ return i * Math.max(a2, b2); }).join(", ") + "…", "The first one " + Math.min(a2, b2) + " also goes into is " + lcm(a2, b2)] }; }
+    var PR = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47], p = P(r, PR), opts = [p], NP = [9, 15, 21, 25, 27, 33, 35, 39, 45, 49, 51, 57, 1];
+    while (opts.length < 4) { var x = P(r, NP); if (opts.indexOf(x) < 0) opts.push(x); }
+    return { type:"mc", q:"Which of these is a prime number?", opts:SH(r, opts.map(String)), a:String(p), skill:"Primes", why:p + " has exactly two factors: 1 and itself. (1 is not prime - it only has one factor.)" };
+  }},
+  powers: { title:"Powers & roots", icon:"🌱", make:function(r){
+    var k = I(r, 0, 3);
+    if (k === 0) { var a = I(r, 2, 15); return { type:"num", q:a + "² = ?", a:a*a, skill:"Powers and roots", why:a + "² means " + a + " × " + a + "." }; }
+    if (k === 1) { var b = I(r, 2, 6); return { type:"num", q:b + "³ = ?", a:b*b*b, skill:"Powers and roots", why:b + "³ means " + b + " × " + b + " × " + b + "." }; }
+    if (k === 2) { var c = I(r, 2, 15); return { type:"num", q:"√" + c*c + " = ?", a:c, skill:"Powers and roots", why:"√" + c*c + " asks which number times itself makes " + c*c + ": " + c + " × " + c + " = " + c*c + "." }; }
+    var e = I(r, 2, 10); return { type:"num", q:"2 to the power of " + e + " (2^" + e + ") = ?", a:Math.pow(2, e), skill:"Powers and roots", why:"Keep doubling: " + [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].slice(0, e).map(function(i){ return Math.pow(2, i); }).join(", ") + "." };
+  }},
+  decimals: { title:"Decimals", icon:"🔸", make:function(r){
+    var k = I(r, 0, 2);
+    if (k === 0) { var x = I(r, 11, 999) / 100, m = P(r, [10, 100, 1000]), ans = Math.round(x * m * 1000) / 1000; return { type:"num", q:x + " × " + m + " = ?", a:ans, skill:"Decimals", why:"Multiplying by " + m + " moves every digit " + (String(m).length - 1) + " place" + (m > 10 ? "s" : "") + " to the left." }; }
+    if (k === 1) { var a = I(r, 1, 9), b = I(r, 1, 9), ans2 = a * b / 100; return { type:"num", q:"0." + a + " × 0." + b + " = ?", a:ans2, shown:String(ans2), skill:"Decimals", why:"Do " + a + " × " + b + " = " + a*b + ", then count the decimal places in the question (2) and put them back.", steps:[a + " × " + b + " = " + a*b, "2 decimal places → " + ans2] }; }
+    var p = I(r, 11, 99) / 10, q = I(r, 11, 99) / 10, s = Math.round((p + q) * 10) / 10; return { type:"num", q:p + " + " + q + " = ?", a:s, skill:"Decimals", why:"Line up the decimal points and add." };
+  }},
+  probability: { title:"Probability", icon:"🎲", make:function(r){
+    var red = I(r, 1, 9), blue = I(r, 1, 9), green = I(r, 0, 6), tot = red + blue + green, ans = frac(red, tot);
+    return { type:"text", nospace:true, q:"A bag has " + red + " red, " + blue + " blue" + (green ? " and " + green + " green" : "") + " counters. One is picked at random. What is the probability it is red?", a:ans, accept:[red + "/" + tot], skill:"Probability", ph:"as a fraction, e.g. 2/5",
+      why:"Probability = number of red ÷ total number of counters = " + red + "/" + tot + (ans !== red + "/" + tot ? " = " + ans : "") + "." };
+  }}
+};
+var ORDER = ["rounding", "negatives", "bidmas", "simplify", "fracof", "fracadd", "percent", "pchange", "ratio", "substitute", "collect", "expand", "solve", "sequences", "angles", "area", "averages", "factors", "powers", "decimals", "probability"];
+
+/* This week's homework: three focus topics (they move on each week),
+   four tasks of six, times tables, and a mixed "keep it fresh" task. */
+function weekNo(id){ return Math.round(new Date(id).getTime() / 6048e5); }
+Kit.start({
+  id: "maths", name: "Brainstorm Maths", icon: "🧠", subject: "maths", colour: "#1f6fde", colour2: "#06b6d4", notebook: true,
+  blurb: "Maths homework that's different every time, with the working for every answer. Write your answers in your book - there are notebook checks.",
+  doneLine: "That task is done. Every answer right in the end.",
+  weekly: function(r, id){
+    var w = weekNo(id), focus = [0, 1, 2].map(function(k){ return ORDER[(w * 3 + k) % ORDER.length]; });
+    var seed = function(){ return Math.floor(r() * 1e9); };
+    var tasks = [];
+    for (var t = 0; t < 4; t++) {
+      /* tasks 1-3: mostly one focus topic with a taste of the other two; task 4 mixes all three */
+      var items = []; for (var i = 0; i < 6; i++) items.push({ t: t < 3 ? (i < 4 ? focus[t] : focus[(t + i - 3) % 3]) : focus[i % 3], s: seed() });
+      tasks.push({ key: "t" + (t + 1), code: String(t + 1), title: "Task " + (t + 1), sub: t < 3 ? T[focus[t]].title : "Mixed: " + focus.map(function(f){ return T[f].title; }).join(", "), items: items });
+    }
+    var tt = []; for (var j = 0; j < 10; j++) tt.push({ t: "times", s: seed() });
+    tasks.push({ key: "tt", code: "T", title: "Times Tables", sub: "Ten quick ones", items: tt });
+    var mix = []; for (var m = 0; m < 6; m++) mix.push({ t: ORDER[Math.floor(r() * ORDER.length)], s: seed() });
+    tasks.push({ key: "mix", code: "M", title: "Keep it fresh", sub: "Older topics, so you don't forget them", items: mix });
+    return tasks;
+  },
+  make: function(item){ var tp = T[item.t] || T.times, q = tp.make(Kit.rng(item.t + ":" + item.s)); q.skill = q.skill || tp.title; return q; },
+  practice: ORDER.concat(["times"]).map(function(k){ return { key: k, title: T[k].title, icon: T[k].icon }; })
+});
+})();
+</script>
+</body>
+</html>

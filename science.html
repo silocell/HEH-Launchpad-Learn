@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script src="https://civilinitiatives.org/site.js?b=20261114p"></script>
+<title>Chemically Scientific</title>
+<meta name="description" content="Key Stage 3 science quizzes on biology, chemistry and physics, with the reason behind every answer.">
+<link rel="icon" type="image/png" href="/favicon.png">
+<script>
+try{ var m = document.cookie.match(/(?:^|; )hl_theme=(dark|light|system)/), t = m ? m[1] : JSON.parse(localStorage.getItem("hl.theme"));
+     if(t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t); }catch(e){}
+if (/^lab\./i.test(location.hostname) || /^\/HEH-(Homework|Launchpad)-Lab(\/|$)/i.test(location.pathname)) document.documentElement.classList.add("lab");
+</script>
+<link rel="stylesheet" href="kit.css?b=20261114a">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js"></script>
+<script src="https://civilinitiatives.org/auth-store.js?b=20261026a"></script>
+<script src="learn.js?b=20261114a"></script>
+<script src="https://civilinitiatives.org/games-gate.js?b=20261027h" data-kind="learning"></script>
+<script src="kit.js?b=20261114a"></script>
+<link rel="stylesheet" href="https://civilinitiatives.org/glass.css?b=20261114a">
+</head>
+<body>
+<div class="labbar">Lab</div>
+<header class="k-top"><span class="k-brand">🧪 Chemically Scientific</span><span class="k-sp"></span><span class="k-xp" id="kXp">⚡ 0 XP</span><a href="./" aria-label="Back to the learning games">✕</a></header>
+<main class="k" id="main"></main>
+<footer class="k">© 2026 HWL Systems · Developed by Shiv Kumar · Free to use, no adverts</footer>
+<script>
+/* Chemically Scientific - Key Stage 3 science quizzes.
+   Every question was written and checked by hand against the KS3
+   curriculum. The wrong answers are the ones people really give, and
+   every question says why. A few ask you to TYPE the key word, because
+   recognising a word and remembering it aren't the same thing.
+   GPL-3.0. */
+(function(){
+"use strict";
+/* [topic, question, answer, wrong, wrong, wrong, why]   - multiple choice
+   [topic, question, "=answer|also ok|also ok", why]     - type the answer   */
+var Q = [
+/* ---------------- Biology ---------------- */
+["cells","Which part of a cell controls what the cell does and contains the genetic material?","Nucleus","Cell membrane","Cytoplasm","Vacuole","The nucleus holds the DNA, which carries the instructions for the cell."],
+["cells","Which part of a cell controls what goes in and out?","Cell membrane","Cell wall","Nucleus","Mitochondria","The cell membrane is selective: it lets some substances through and keeps others out."],
+["cells","Where in a cell does aerobic respiration happen?","Mitochondria","Chloroplasts","Nucleus","Vacuole","Mitochondria release energy from glucose using oxygen."],
+["cells","Which of these is found in plant cells but NOT in animal cells?","Chloroplasts","Nucleus","Cell membrane","Cytoplasm","Chloroplasts (for photosynthesis), a cell wall and a permanent vacuole are only in plant cells."],
+["cells","What is the cell wall in a plant cell made of?","Cellulose","Chlorophyll","Starch","Protein","Cellulose is a tough material that keeps the plant cell's shape."],
+["cells","Where do most of the cell's chemical reactions happen?","Cytoplasm","Cell wall","Vacuole","Cell membrane","The cytoplasm is the jelly-like part where most reactions take place."],
+["cells","Which piece of equipment is used to see cells?","=microscope|light microscope","Cells are too small to see with the naked eye, so we use a microscope."],
+["cells","A group of similar cells working together is called a…","Tissue","Organ","Organism","System","Cells → tissues → organs → organ systems → organism."],
+["cells","Which specialised cell carries oxygen around the body?","Red blood cell","Nerve cell","Sperm cell","Root hair cell","Red blood cells have no nucleus and are packed with haemoglobin to carry oxygen."],
+["cells","What is the job of a root hair cell?","Absorb water and minerals from the soil","Make food by photosynthesis","Carry messages","Transport sugar to the leaves","Its long thin shape gives a large surface area to take in water."],
+["body","Which organ pumps blood around the body?","=heart","The heart is a muscle that pumps blood through the blood vessels."],
+["body","Which blood vessels carry blood AWAY from the heart?","Arteries","Veins","Capillaries","Nerves","Arteries carry blood away from the heart at high pressure; veins bring it back."],
+["body","Where does gas exchange happen in the lungs?","Alveoli","Trachea","Bronchi","Diaphragm","Alveoli are tiny air sacs with thin walls and a big surface area, next to capillaries."],
+["body","Which gas do we breathe out more of than we breathe in?","Carbon dioxide","Oxygen","Nitrogen","Hydrogen","Carbon dioxide is a waste product of respiration, so we breathe out more of it."],
+["body","Where are most nutrients absorbed into the blood?","Small intestine","Stomach","Large intestine","Mouth","The small intestine is long and lined with villi, which give a huge surface area."],
+["body","What does the large intestine mainly absorb?","Water","Protein","Fat","Glucose","By the time food reaches the large intestine most nutrients are gone; it takes back water."],
+["body","What do enzymes do in digestion?","Break large molecules into small ones","Make food bigger","Kill bacteria","Turn food into blood","Enzymes are biological catalysts that speed up the breakdown of large molecules."],
+["body","Which food group is mainly used for growth and repair?","Protein","Carbohydrate","Fat","Fibre","Protein is used to build and repair cells, such as muscle."],
+["body","Which food group is the body's main source of energy?","Carbohydrates","Vitamins","Minerals","Water","Carbohydrates such as starch and sugar are the main energy source."],
+["body","What joins muscle to bone?","Tendons","Ligaments","Cartilage","Nerves","Tendons join muscle to bone. Ligaments join bone to bone."],
+["body","Muscles that work in pairs, like the biceps and triceps, are called…","Antagonistic muscles","Opposite muscles","Twin muscles","Voluntary muscles","When one contracts the other relaxes - they pull in opposite directions."],
+["body","Which mineral is needed for strong bones and teeth?","Calcium","Iron","Sodium","Iodine","Calcium (found in milk and cheese) keeps bones and teeth strong."],
+["energy","What is the word equation for aerobic respiration?","Glucose + oxygen → carbon dioxide + water","Carbon dioxide + water → glucose + oxygen","Glucose → lactic acid","Oxygen + water → glucose","Aerobic respiration uses oxygen to release energy from glucose."],
+["energy","What is the word equation for photosynthesis?","Carbon dioxide + water → glucose + oxygen","Glucose + oxygen → carbon dioxide + water","Oxygen + water → carbon dioxide","Glucose → oxygen + water","Plants use light energy to turn carbon dioxide and water into glucose, giving off oxygen."],
+["energy","What is produced in muscles during anaerobic respiration?","Lactic acid","Oxygen","Alcohol","Carbon dioxide only","Without enough oxygen, muscles make lactic acid - that's the burning feeling in hard exercise."],
+["energy","What does yeast make during anaerobic respiration (fermentation)?","Ethanol and carbon dioxide","Lactic acid","Oxygen and water","Glucose","Yeast fermentation makes ethanol (alcohol) and carbon dioxide - the gas makes bread rise."],
+["energy","What green substance in chloroplasts absorbs light?","=chlorophyll","Chlorophyll absorbs light energy for photosynthesis."],
+["energy","Through which tiny holes do gases enter and leave a leaf?","Stomata","Veins","Xylem","Root hairs","Stomata (one is a stoma) are on the underside of leaves and can open and close."],
+["life","In a food chain, what do the arrows show?","The direction energy flows","What eats what, from predator to prey","The size of the animals","Where animals live","Arrows point from the thing being eaten to the thing eating it - the way energy moves."],
+["life","What is a producer in a food chain?","A plant that makes its own food","An animal that eats plants","An animal that eats other animals","Something that breaks down dead things","Producers (usually green plants) make food by photosynthesis, so every food chain starts with one."],
+["life","An animal that only eats plants is called a…","Herbivore","Carnivore","Omnivore","Producer","Herbivores eat plants, carnivores eat animals, omnivores eat both."],
+["life","Why is a food web more useful than a single food chain?","It shows how many food chains link together","It only shows predators","It shows animal sizes","It only works for oceans","Most animals eat and are eaten by more than one thing, which a web can show."],
+["life","Which process causes differences between members of the same species?","Variation","Respiration","Digestion","Photosynthesis","Variation can be caused by genes, by the environment, or by both."],
+["life","Who first explained evolution by natural selection?","Charles Darwin","Isaac Newton","Marie Curie","Albert Einstein","Darwin published On the Origin of Species in 1859."],
+["life","Where does fertilisation happen in a human?","Oviduct (fallopian tube)","Ovary","Uterus","Vagina","The sperm meets the egg in the oviduct; the embryo then implants in the uterus."],
+["life","In a flower, which part makes pollen?","Anther","Stigma","Ovary","Petal","The anther (on the stamen) makes pollen. The stigma is where pollen lands."],
+["life","What is the name for the moving of pollen from anther to stigma?","=pollination","Pollination can be by insects or by the wind."],
+["health","Which type of microbe causes diseases such as flu and COVID-19?","Virus","Bacterium","Fungus","Protist","Flu and COVID-19 are caused by viruses, which can't be treated with antibiotics."],
+["health","What do antibiotics kill?","Bacteria","Viruses","All microbes","Fungi only","Antibiotics work on bacteria only. They do nothing against viruses."],
+["health","What does a vaccine contain?","A harmless or dead form of a pathogen","Antibiotics","Painkillers","Living harmful bacteria","It trains your immune system to recognise the pathogen, so you can fight it quickly later."],
+/* ---------------- Chemistry ---------------- */
+["particles","In which state are particles closest together and only vibrating?","Solid","Liquid","Gas","Plasma","In a solid, particles are in a fixed pattern and vibrate in place."],
+["particles","What is the change from liquid to gas called?","Evaporation (or boiling)","Condensation","Melting","Freezing","Evaporating or boiling turns a liquid into a gas. Condensing is the opposite."],
+["particles","What is the change from gas to liquid called?","Condensation","Evaporation","Sublimation","Melting","Water vapour condensing on a cold window is an example."],
+["particles","Why can gases be squashed (compressed) easily?","Their particles are far apart","Their particles are very small","Their particles don't move","Their particles are joined together","There is lots of space between gas particles, so they can be pushed closer."],
+["particles","What is diffusion?","Particles spreading from high to low concentration","Particles joining together","A solid turning into a gas","Particles stopping moving","That's why you can smell perfume across a room - its particles spread out."],
+["particles","When a solid turns straight into a gas, it is called…","=sublimation|subliming","Dry ice (solid carbon dioxide) sublimes."],
+["particles","At what temperature does pure water boil at sea level?","100 °C","0 °C","50 °C","212 °C","Pure water boils at 100 °C and freezes at 0 °C."],
+["atoms","What is an element?","A substance made of only one type of atom","Two elements chemically joined","A mixture of substances","Any liquid","Each element has its own symbol in the periodic table, like O for oxygen."],
+["atoms","What is a compound?","Two or more elements chemically joined","Only one type of atom","A mixture you can separate by filtering","A pure element","Water (H₂O) is a compound of hydrogen and oxygen."],
+["atoms","What is the chemical symbol for sodium?","=Na","Na comes from its Latin name, natrium."],
+["atoms","What is the chemical symbol for iron?","=Fe","Fe comes from the Latin ferrum."],
+["atoms","What is the chemical formula for carbon dioxide?","CO₂","CO","C₂O","CO₃","One carbon atom joined to two oxygen atoms."],
+["atoms","What are the vertical columns in the periodic table called?","Groups","Periods","Rows","Families of metals","Elements in the same group have similar properties."],
+["atoms","Which group in the periodic table contains the noble gases (like helium and neon)?","Group 0 (or 8)","Group 1","Group 7","Group 2","Noble gases are very unreactive, which is why helium is used in balloons."],
+["atoms","Group 1 metals (like sodium) react with water to make…","Hydrogen and an alkali","Oxygen and an acid","Carbon dioxide","Salt and sand","For example, sodium + water → sodium hydroxide + hydrogen."],
+["atoms","Most of the elements in the periodic table are…","Metals","Non-metals","Gases","Liquids","About three quarters of the elements are metals."],
+["atoms","Which particle in an atom has a negative charge?","Electron","Proton","Neutron","Nucleus","Protons are positive, neutrons have no charge, electrons are negative."],
+["mixtures","Which method separates an insoluble solid from a liquid, like sand from water?","Filtration","Evaporation","Distillation","Chromatography","The filter paper lets the water through but keeps the sand."],
+["mixtures","How can you get salt back from salty water?","Evaporation","Filtration","Magnetism","Sieving","Heating evaporates the water and leaves the salt behind."],
+["mixtures","Which method separates the different coloured inks in a pen?","Chromatography","Filtration","Distillation","Decanting","The inks travel up the paper at different speeds, so they separate."],
+["mixtures","Which method gets pure water from sea water?","Distillation","Filtration","Chromatography","Sieving","The water evaporates, then cools and condenses, leaving the salt behind."],
+["mixtures","A substance that dissolves is described as…","=soluble","Soluble substances dissolve; insoluble ones don't. The liquid it dissolves in is the solvent."],
+["mixtures","In salt water, which is the solute?","Salt","Water","Salt water","Neither","The solute dissolves in the solvent (water) to make a solution."],
+["reactions","What is the pH of a neutral solution like pure water?","7","0","1","14","Below 7 is acidic, 7 is neutral, above 7 is alkaline."],
+["reactions","What colour does universal indicator turn in a strong acid?","Red","Purple","Green","Blue","Strong acids turn it red; neutral is green; strong alkalis turn it purple."],
+["reactions","What is made when an acid reacts with an alkali?","A salt and water","Hydrogen and oxygen","Carbon dioxide only","A stronger acid","This is called neutralisation."],
+["reactions","What gas is given off when a metal reacts with an acid?","Hydrogen","Oxygen","Carbon dioxide","Nitrogen","The test for hydrogen: it burns with a squeaky pop."],
+["reactions","What gas turns limewater cloudy?","Carbon dioxide","Oxygen","Hydrogen","Nitrogen","That is the test for carbon dioxide."],
+["reactions","What is the test for oxygen?","It relights a glowing splint","It makes a squeaky pop","It turns limewater cloudy","It bleaches damp litmus","Oxygen helps things burn, so a glowing splint bursts back into flame."],
+["reactions","Which of these is a chemical change?","Burning wood","Melting ice","Dissolving sugar","Boiling water","A new substance is made and it can't easily be reversed. The others are physical changes."],
+["reactions","Burning a fuel in oxygen is called…","=combustion|burning","Complete combustion of a hydrocarbon gives carbon dioxide and water."],
+["reactions","Rusting needs iron, water and…","Oxygen","Carbon dioxide","Nitrogen","Salt only","Iron + oxygen + water → hydrated iron oxide (rust)."],
+["reactions","In a chemical reaction, the total mass…","Stays the same","Always goes up","Always goes down","Doubles","Atoms are rearranged, not made or destroyed - this is conservation of mass."],
+["reactions","What do we call the substances at the start of a reaction?","Reactants","Products","Solutions","Catalysts","Reactants → products."],
+/* ---------------- Physics ---------------- */
+["forces","What is the unit of force?","Newton (N)","Kilogram (kg)","Joule (J)","Watt (W)","Force is measured in newtons, named after Isaac Newton."],
+["forces","Which force pulls objects towards the Earth?","Gravity (weight)","Friction","Upthrust","Air resistance","Your weight is the force of gravity on your mass."],
+["forces","On Earth, about how much does a 1 kg mass weigh?","About 10 N","About 1 N","About 100 N","About 0.1 N","Gravitational field strength on Earth is about 10 N/kg, so weight = mass × 10."],
+["forces","What happens to an object when the forces on it are balanced?","It stays still or keeps moving at the same speed","It speeds up","It slows down","It changes shape","Balanced forces mean no change in motion."],
+["forces","Which force acts against movement when two surfaces rub?","Friction","Gravity","Magnetism","Upthrust","Friction makes things slow down and produces heat."],
+["forces","Speed = distance ÷ …","Time","Mass","Force","Area","For example, 100 m in 20 s is 100 ÷ 20 = 5 m/s."],
+["forces","A car travels 120 km in 2 hours. What is its average speed in km/h?","=60|60 km/h|60km/h|60 kmh","Speed = distance ÷ time = 120 ÷ 2 = 60 km/h."],
+["forces","Why does a boat float?","Upthrust from the water balances its weight","It has no weight","Water pushes it from above","Air holds it up","When upthrust equals weight, the boat floats."],
+["forces","Pressure = force ÷ …","Area","Mass","Volume","Time","The same force on a smaller area gives more pressure - that's why knives are sharp."],
+["energy2","What is the unit of energy?","Joule (J)","Newton (N)","Watt (W)","Volt (V)","Energy is measured in joules; power (energy per second) is in watts."],
+["energy2","Which energy store does a stretched elastic band have?","Elastic potential","Kinetic","Chemical","Nuclear","Stretching or squashing something stores elastic potential energy."],
+["energy2","Food and batteries are stores of which kind of energy?","Chemical","Kinetic","Thermal","Gravitational","The energy is stored in chemical bonds and released in reactions."],
+["energy2","Which of these is a renewable energy resource?","Wind","Coal","Natural gas","Oil","Wind won't run out. Coal, oil and gas are fossil fuels and will."],
+["energy2","Energy can't be created or destroyed. It can only be…","Transferred (moved between stores)","Used up","Destroyed by friction","Turned into mass","This is the law of conservation of energy; some is usually wasted as heat."],
+["energy2","Which type of heat transfer can travel through a vacuum (empty space)?","Radiation","Conduction","Convection","None of them","That's how heat from the Sun reaches the Earth."],
+["energy2","Metals are good at which type of heat transfer?","Conduction","Convection","Radiation","Evaporation","Metals have free electrons that pass on energy quickly."],
+["electric","What is the unit of current?","Amp (A)","Volt (V)","Ohm (Ω)","Watt (W)","Current is the flow of charge, measured in amps with an ammeter."],
+["electric","How is an ammeter connected in a circuit?","In series","In parallel","Across the battery only","It isn't connected","An ammeter goes in series; a voltmeter goes in parallel."],
+["electric","In a series circuit, if one bulb breaks…","All the bulbs go out","Only that bulb goes out","The others get brighter","Nothing happens","There's only one path, so breaking it stops the current everywhere."],
+["electric","Resistance = voltage ÷ …","Current","Power","Time","Charge","R = V ÷ I. Resistance is measured in ohms (Ω)."],
+["electric","A lamp has 6 V across it and 2 A through it. What is its resistance in ohms?","=3|3 ohms|3 ohm|3Ω|3 Ω","R = V ÷ I = 6 ÷ 2 = 3 Ω."],
+["electric","Which of these is a good electrical conductor?","Copper","Plastic","Rubber","Wood","Metals like copper conduct electricity; plastic and rubber are insulators."],
+["electric","Two north poles of magnets placed near each other will…","Repel","Attract","Do nothing","Stick together","Like poles repel, opposite poles attract."],
+["waves","How fast does light travel compared with sound?","Much faster","Much slower","About the same","Light doesn't move","That's why you see lightning before you hear thunder."],
+["waves","Light reflecting off a mirror: the angle of incidence equals the angle of…","Reflection","Refraction","Diffraction","Absorption","The law of reflection: angle in = angle out, measured from the normal."],
+["waves","When light bends as it goes from air into glass, it is called…","=refraction","Light changes speed when it enters a different material, so it changes direction."],
+["waves","White light can be split into colours by a…","Prism","Mirror","Magnet","Lens cap","The prism refracts each colour by a different amount, making a spectrum."],
+["waves","Why can't sound travel through space?","There are no particles to vibrate","It is too cold","It is too dark","Space is too big","Sound is a vibration passed between particles, and space is a vacuum."],
+["waves","A sound with a higher frequency sounds…","Higher pitched","Louder","Quieter","Lower pitched","Frequency is pitch; amplitude is loudness."],
+["waves","What is the unit of frequency?","Hertz (Hz)","Decibel (dB)","Metre (m)","Newton (N)","1 Hz is one wave per second."],
+["space","Why do we have day and night?","The Earth spins on its axis","The Earth orbits the Sun","The Moon blocks the Sun","The Sun moves around the Earth","One full spin takes about 24 hours."],
+["space","Why do we have seasons?","The Earth's axis is tilted","The Earth gets closer to the Sun in summer","The Sun gets hotter","The Moon changes shape","When your hemisphere is tilted towards the Sun, it's summer there."],
+["space","How long does the Earth take to orbit the Sun?","About 365 days","24 hours","28 days","12 hours","That's one year (365¼ days, which is why we have leap years)."],
+["space","Which planet is closest to the Sun?","=mercury","Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune."],
+["space","What is the Sun?","A star","A planet","A moon","A galaxy","The Sun is a star - the closest one to Earth."]
+];
+var TOPICS = {
+  cells:["Cells","🦠","Biology"], body:["The human body","🫀","Biology"], energy:["Respiration & photosynthesis","🌿","Biology"], life:["Ecosystems, reproduction & evolution","🐝","Biology"], health:["Health & disease","💉","Biology"],
+  particles:["Particles & states","🧊","Chemistry"], atoms:["Atoms, elements & the periodic table","⚛️","Chemistry"], mixtures:["Mixtures & separating","🧪","Chemistry"], reactions:["Reactions, acids & alkalis","🔥","Chemistry"],
+  forces:["Forces & motion","🧲","Physics"], energy2:["Energy","⚡","Physics"], electric:["Electricity & magnets","🔋","Physics"], waves:["Light & sound","🌈","Physics"], space:["Space","🪐","Physics"]
+};
+var ORDER = Object.keys(TOPICS);
+var byTopic = {}; Q.forEach(function(q, i){ (byTopic[q[0]] = byTopic[q[0]] || []).push(i); });
+
+function make(item){
+  var r = Kit.rng("sci:" + item.t + ":" + item.s), list = byTopic[item.t] || Q.map(function(_, i){ return i; });
+  var idx = typeof item.q === "number" ? item.q : list[Math.floor(r() * list.length)], x = Q[idx], tp = TOPICS[x[0]];
+  if (x.length === 4) {
+    var ans = x[2].slice(1).split("|");
+    return { type:"text", q:x[1], a:ans[0], accept:ans.slice(1), shown:ans[0].charAt(0).toUpperCase() + ans[0].slice(1), why:x[3], skill:tp[0], lead:"Type the answer.", ph:"Type the key word" };
+  }
+  return { type:"mc", q:x[1], a:x[2], opts:Kit.shuffle(r, x.slice(2, 6)), why:x[6], skill:tp[0] };
+}
+function weekNo(id){ return Math.round(new Date(id).getTime() / 6048e5); }
+
+Kit.start({
+  id: "science", name: "Chemically Scientific", icon: "🧪", subject: "science", colour: "#0f9d58", colour2: "#14b8a6",
+  blurb: "Science quizzes on everything in Key Stage 3. Every answer comes with the reason why, and the ones you miss come back until they stick.",
+  doneLine: "Quiz complete.",
+  weekly: function(r, id){
+    var w = weekNo(id), bio = ORDER.slice(0, 5), chem = ORDER.slice(5, 9), phys = ORDER.slice(9);
+    var focus = [bio[w % bio.length], chem[w % chem.length], phys[w % phys.length]];
+    var tasks = focus.map(function(t, k){
+      var ids = Kit.shuffle(r, byTopic[t]).slice(0, 8);
+      return { key: "q" + (k + 1), code: String(k + 1), title: TOPICS[t][2] + ": " + TOPICS[t][0], sub: ids.length + " questions", items: ids.map(function(q){ return { t: t, q: q, s: Math.floor(r() * 1e9) }; }) };
+    });
+    var mix = Kit.shuffle(r, Q.map(function(_, i){ return i; })).slice(0, 8);
+    tasks.push({ key: "mix", code: "R", title: "Recap: everything", sub: "8 questions from any topic", items: mix.map(function(q){ return { t: Q[q][0], q: q, s: Math.floor(r() * 1e9) }; }) });
+    return tasks;
+  },
+  make: make,
+  practice: ORDER.map(function(k){ return { key: k, title: TOPICS[k][0], icon: TOPICS[k][1], sub: TOPICS[k][2] + " · " + byTopic[k].length + " questions", n: Math.min(10, byTopic[k].length),
+    items: (function(){ var order = null; return function(i, seed){ if (!order || i === 0) order = Kit.shuffle(Kit.rng(seed), byTopic[k]); return { t: k, q: order[i % order.length], s: seed }; }; })() }; })
+});
+})();
+</script>
+</body>
+</html>

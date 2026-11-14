@@ -69,9 +69,9 @@ details p{max-width:44rem}
 var main = document.getElementById("main");
 function h(t, c, x){ var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
 var SUBJ = {
-  maths:     { name:"Maths",     icon:"🔢", play:[["Times Table Tycoon","tables.html"],["Level Up","levelup.html"]] },
-  english:   { name:"English",   icon:"📖", play:[["Word Dragons","dragons.html"],["Level Up","levelup.html"]] },
-  science:   { name:"Science",   icon:"🧪", play:[["Level Up","levelup.html"]] },
+  maths:     { name:"Maths",     icon:"🔢", play:[["Brainstorm Maths","maths.html"],["Times Table Tycoon","tables.html"]] },
+  english:   { name:"English",   icon:"📖", play:[["XP Reader","reader.html"],["Word Dragons","dragons.html"]] },
+  science:   { name:"Science",   icon:"🧪", play:[["Chemically Scientific","science.html"]] },
   history:   { name:"History",   icon:"⚔️", play:[["Battle Stories","history.html"]] },
   geography: { name:"Geography", icon:"🧭", play:[["Map Quest","geo.html"]] }
 };
@@ -199,7 +199,7 @@ function draw(res){
   /* ---- each game's own record ---- */
   var games = h("div", "games");
   function g(name, href, line){ if (!line) return; var a = h("a", "game"); a.href = href; a.appendChild(h("b", null, name)); a.appendChild(h("span", null, line)); games.appendChild(a); }
-  if (lu) g("🚀 Level Up", "levelup.html", "Level " + lu.level + " · " + lu.pts + " points" + (lu.streak > 1 ? " · " + lu.streak + "-day streak" : ""));
+  /* Level Up has been replaced by Brainstorm Maths, XP Reader, Chemically Scientific and Word Passport */
   if (tt && tt.catalogue) {
     var found = {}; (tt.cards || []).forEach(function(c){ found[c.kind] = 1; });
     var mastered = Object.keys(tt.tables || {}).filter(function(k){ return tt.tables[k].mastered; }).length;
