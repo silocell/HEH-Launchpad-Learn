@@ -98,3 +98,10 @@ footer.k{text-align:center;color:var(--soft);font-size:.85rem;padding:10px 16px 
 .k-stat{display:grid;grid-template-columns:minmax(0,1.3fr) 1fr 3.2em;gap:10px;align-items:center;font-size:.92rem}
 .k-stat span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .k-stat b{text-align:right;font-variant-numeric:tabular-nums}
 .k-stat .k-bar{margin:0;height:9px}
+
+/* Word Passport games */
+.k-match{display:grid;grid-template-columns:repeat(3,1fr);gap:8px} @media (max-width:420px){ .k-match{grid-template-columns:repeat(2,1fr)} }
+.k-mc{min-height:64px;border:2px solid var(--rule);background:var(--card);border-radius:14px;font-weight:700;padding:8px;transition:transform .12s}
+.k-mc.sel{border-color:var(--ac);background:color-mix(in srgb,var(--ac) 12%,var(--card));transform:scale(1.03)}
+.k-mc.bad{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,var(--card))}
+.k-mc.done{border-color:var(--good);background:color-mix(in srgb,var(--good) 14%,var(--card));opacity:.55;pointer-events:none}

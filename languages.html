@@ -12,7 +12,7 @@ try{ var m = document.cookie.match(/(?:^|; )hl_theme=(dark|light|system)/), t = 
      if(t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t); }catch(e){}
 if (/^lab\./i.test(location.hostname) || /^\/HEH-(Homework|Launchpad)-Lab(\/|$)/i.test(location.pathname)) document.documentElement.classList.add("lab");
 </script>
-<link rel="stylesheet" href="kit.css?b=20261114c">
+<link rel="stylesheet" href="kit.css?b=20261114d">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js"></script>
 <script src="https://civilinitiatives.org/auth-store.js?b=20261026a"></script>
 <script src="learn.js?b=20261114a"></script>
@@ -122,11 +122,93 @@ function make(item){
     why:word + (bare !== word ? " - remember the word for “the” goes with it" : "") + "." , hint: bare !== word ? "Include the word for “the” if you can." : null };
 }
 function weekNo(id){ return Math.round(new Date(id).getTime() / 6048e5); }
+/* ---------- games (Languagenut-style, our own versions) ---------- */
+function gameWords(n){
+  var w = weekNo(Kit.week().id), a = ORDER[(w * 2) % ORDER.length], b = ORDER[(w * 2 + 1) % ORDER.length], c = COL[lang];
+  var pool = V[a].w.concat(V[b].w), seen = {};
+  pool = Kit.shuffle(Kit.rng(Date.now()), pool).filter(function(x){ if (seen[x[0]] || seen[x[c]]) return false; seen[x[0]] = seen[x[c]] = 1; return true; });
+  return { list: pool.slice(0, n).map(function(x){ return { en: x[0], fx: x[c] }; }), topics: V[a].title + " & " + V[b].title };
+}
+function card(main, title, sub){
+  var box = Kit.h("div", "k-q"), hd = Kit.h("div", "k-qhead");
+  hd.appendChild(Kit.h("span", "k-kicker", title)); var sp = Kit.h("span", "k-code", sub); hd.appendChild(sp);
+  var ds = Kit.h("div", "k-dots"); hd.appendChild(ds);
+  main.appendChild(box); box.appendChild(hd); return { box: box, info: sp };
+}
+function endScreen(main, api, title, big, line, again){
+  main.textContent = "";
+  var c = Kit.h("div", "k-q"); c.appendChild(Kit.h("div", "k-kicker", title)); c.appendChild(Kit.h("div", "k-big", big)); c.appendChild(Kit.h("p", null, line));
+  var row = Kit.h("div", "k-actions"), a = Kit.h("button", "k-btn", "Play again"); a.type = "button"; a.onclick = again;
+  var b = Kit.h("button", "k-btn ghost", "Back"); b.type = "button"; b.onclick = api.home; row.appendChild(a); row.appendChild(b); c.appendChild(row); main.appendChild(c);
+}
+function matchUp(main, api){
+  var g = gameWords(6), left = g.list.length, misses = 0, t0 = Date.now(), first = null, li = L();
+  var ui = card(main, "🃏 Match-up · " + li.name, g.topics);
+  ui.box.appendChild(Kit.h("p", "k-note", "Tap a word, then tap its partner. Match all six pairs as fast as you can."));
+  var grid = Kit.h("div", "k-match"); ui.box.appendChild(grid);
+  var cards = [];
+  g.list.forEach(function(x, i){ cards.push({ t: x.fx, k: i, fx: true }); cards.push({ t: x.en, k: i }); });
+  Kit.shuffle(Kit.rng(t0), cards).forEach(function(cd){
+    var b = Kit.h("button", "k-mc", cd.t); b.type = "button"; cd.el = b;
+    b.onclick = function(){
+      if (b.classList.contains("done") || b === (first && first.el)) return;
+      if (cd.fx && Kit.canSay()) Kit.say(cd.t, li.voice);
+      if (!first) { first = cd; b.classList.add("sel"); return; }
+      if (first.k === cd.k && first.fx !== cd.fx) {
+        b.classList.add("done"); first.el.classList.add("done"); first.el.classList.remove("sel");
+        api.record(true, { q: "Match: " + g.list[cd.k].fx, a: g.list[cd.k].en, skill: li.name + " vocabulary" });
+        first = null; left--;
+        if (!left) {
+          var secs = Math.round((Date.now() - t0) / 1000), score = Math.max(10, 100 - misses * 8 - Math.max(0, secs - 20));
+          api.xp(15 + Math.max(0, 20 - misses * 3)); var best = api.best(score);
+          setTimeout(function(){ endScreen(main, api, "🃏 Match-up", secs + "s", (misses ? misses + " wrong tap" + (misses > 1 ? "s" : "") + ". " : "No wrong taps! ") + "Score " + score + "." + (best ? " 🏆 New best!" : ""), function(){ main.textContent = ""; matchUp(main, api); }); }, 500);
+        }
+      } else {
+        misses++; b.classList.add("bad"); first.el.classList.add("bad");
+        var a = first; first = null;
+        setTimeout(function(){ b.classList.remove("bad"); a.el.classList.remove("bad", "sel"); }, 450);
+      }
+      ui.info.textContent = (6 - left) + "/6 · " + misses + " wrong";
+    };
+    grid.appendChild(b);
+  });
+}
+function speedRound(main, api){
+  var li = L(), c = COL[lang], g = gameWords(40).list, all = Object.keys(V).reduce(function(a, k){ return a.concat(V[k].w); }, []);
+  var score = 0, combo = 0, wrong = 0, end = Date.now() + 60000, r = Kit.rng(Date.now()), timer = null, i = 0;
+  var ui = card(main, "⚡ Speed round · " + li.name, "60s");
+  var big = Kit.h("div", "k-qtext"); big.style.cssText = "font-size:1.8rem;text-align:center;margin:18px 0"; ui.box.appendChild(big);
+  var opts = Kit.h("div", "k-opts"); ui.box.appendChild(opts);
+  var sc = Kit.h("p", "k-note"); sc.style.textAlign = "center"; ui.box.appendChild(sc);
+  function next(){
+    if (i >= g.length) i = 0;
+    var w = g[i++], others = Kit.shuffle(r, all.filter(function(x){ return x[0] !== w.en; })).slice(0, 3).map(function(x){ return x[0]; });
+    big.textContent = w.fx; opts.textContent = "";
+    Kit.shuffle(r, [w.en].concat(others)).forEach(function(o){
+      var b = Kit.h("button", "k-opt", o); b.type = "button";
+      b.onclick = function(){
+        var ok = o === w.en; api.record(ok, { q: w.fx, a: w.en, skill: li.name + " vocabulary" });
+        if (ok) { combo++; score += 1 + Math.floor(combo / 5); } else { combo = 0; wrong++; b.classList.add("wrong"); }
+        sc.textContent = "Score " + score + (combo >= 5 ? " · 🔥 x" + (1 + Math.floor(combo / 5)) + " combo" : "");
+        setTimeout(next, ok ? 80 : 350);
+      };
+      opts.appendChild(b);
+    });
+  }
+  function tick(){
+    var left = Math.max(0, Math.ceil((end - Date.now()) / 1000)); ui.info.textContent = left + "s";
+    if (left <= 0) { clearInterval(timer); api.xp(score * 2); var best = api.best(score);
+      endScreen(main, api, "⚡ Speed round", String(score), wrong + " wrong. Every 5 in a row adds a combo bonus." + (best ? " 🏆 New best!" : ""), function(){ main.textContent = ""; speedRound(main, api); }); }
+  }
+  timer = setInterval(tick, 250); next(); tick();
+  var stop = Kit.h("button", "k-btn ghost", "Stop"); stop.type = "button"; stop.style.marginTop = "12px"; stop.onclick = function(){ clearInterval(timer); api.home(); }; ui.box.appendChild(stop);
+}
+
 
 Kit.start({
   stats: true, id: "languages", name: "Word Passport", icon: "🛂", subject: "languages", colour: "#ea580c", colour2: "#e11d48",
   variant: function(){ return lang; },
-  blurb: "French, Spanish and German words and sentences: learn them, hear them, spell them, use them. Pick your language below.",
+  blurb: "French, Spanish and German: learn words, hear them, spell them and build sentences - then race the clock in Match-up and the Speed round.",
   doneLine: "Stamped in your passport.",
   extraHome: function(main, reload){
     var box = Kit.h("section", "k-card"), hd = Kit.h("div", "k-head"); hd.appendChild(Kit.h("h2", null, "Your language")); box.appendChild(hd);
@@ -151,8 +233,11 @@ Kit.start({
     ];
   },
   make: make,
-  practice: ORDER.map(function(k){ return { key:k, title:V[k].title, icon:V[k].icon, sub:V[k].w.length + " words",
-    items:function(i, seed){ return { t:k, k:["see", "say", "listen", "type"][i % 4], s:seed }; } }; }).concat([{ key:"sent", title:"Sentences", icon:"🧩", sub:"Build them", n:6, items:function(i, seed){ return { t:"sent", k:"order", s:seed }; } }])
+  practice: [
+    { key:"match", title:"Match-up", icon:"🃏", sub:"Pair the words, beat the clock", run:matchUp },
+    { key:"speed", title:"Speed round", icon:"⚡", sub:"60 seconds, as many as you can", run:speedRound }
+  ].concat(ORDER.map(function(k){ return { key:k, title:V[k].title, icon:V[k].icon, sub:V[k].w.length + " words",
+    items:function(i, seed){ return { t:k, k:["see", "say", "listen", "type"][i % 4], s:seed }; } }; }).concat([{ key:"sent", title:"Sentences", icon:"🧩", sub:"Build them", n:6, items:function(i, seed){ return { t:"sent", k:"order", s:seed }; } }]))
 });
 })();
 </script>
