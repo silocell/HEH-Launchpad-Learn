@@ -12,12 +12,12 @@ try{ var m = document.cookie.match(/(?:^|; )hl_theme=(dark|light|system)/), t = 
      if(t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t); }catch(e){}
 if (/^lab\./i.test(location.hostname) || /^\/HEH-(Homework|Launchpad)-Lab(\/|$)/i.test(location.pathname)) document.documentElement.classList.add("lab");
 </script>
-<link rel="stylesheet" href="kit.css?b=20261114a">
+<link rel="stylesheet" href="kit.css?b=20261114c">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js"></script>
 <script src="https://civilinitiatives.org/auth-store.js?b=20261026a"></script>
 <script src="learn.js?b=20261114a"></script>
 <script src="https://civilinitiatives.org/games-gate.js?b=20261027h" data-kind="learning"></script>
-<script src="kit.js?b=20261114a"></script>
+<script src="kit.js?b=20261114c"></script>
 <link rel="stylesheet" href="https://civilinitiatives.org/glass.css?b=20261114a">
 </head>
 <body>
@@ -124,7 +124,7 @@ function make(item){
 function weekNo(id){ return Math.round(new Date(id).getTime() / 6048e5); }
 
 Kit.start({
-  id: "languages", name: "Word Passport", icon: "🛂", subject: "languages", colour: "#ea580c", colour2: "#e11d48",
+  stats: true, id: "languages", name: "Word Passport", icon: "🛂", subject: "languages", colour: "#ea580c", colour2: "#e11d48",
   variant: function(){ return lang; },
   blurb: "French, Spanish and German words and sentences: learn them, hear them, spell them, use them. Pick your language below.",
   doneLine: "Stamped in your passport.",

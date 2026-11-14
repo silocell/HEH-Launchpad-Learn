@@ -88,6 +88,35 @@
   };
   Kit.canSay = function () { return !!window.speechSynthesis; };
 
+  /* ---------- the family: one hat over all the homework apps ---------- */
+  Kit.APPS = [
+    { id: "hub", name: "My homework", icon: "🎒", url: "homework.html" },
+    { id: "maths", name: "Brainstorm Maths", icon: "🧠", url: "maths.html", colour: "#1f6fde" },
+    { id: "reader", name: "XP Reader", icon: "📚", url: "reader.html", colour: "#7c3aed" },
+    { id: "science", name: "Chemically Scientific", icon: "🧪", url: "science.html", colour: "#0f9d58" },
+    { id: "languages", name: "Word Passport", icon: "🛂", url: "languages.html", colour: "#ea580c" }
+  ];
+  Kit.switcher = function (current) {
+    var brand = document.querySelector(".k-top .k-brand"); if (!brand) return;
+    var me = Kit.APPS.filter(function (a) { return a.id === current; })[0] || Kit.APPS[0];
+    var btn = h("button", "k-brand k-switch"); btn.type = "button"; btn.setAttribute("aria-haspopup", "true"); btn.setAttribute("aria-expanded", "false");
+    btn.textContent = me.icon + " " + me.name + " ▾";
+    var menu = h("div", "k-menu"); menu.hidden = true; menu.setAttribute("role", "menu");
+    Kit.APPS.forEach(function (a) {
+      var it = h("a", "k-mi" + (a.id === current ? " on" : "")); it.href = a.url; it.setAttribute("role", "menuitem");
+      it.appendChild(h("span", null, a.icon)); it.appendChild(h("b", null, a.name));
+      if (a.id !== "hub") { var sm = Kit.summary()[a.id]; it.appendChild(h("small", null, sm && sm.week === weekInfo().id ? sm.pc + "%" : "")); }
+      menu.appendChild(it);
+    });
+    brand.replaceWith(btn); btn.after(menu);
+    btn.onclick = function (e) { e.stopPropagation(); menu.hidden = !menu.hidden; btn.setAttribute("aria-expanded", String(!menu.hidden)); };
+    document.addEventListener("click", function () { menu.hidden = true; btn.setAttribute("aria-expanded", "false"); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") menu.hidden = true; });
+  };
+  /* a small summary of each app's week, so the hub and the switcher can show it */
+  Kit.summary = function () { try { return JSON.parse(ls("hl.kit.sum") || "{}") || {}; } catch (e) { return {}; } };
+  Kit.week = weekInfo;
+
   /* ---------- the app ---------- */
   Kit.start = function (app) {
     Kit.app = app;
@@ -97,6 +126,7 @@
     var W = weekInfo();
     var S = null;            // saved progress for this app (and variant)
     var xpEl = document.getElementById("kXp");
+    Kit.switcher(app.id);
 
     function key() { return "kit-" + app.id + (app.variant ? "-" + app.variant() : ""); }
     function blank() { return { week: W.id, tasks: {}, xp: (S && S.xp) || 0, prac: (S && S.prac) || {}, last: (S && S.last) || null }; }
@@ -107,8 +137,8 @@
         if (!S) S = blank();
         if (S.week !== W.id) {                 // new week: remember how last week went, start fresh
           var lastPc = S.week ? overall(S, tasksFor(S.week)) : null;
-          var keep = { xp: S.xp || 0, prac: S.prac || {}, last: S.week ? { week: S.week, pc: lastPc } : S.last };
-          S = blank(); S.xp = keep.xp; S.prac = keep.prac; S.last = keep.last;
+          var keep = { xp: S.xp || 0, prac: S.prac || {}, stats: S.stats || {}, last: S.week ? { week: S.week, pc: lastPc } : S.last };
+          S = blank(); S.xp = keep.xp; S.prac = keep.prac; S.last = keep.last; S.stats = keep.stats;
           save();
         }
       }, function () { S = blank(); });
@@ -117,6 +147,18 @@
       if (window.HEHLearn) HEHLearn.save(key(), S);
       else ls("hl.save." + key(), JSON.stringify(S));
       paintXp();
+      try {
+        var sum = Kit.summary(), ts = tasksFor(W.id), left = 0;
+        ts.forEach(function (t) { if (pc(t) < 100) left++; });
+        sum[app.id] = { week: W.id, pc: overall(S, ts), left: left, tasks: ts.length, xp: S.xp || 0, variant: app.variant ? app.variant() : null, at: Date.now() };
+        ls("hl.kit.sum", JSON.stringify(sum));
+        if (window.HEHLearn) HEHLearn.save("kit-summary", sum);
+      } catch (e) {}
+    }
+    function stat(skill, ok) {
+      S.stats = S.stats || {};
+      var x = S.stats[skill] = S.stats[skill] || { r: 0, n: 0 };
+      x.n++; if (ok) x.r++;
     }
     function paintXp() { if (xpEl) xpEl.textContent = "⚡ " + Number(S && S.xp || 0).toLocaleString("en-GB") + " XP"; }
 
@@ -166,6 +208,8 @@
       ts.forEach(function (t) {
         var p = pc(t), row = h("div", "k-row");
         var tt = h("div", "k-t", t.title); if (t.sub) tt.appendChild(h("small", null, t.sub)); row.appendChild(tt);
+        var stt = S.tasks[t.key];
+        if (stt && stt.asked) tt.appendChild(h("small", "k-first", "✔ " + Math.round(100 * stt.first / stt.asked) + "% right first time"));
         row.appendChild(h("span", "k-pc " + (p >= 100 ? "full" : p > 0 ? "part" : "none"), p + "%"));
         var b = h("button", "k-btn" + (p >= 100 ? " done" : ""), p >= 100 ? "Complete ✓" : p > 0 ? "Continue ›" : "Start ›"); b.type = "button";
         b.onclick = function () { runTask(t); };
@@ -175,6 +219,20 @@
       if (S.last && S.last.pc != null) { var lw = h("p", "k-note", "Last week: " + S.last.pc + "%."); lw.style.cssText = "margin:0 16px 14px"; card.appendChild(lw); }
       main.appendChild(card);
 
+      if (app.stats && S.stats && Object.keys(S.stats).length) {
+        var sc = h("section", "k-card"), sh = h("div", "k-head"); sh.appendChild(h("h2", null, "How you're doing")); sh.appendChild(h("span", "k-note", "Right answers, by topic")); sc.appendChild(sh);
+        var list = h("div", "k-stats");
+        Object.keys(S.stats).map(function (k) { return [k, S.stats[k]]; }).filter(function (x) { return x[1].n >= 2; })
+          .sort(function (a, b) { return a[1].r / a[1].n - b[1].r / b[1].n; }).slice(0, 12).forEach(function (x) {
+            var pcx = Math.round(100 * x[1].r / x[1].n), row = h("div", "k-stat");
+            row.appendChild(h("span", null, x[0]));
+            var bar = h("div", "k-bar"), fill = h("i"); fill.style.width = pcx + "%"; fill.style.background = pcx >= 80 ? "var(--good)" : pcx >= 50 ? "var(--warn)" : "var(--bad)"; bar.appendChild(fill);
+            row.appendChild(bar); row.appendChild(h("b", null, pcx + "%")); list.appendChild(row);
+          });
+        sc.appendChild(list);
+        sc.appendChild(h("p", "k-note", "Red topics first: they're where practice helps most.")); sc.lastChild.style.cssText = "margin:0 16px 14px";
+        main.appendChild(sc);
+      }
       if (app.practice && app.practice.length) {
         var pcard = h("section", "k-card");
         var ph = h("div", "k-head"); ph.appendChild(h("h2", null, "Free practice")); ph.appendChild(h("span", "k-note", "Any topic, any time")); pcard.appendChild(ph);
@@ -185,7 +243,7 @@
           var best = S.prac[p.key];
           b.appendChild(h("small", null, p.sub ? p.sub + (best != null ? " · best " + best + "%" : "") : best != null ? "Best " + best + "%" : "Not tried yet"));
           var bar = h("div", "k-bar"), fill = h("i"); fill.style.width = (best || 0) + "%"; bar.appendChild(fill); b.appendChild(bar);
-          b.onclick = function () { runPractice(p); };
+          b.onclick = function () { if (p.run) runCustom(p); else runPractice(p); };
           grid.appendChild(b);
         });
         pcard.appendChild(grid); main.appendChild(pcard);
@@ -216,7 +274,11 @@
         show(q, { kicker: t.title, code: code, dots: t.items.map(function (_, k) { return st.res[k] === "right" || st.res[k] === "read" ? "ok" : st.res[k] === "wrong" ? "no" : k === i ? "now" : ""; }), retry: retry },
           function (ok, gave) {
             if (q.type === "read") st.res[i] = "read";
-            else st.res[i] = ok ? "right" : "wrong";
+            else {
+              if (!retry) st.first = (st.first || 0) + (ok ? 1 : 0), st.asked = (st.asked || 0) + 1;
+              st.res[i] = ok ? "right" : "wrong";
+              stat(q.skill || t.title, ok);
+            }
             if (ok && (q.type === "num" || q.type === "text")) { typedRight.push({ code: code, q: q, a: q.shown || q.a }); sinceCheck++; }
             S.xp = (S.xp || 0) + (q.type === "read" ? Math.round((q.words || 100) / 10) : ok ? (retry ? 5 : 10) : 1);
             save();
@@ -248,6 +310,17 @@
       show(q, { kicker: "📓 Notebook check", code: pickd.code, dots: [] }, function () {}, then, home);
     }
 
+    /* ---------- a game of the app's own (Word Passport's match-up, speed round) ---------- */
+    function runCustom(p) {
+      window.scrollTo(0, 0); main.textContent = "";
+      p.run(main, {
+        home: home,
+        xp: function (n) { S.xp = (S.xp || 0) + n; save(); },
+        best: function (score) { if (S.prac[p.key] == null || score > S.prac[p.key]) { S.prac[p.key] = score; save(); return true; } return false; },
+        record: function (ok, q) { stat(q.skill || p.title, ok); if (window.HEHLearn) HEHLearn.record({ subject: app.subject, skill: q.skill || p.title, ok: ok, front: q.q || "", back: String(q.a || ""), game: app.id }); }
+      });
+    }
+
     /* ---------- practice: ten from one topic ---------- */
     function runPractice(p) {
       var n = p.n || 10, i = 0, right = 0, missed = [], r = rngFrom(Date.now() + p.key);
@@ -257,7 +330,7 @@
         var item = p.items ? p.items(i, seeds[i]) : { t: p.key, s: seeds[i], i: i };
         var q = app.make(item);
         show(q, { kicker: (p.icon ? p.icon + " " : "") + p.title, code: "P" + (i + 1), dots: seeds.map(function (_, k) { return k < i ? (missed.indexOf(k) >= 0 ? "no" : "ok") : k === i ? "now" : ""; }) },
-          function (ok) { if (q.type === "read" || ok) right++; else missed.push(i); S.xp = (S.xp || 0) + (ok ? 5 : 1); save(); }, function () { i++; step(); }, home);
+          function (ok) { if (q.type === "read" || ok) right++; else missed.push(i); if (q.type !== "read") stat(q.skill || p.title, ok); S.xp = (S.xp || 0) + (ok ? 5 : 1); save(); }, function () { i++; step(); }, home);
       }
       function done() {
         var score = Math.round(100 * right / n);

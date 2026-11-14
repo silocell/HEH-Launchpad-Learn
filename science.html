@@ -12,12 +12,12 @@ try{ var m = document.cookie.match(/(?:^|; )hl_theme=(dark|light|system)/), t = 
      if(t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t); }catch(e){}
 if (/^lab\./i.test(location.hostname) || /^\/HEH-(Homework|Launchpad)-Lab(\/|$)/i.test(location.pathname)) document.documentElement.classList.add("lab");
 </script>
-<link rel="stylesheet" href="kit.css?b=20261114a">
+<link rel="stylesheet" href="kit.css?b=20261114c">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js"></script>
 <script src="https://civilinitiatives.org/auth-store.js?b=20261026a"></script>
 <script src="learn.js?b=20261114a"></script>
 <script src="https://civilinitiatives.org/games-gate.js?b=20261027h" data-kind="learning"></script>
-<script src="kit.js?b=20261114a"></script>
+<script src="kit.js?b=20261114c"></script>
 <link rel="stylesheet" href="https://civilinitiatives.org/glass.css?b=20261114a">
 </head>
 <body>
@@ -148,7 +148,67 @@ var Q = [
 ["space","Why do we have seasons?","The Earth's axis is tilted","The Earth gets closer to the Sun in summer","The Sun gets hotter","The Moon changes shape","When your hemisphere is tilted towards the Sun, it's summer there."],
 ["space","How long does the Earth take to orbit the Sun?","About 365 days","24 hours","28 days","12 hours","That's one year (365¼ days, which is why we have leap years)."],
 ["space","Which planet is closest to the Sun?","=mercury","Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune."],
-["space","What is the Sun?","A star","A planet","A moon","A galaxy","The Sun is a star - the closest one to Earth."]
+["space","What is the Sun?","A star","A planet","A moon","A galaxy","The Sun is a star - the closest one to Earth."],
+/* ---------- more, mostly "type the key word" (added for the Educake-style quizzes) ---------- */
+["cells","What do we call a living thing made of only one cell?","=unicellular|single-celled|single celled|unicellular organism","Bacteria and amoebas are unicellular (single-celled) organisms."],
+["cells","Which part of a plant cell is full of cell sap and helps keep the cell firm?","=vacuole|permanent vacuole","The permanent vacuole is filled with cell sap, which pushes outwards and keeps the cell firm."],
+["cells","Which cell has a tail to help it swim to the egg?","Sperm cell","Red blood cell","Nerve cell","Ciliated cell","The sperm cell's tail lets it swim; it also has lots of mitochondria for energy."],
+["cells","What is the name of the structures in a cell that carry out specific jobs (like the nucleus and mitochondria)?","=organelles|organelle","Organelles are the 'little organs' inside a cell."],
+["body","Which organ breaks down food using acid and enzymes, and churns it?","=stomach","The stomach contains hydrochloric acid, which also kills microbes in food."],
+["body","Which tube carries food from the mouth to the stomach?","=oesophagus|esophagus|gullet|food pipe","The oesophagus moves food down by waves of muscle called peristalsis."],
+["body","Which muscle under the lungs contracts to help you breathe in?","=diaphragm","When the diaphragm contracts and flattens, the chest gets bigger and air rushes in."],
+["body","Which blood vessels have very thin walls so substances can pass in and out?","Capillaries","Arteries","Veins","Valves","Capillary walls are only one cell thick."],
+["body","What is the name of the frame of bones that supports the body?","=skeleton","The skeleton supports, protects (like the skull) and helps you move."],
+["body","Smoking damages the tiny hairs that sweep mucus out of the airways. What are they called?","=cilia","Cilia sweep mucus and trapped dirt up and out of the airways."],
+["energy","Which gas do plants take in for photosynthesis?","=carbon dioxide|co2|co₂","Plants take in carbon dioxide through the stomata."],
+["energy","Which gas do plants give off during photosynthesis?","=oxygen|o2|o₂","Oxygen is a by-product of photosynthesis."],
+["energy","Plants store the glucose they make as which substance?","Starch","Protein","Fat","Cellulose only","Glucose is turned into starch for storage. You can test for starch with iodine, which turns blue-black."],
+["energy","What colour does iodine turn when starch is present?","Blue-black","Orange","Red","Green","Iodine is orange-brown; with starch it turns blue-black."],
+["life","What is a consumer in a food chain?","An organism that eats other organisms","A plant that makes its own food","Something that rots dead things","The sun","Consumers get their energy by eating producers or other consumers."],
+["life","Organisms that break down dead material are called…","=decomposers|decomposer","Decomposers like bacteria and fungi return nutrients to the soil."],
+["life","What do we call an animal that hunts other animals for food?","=predator","The animals it hunts are its prey."],
+["life","Where does a baby develop during pregnancy?","Uterus","Ovary","Oviduct","Placenta","The baby (fetus) grows in the uterus; the placenta passes it food and oxygen."],
+["life","The characteristics passed from parents to children are carried by…","Genes","Cells only","Blood","Vitamins","Genes are sections of DNA on chromosomes."],
+["health","What is a microbe that causes disease called?","=pathogen|pathogens","Bacteria, viruses, fungi and protists can all be pathogens."],
+["health","What do white blood cells do?","Fight infection","Carry oxygen","Clot the blood","Carry food","Some white blood cells eat pathogens; others make antibodies."],
+["health","Which of these is a good way to stop the spread of germs?","Washing your hands","Sharing cups","Coughing into your hands","Leaving cuts uncovered","Handwashing removes pathogens before they get into your body or onto others."],
+["health","Which drug, found in cigarettes, is addictive?","=nicotine","Nicotine is the addictive drug in tobacco. Tar causes cancer; carbon monoxide reduces oxygen carried in the blood."],
+["health","Which part of a balanced diet helps food move through the gut?","Fibre","Fat","Salt","Sugar","Fibre (in fruit, vegetables and wholegrains) keeps the digestive system working."],
+["particles","What is the change from solid to liquid called?","=melting|melt","Melting happens at the melting point; for ice that's 0 °C."],
+["particles","What is the change from liquid to solid called?","=freezing|solidifying|freeze","Freezing happens at the same temperature as melting."],
+["particles","Why does a gas fill its whole container?","Its particles move quickly in all directions","Its particles are bigger","Its particles stick to the walls","It is heavier than air","Gas particles move fast and randomly, spreading to fill the space."],
+["atoms","What is the chemical symbol for oxygen?","=O","Oxygen's symbol is O; oxygen gas is O₂ because its atoms go around in pairs."],
+["atoms","What is the chemical symbol for gold?","=Au","Au comes from the Latin aurum."],
+["atoms","What is the chemical formula for water?","=H2O|h₂o","Two hydrogen atoms and one oxygen atom."],
+["atoms","Who arranged an early version of the periodic table in 1869?","Dmitri Mendeleev","Isaac Newton","Marie Curie","John Dalton","Mendeleev left gaps for elements nobody had discovered yet - and predicted their properties."],
+["atoms","What are the horizontal rows in the periodic table called?","=periods|period","Rows are periods; columns are groups."],
+["mixtures","What is a solution?","A solute dissolved in a solvent","A mixture of two solids","A pure element","A liquid that can't dissolve anything","Salt (solute) dissolved in water (solvent) makes salt water (a solution)."],
+["mixtures","A solution that can't dissolve any more solute is called…","=saturated|saturated solution","When it's saturated, extra solute just sits at the bottom."],
+["mixtures","What do we call a substance with nothing else mixed in?","=pure|pure substance","A pure substance has a sharp, fixed melting point."],
+["reactions","What colour does universal indicator turn in a strong alkali?","Purple","Red","Yellow","Green","Strong alkalis are pH 12-14 and turn universal indicator purple."],
+["reactions","Which of these is an alkali?","Sodium hydroxide","Hydrochloric acid","Vinegar","Lemon juice","Sodium hydroxide is a strong alkali. Vinegar and lemon juice are acids."],
+["reactions","Hydrochloric acid reacting with sodium hydroxide makes water and which salt?","=sodium chloride","Hydrochloric acid makes chlorides; this one is sodium chloride - table salt."],
+["reactions","A substance that speeds up a reaction without being used up is a…","=catalyst","Enzymes are biological catalysts."],
+["reactions","When a reaction gives out heat it is called…","Exothermic","Endothermic","Neutral","Catalytic","Burning is exothermic. Reactions that take in heat are endothermic."],
+["forces","Which force slows down a falling parachutist?","Air resistance","Gravity","Magnetism","Upthrust from the ground","Air resistance (drag) increases with speed, until it balances the weight."],
+["forces","What do we call the speed at which the forces on a falling object balance?","=terminal velocity|terminal speed","At terminal velocity the object stops speeding up."],
+["forces","Mass is measured in kilograms. Weight is measured in…","=newtons|newton|n","Weight is a force, so it is measured in newtons."],
+["forces","The turning effect of a force is called a…","=moment","Moment = force × distance from the pivot."],
+["energy2","What is the unit of power?","Watt (W)","Joule (J)","Newton (N)","Amp (A)","1 watt is 1 joule of energy transferred every second."],
+["energy2","A moving object has which kind of energy store?","=kinetic","The faster it moves, the more kinetic energy it has."],
+["energy2","An object lifted up high has more of which energy store?","Gravitational potential","Kinetic","Elastic potential","Chemical","Lifting something higher increases its gravitational potential energy."],
+["electric","What is the unit of potential difference (voltage)?","=volts|volt|v","Voltage is measured in volts with a voltmeter, connected in parallel."],
+["electric","In a parallel circuit, if one bulb breaks…","The other bulbs stay on","All the bulbs go out","The other bulbs get dimmer","The battery explodes","Each bulb has its own loop, so the others still have a complete circuit."],
+["electric","What is made when you wrap a wire around an iron nail and pass a current through it?","=electromagnet|an electromagnet","Electromagnets can be switched on and off, and made stronger with more coils or more current."],
+["electric","What does a compass needle line up with?","The Earth's magnetic field","The Sun","The Moon's gravity","Static electricity","The needle is a small magnet that points along Earth's magnetic field, roughly north-south."],
+["waves","Objects that let no light through are called…","=opaque","Transparent lets light through clearly; translucent lets some through."],
+["waves","What forms when an opaque object blocks light?","=shadow|a shadow","Light travels in straight lines, so it can't bend round the object."],
+["waves","Sound travels fastest through which of these?","Solids","Liquids","Gases","A vacuum","The particles in a solid are closest together, so vibrations pass on quickly."],
+["waves","How is loudness measured?","In decibels (dB)","In hertz (Hz)","In metres","In newtons","Very loud sounds (above about 85 dB) can damage your hearing over time."],
+["space","What is the name of our galaxy?","=the milky way|milky way","The Milky Way contains hundreds of billions of stars."],
+["space","Which force keeps the planets in orbit around the Sun?","Gravity","Magnetism","Friction","Air resistance","The Sun's gravity pulls the planets towards it as they move."],
+["space","Why can we see the Moon?","It reflects light from the Sun","It makes its own light","It is on fire","It reflects light from the Earth only","The Moon is not a light source - it reflects sunlight."],
+["space","Which is the largest planet in our solar system?","Jupiter","Saturn","Earth","Neptune","Jupiter is so big that all the other planets could fit inside it."]
 ];
 var TOPICS = {
   cells:["Cells","🦠","Biology"], body:["The human body","🫀","Biology"], energy:["Respiration & photosynthesis","🌿","Biology"], life:["Ecosystems, reproduction & evolution","🐝","Biology"], health:["Health & disease","💉","Biology"],
@@ -170,18 +230,18 @@ function make(item){
 function weekNo(id){ return Math.round(new Date(id).getTime() / 6048e5); }
 
 Kit.start({
-  id: "science", name: "Chemically Scientific", icon: "🧪", subject: "science", colour: "#0f9d58", colour2: "#14b8a6",
-  blurb: "Science quizzes on everything in Key Stage 3. Every answer comes with the reason why, and the ones you miss come back until they stick.",
+  stats: true, id: "science", name: "Chemically Scientific", icon: "🧪", subject: "science", colour: "#0f9d58", colour2: "#14b8a6",
+  blurb: "Science quizzes on everything in Key Stage 3. Type the key words or pick the answer: it marks you straight away, tells you why, and brings back the ones you miss until they stick.",
   doneLine: "Quiz complete.",
   weekly: function(r, id){
     var w = weekNo(id), bio = ORDER.slice(0, 5), chem = ORDER.slice(5, 9), phys = ORDER.slice(9);
     var focus = [bio[w % bio.length], chem[w % chem.length], phys[w % phys.length]];
     var tasks = focus.map(function(t, k){
-      var ids = Kit.shuffle(r, byTopic[t]).slice(0, 8);
+      var ids = Kit.shuffle(r, byTopic[t]).slice(0, 10);
       return { key: "q" + (k + 1), code: String(k + 1), title: TOPICS[t][2] + ": " + TOPICS[t][0], sub: ids.length + " questions", items: ids.map(function(q){ return { t: t, q: q, s: Math.floor(r() * 1e9) }; }) };
     });
-    var mix = Kit.shuffle(r, Q.map(function(_, i){ return i; })).slice(0, 8);
-    tasks.push({ key: "mix", code: "R", title: "Recap: everything", sub: "8 questions from any topic", items: mix.map(function(q){ return { t: Q[q][0], q: q, s: Math.floor(r() * 1e9) }; }) });
+    var mix = Kit.shuffle(r, Q.map(function(_, i){ return i; })).slice(0, 10);
+    tasks.push({ key: "mix", code: "R", title: "Recap: everything", sub: "10 questions from any topic", items: mix.map(function(q){ return { t: Q[q][0], q: q, s: Math.floor(r() * 1e9) }; }) });
     return tasks;
   },
   make: make,

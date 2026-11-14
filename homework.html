@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script src="https://civilinitiatives.org/site.js?b=20261114p"></script>
+<title>My homework</title>
+<meta name="description" content="All your Launchpad homework in one place: maths, reading, science and languages.">
+<link rel="icon" type="image/png" href="/favicon.png">
+<script>
+try{ var m = document.cookie.match(/(?:^|; )hl_theme=(dark|light|system)/), t = m ? m[1] : JSON.parse(localStorage.getItem("hl.theme"));
+     if(t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t); }catch(e){}
+if (/^lab\./i.test(location.hostname) || /^\/HEH-(Homework|Launchpad)-Lab(\/|$)/i.test(location.pathname)) document.documentElement.classList.add("lab");
+</script>
+<link rel="stylesheet" href="kit.css?b=20261114c">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js"></script>
+<script src="https://civilinitiatives.org/auth-store.js?b=20261026a"></script>
+<script src="learn.js?b=20261114a"></script>
+<script src="https://civilinitiatives.org/games-gate.js?b=20261027h" data-kind="learning"></script>
+<script src="kit.js?b=20261114c"></script>
+<link rel="stylesheet" href="https://civilinitiatives.org/glass.css?b=20261114a">
+</head>
+<body>
+<div class="labbar">Lab</div>
+<header class="k-top"><span class="k-brand">🎒 My homework</span><span class="k-sp"></span><span class="k-xp" id="kXp">⚡ 0 XP</span><a href="./" aria-label="Back to the learning games">✕</a></header>
+<main class="k" id="main"></main>
+<footer class="k">© 2026 HWL Systems · Developed by Shiv Kumar · Free to use, no adverts</footer>
+<script>
+/* The hat over the homework apps: this week's homework from all of them
+   in one list, like a homework planner that fills itself in. Each app
+   leaves a short summary when you use it; this page reads those. */
+(function(){
+"use strict";
+var h = Kit.h, main = document.getElementById("main"), W = Kit.week();
+Kit.switcher("hub");
+var xp = document.getElementById("kXp");
+function paint(sum){
+  main.textContent = "";
+  var hero = h("div", "k-hero"); hero.style.setProperty("--ac", "#14213d"); hero.style.setProperty("--ac2", "#4f46e5");
+  hero.appendChild(h("h1", null, "My homework"));
+  hero.appendChild(h("p", null, "Everything due " + W.label + ", from every homework app. Tap one to carry on."));
+  hero.appendChild(h("div", "k-big", "🎒")); main.appendChild(hero);
+  var apps = Kit.APPS.filter(function(a){ return a.id !== "hub"; }), tot = 0, totXp = 0;
+  var card = h("section", "k-card k-due"), hd = h("div", "k-head"); hd.appendChild(h("h2", null, "Due " + W.label));
+  var g = h("div", "k-gauge"); card.appendChild(hd);
+  var rows = h("div", "k-rows");
+  apps.forEach(function(a){
+    var s = sum[a.id], fresh = s && s.week === W.id, p = fresh ? s.pc : 0;
+    tot += p; totXp += s && s.xp || 0;
+    var row = h("div", "k-row");
+    var t = h("div", "k-t", a.icon + " " + a.name);
+    t.appendChild(h("small", null, !fresh ? "Not opened this week yet" : p >= 100 ? "All done" : s.left + " of " + s.tasks + " tasks to finish" + (s.variant && a.id === "languages" ? " · " + ({ fr:"French", es:"Spanish", de:"German" })[s.variant] : "")));
+    row.appendChild(t);
+    row.appendChild(h("span", "k-pc " + (p >= 100 ? "full" : p > 0 ? "part" : "none"), p + "%"));
+    var b = h("a", "k-btn" + (p >= 100 ? " done" : ""), p >= 100 ? "Complete ✓" : p > 0 ? "Continue ›" : "Start ›");
+    b.href = a.url; b.style.cssText = "text-decoration:none;text-align:center;" + (p >= 100 ? "" : "background:" + a.colour);
+    row.appendChild(b); rows.appendChild(row);
+  });
+  var all = Math.round(tot / apps.length);
+  g.appendChild(h("small", null, all >= 100 ? "Done ✅" : Math.ceil(W.left / 864e5) + " days left")); g.appendChild(h("span", null, all + "%"));
+  g.lastChild.style.color = all >= 100 ? "var(--good)" : all > 0 ? "var(--warn)" : "var(--soft)";
+  hd.appendChild(g); card.appendChild(rows); main.appendChild(card);
+  var tip = h("p", "k-note", "Homework is set every Friday at 9am and due the next Friday at 9am. Your progress follows your account onto any device."); tip.style.margin = "0 4px";
+  main.appendChild(tip);
+  if (xp) xp.textContent = "⚡ " + totXp.toLocaleString("en-GB") + " XP";
+}
+paint(Kit.summary());
+if (window.HEHLearn && HEHLearn.connect) { HEHLearn.connect(); HEHLearn.load("kit-summary").then(function(remote){
+  if (!remote) return;
+  var local = Kit.summary(), merged = {};
+  Object.keys(remote).concat(Object.keys(local)).forEach(function(k){ var a = local[k], b2 = remote[k]; merged[k] = !a ? b2 : !b2 ? a : (a.at || 0) >= (b2.at || 0) ? a : b2; });
+  try { localStorage.setItem("hl.kit.sum", JSON.stringify(merged)); } catch(e){}
+  paint(merged);
+}, function(){}); }
+})();
+</script>
+</body>
+</html>

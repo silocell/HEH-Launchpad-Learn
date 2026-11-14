@@ -84,3 +84,17 @@ footer.k{text-align:center;color:var(--soft);font-size:.85rem;padding:10px 16px 
 @media (max-width:420px){ .k-row{gap:8px;padding:10px 10px 10px 12px} .k-row .k-btn{min-width:0;padding:9px 12px;font-size:.92rem} .k-q{padding:14px} }
 @media (max-width:300px){ .k-row{flex-wrap:wrap} .k-row .k-t{flex:1 1 100%} }
 @media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+
+/* the app switcher (one hat over all the homework apps) */
+.k-top{position:sticky}
+.k-switch{background:transparent;border:0;color:#fff;padding:6px 8px;margin:-6px -8px;border-radius:10px;font:inherit;font-weight:800;font-size:1.05rem;cursor:pointer;max-width:70vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.k-switch:hover,.k-switch[aria-expanded="true"]{background:rgba(255,255,255,.12)}
+.k-menu{position:absolute;top:calc(100% + 4px);left:10px;z-index:40;min-width:250px;background:var(--card);color:var(--ink);border:1px solid var(--rule);border-radius:16px;padding:6px;box-shadow:0 18px 40px -12px rgba(0,0,0,.4)}
+.k-top .k-mi{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:var(--ink);text-decoration:none;opacity:1;font-weight:600}
+.k-mi:hover{background:var(--row)} .k-mi.on{background:var(--row)}
+.k-mi span{font-size:1.2rem} .k-mi b{flex:1} .k-mi small{color:var(--soft);font-weight:700}
+.k-first{color:var(--good)!important}
+.k-stats{display:grid;gap:8px;padding:0 16px 10px}
+.k-stat{display:grid;grid-template-columns:minmax(0,1.3fr) 1fr 3.2em;gap:10px;align-items:center;font-size:.92rem}
+.k-stat span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .k-stat b{text-align:right;font-variant-numeric:tabular-nums}
+.k-stat .k-bar{margin:0;height:9px}
