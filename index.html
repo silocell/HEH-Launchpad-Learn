@@ -38,6 +38,11 @@ h1{margin:0 0 4px} .muted{color:var(--soft)}
 footer{max-width:1000px;margin:0 auto;padding:0 16px 40px;color:var(--soft);font-size:.85rem}
 footer a{color:inherit}
 @media (prefers-reduced-motion: reduce){ .game{transition:none} .game:hover{transform:none} }
+.today{margin:14px 0 4px;padding:14px 16px;border-radius:16px;border:1px solid var(--rule,#ddd);background:var(--card,#fff)}
+.today-top{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.today-bar{height:10px;border-radius:999px;background:color-mix(in srgb,currentColor 12%,transparent);overflow:hidden;margin:10px 0 6px}
+.today-bar i{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#16a34a,#06b6d4);transition:width .6s}
+.today small{opacity:.75}
 </style>
 <link rel="stylesheet" href="https://civilinitiatives.org/glass.css?b=20261102a">
 </head>
@@ -46,6 +51,11 @@ footer a{color:inherit}
 <main>
   <h1>Learning Games</h1>
   <p class="muted">Sign in with your Launchpad account to begin. Your progress syncs across all your devices.</p>
+  <div class="today" id="today" hidden>
+    <div class="today-top"><b>🎯 Today</b><span id="todayTxt"></span></div>
+    <div class="today-bar"><i id="todayFill"></i></div>
+    <small id="todayMore"></small>
+  </div>
   <div class="mine"><a class="pill" href="progress.html">📈 My progress</a><a class="pill" href="cards.html">🃏 Flash cards</a></div>
   <div class="grid" id="list"></div>
 </main>
@@ -67,6 +77,17 @@ var GAMES = [
   { icon:"🎮", bg:"linear-gradient(135deg,#0f766e,#0891b2 50%,#4f46e5)", name:"Game Maker", url:"https://sandbox.civilinitiatives.org/",
     says:"Describe a game and Claude builds it for you - a maths race, a spelling game, anything. Your first one is free.", tags:["Make your own","New"] }
 ];
+/* today's goal and best streak, from the learning games (kept on this device) */
+(function(){
+  var n = 0, best = 0, GOAL = 20;
+  try { var p = (localStorage.getItem("hl.learn.day") || "").split("|"), d = new Date();
+        if (p[0] === d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate()) n = +p[1] || 0;
+        best = +localStorage.getItem("hl.learn.beststreak") || 0; } catch(e){}
+  document.getElementById("today").hidden = false;
+  document.getElementById("todayTxt").textContent = Math.min(n, GOAL) + " / " + GOAL + " right answers" + (n >= GOAL ? " ✅" : "");
+  setTimeout(function(){ document.getElementById("todayFill").style.width = Math.min(100, n / GOAL * 100) + "%"; }, 60);
+  document.getElementById("todayMore").textContent = (n >= GOAL ? "Daily goal done - anything more is a bonus. " : "Any learning game counts. ") + (best ? "🔥 Best streak: " + best + " in a row." : "Get 3 in a row to start a streak.");
+})();
 var list = document.getElementById("list");
 function h(t, c, x){ var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
 GAMES.forEach(function(g){
