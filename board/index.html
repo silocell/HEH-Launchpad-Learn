@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script src="https://civilinitiatives.org/site.js?b=20261114p"></script>
+<title>Launchpad Leaderboards</title>
+<meta name="description" content="The Launchpad's leaderboards: most played games, top scores and this week's top players.">
+<link rel="icon" type="image/png" href="/favicon.png">
+<script>
+try{ var m = document.cookie.match(/(?:^|; )hl_theme=(dark|light|system)/), t = m ? m[1] : JSON.parse(localStorage.getItem("hl.theme"));
+     if(t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t); }catch(e){}
+</script>
+<style>
+:root{ --bg:#0c1022; --card:#151b36; --row:#1c2446; --ink:#eef1ff; --soft:#a3acd3; --rule:#2a3463; --gold:#fbbf24; --silver:#cbd5e1; --bronze:#d97706; --ac:#8b5cf6; }
+:root[data-theme="light"]{ --bg:#f3f4fb; --card:#fff; --row:#f0f2fb; --ink:#141a33; --soft:#5b6380; --rule:#e2e5f2; }
+*{box-sizing:border-box} html,body{margin:0} [hidden]{display:none!important}
+body{background:radial-gradient(1200px 500px at 50% -200px, #3b2a7a 0%, transparent 70%), var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+header{display:flex;align-items:center;gap:10px;padding:12px 16px;max-width:900px;margin:0 auto}
+header b{font-size:1.05rem} header .sp{flex:1} header a{color:var(--ink);text-decoration:none;font-weight:700;opacity:.85}
+main{max-width:900px;margin:0 auto;padding:6px 14px 60px}
+h1{font-size:clamp(2rem,7vw,3.2rem);line-height:1;margin:18px 0 8px;letter-spacing:-.03em}
+.lead{color:var(--soft);margin:0 0 18px;max-width:56ch}
+.tabs{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 0 14px;padding-bottom:2px}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:none;border:1px solid var(--rule);background:var(--card);color:var(--ink);border-radius:999px;padding:9px 16px;font:inherit;font-weight:700;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--ac);border-color:var(--ac);color:#fff}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:20px;padding:14px;margin-bottom:14px}
+.card h2{margin:4px 4px 2px;font-size:1.15rem} .card .sub{color:var(--soft);margin:0 4px 12px;font-size:.92rem}
+.podium{display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:8px;align-items:end;margin:6px 0 14px}
+.pod{text-align:center;border-radius:16px;padding:12px 8px;background:var(--row)}
+.pod .m{font-size:1.8rem} .pod b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .pod small{color:var(--soft)}
+.pod.p1{padding-top:22px;box-shadow:inset 0 3px 0 var(--gold)} .pod.p2{box-shadow:inset 0 3px 0 var(--silver)} .pod.p3{box-shadow:inset 0 3px 0 var(--bronze)}
+ol.rows{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+ol.rows li{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:var(--row)}
+ol.rows .n{width:2em;text-align:center;font-weight:800;color:var(--soft);font-variant-numeric:tabular-nums}
+ol.rows .t{flex:1;min-width:0} ol.rows .t b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} ol.rows .t small{color:var(--soft)}
+ol.rows .v{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+ol.rows a{color:inherit;text-decoration:none}
+.empty{color:var(--soft);text-align:center;padding:26px 10px}
+.note{color:var(--soft);font-size:.86rem;text-align:center;margin-top:20px}
+.prize{display:flex;gap:10px;align-items:center;background:color-mix(in srgb,var(--gold) 14%,var(--card));border:1px solid color-mix(in srgb,var(--gold) 40%,var(--rule));border-radius:14px;padding:10px 12px;margin:0 0 12px;font-weight:600}
+@media (max-width:420px){ .podium{gap:6px} .pod{padding:10px 4px} .pod .m{font-size:1.4rem} }
+</style>
+</head>
+<body>
+<header><b>🏆 Leaderboards</b><span class="sp"></span><a href="https://civilinitiatives.org/">Launchpad ✕</a></header>
+<main>
+  <h1>Who's on top?</h1>
+  <p class="lead">The most played games on the Launchpad, and this week's top players. Boards reset every Friday at 9am. Only first names and initials are shown.</p>
+  <nav class="tabs" id="tabs" aria-label="Leaderboards"></nav>
+  <div id="board"></div>
+  <p class="note">© 2026 HWL Systems · Developed by Shiv Kumar</p>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js"></script>
+<script src="https://civilinitiatives.org/auth-store.js?b=20261026a"></script>
+<script>
+/* Leaderboards. "Most played" reads the Game Maker library (already on the
+   server). The weekly boards - Pounds earned, friends invited, games, learning -
+   come from one server function, board_get, added by a server update; until
+   it's there those boards say so instead of breaking. */
+(function(){
+"use strict";
+var URL = "https://hehs-live.duckdns.org", KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkyODMyMjkwLCJleHAiOjIxMDgxOTIyOTB9.7gFhQa5RBwVtiOPLO7Qf2-aVEbkd5xgpLiN1J06Gybo";
+var sb = null; try { sb = supabase.createClient(URL, KEY, { auth: { persistSession: true, autoRefreshToken: true, storage: (window.HEHAuth && HEHAuth.storage) || undefined } }); } catch(e){}
+function h(t, c, x){ var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+var BOARDS = [
+  { key:"played", title:"🎮 Most played", sub:"Games made in the Game Maker, by number of plays." },
+  { key:"pounds", title:"🪙 Pounds earned", sub:"Launchpad Pounds earned this week.", prize:true },
+  { key:"learning", title:"🧠 Learning", sub:"Right answers in the learning games and homework apps this week.", prize:true },
+  { key:"games", title:"🕹️ Games", sub:"Best game scores this week.", prize:true },
+  { key:"invites", title:"🤝 Friends invited", sub:"Friends who joined and stayed active this week.", prize:true }
+];
+var cur = "played", tabs = document.getElementById("tabs"), box = document.getElementById("board"), weekly = null;
+BOARDS.forEach(function(b){ var t = h("button", null, b.title); t.type = "button"; t.onclick = function(){ cur = b.key; paint(); }; t.dataset.k = b.key; tabs.appendChild(t); });
+function medal(i){ return ["🥇","🥈","🥉"][i] || ""; }
+function list(rows, fmt){
+  var wrap = h("div");
+  if (!rows.length) { wrap.appendChild(h("div", "empty", "Nobody on this board yet - be the first.")); return wrap; }
+  var pod = h("div", "podium");
+  [1, 0, 2].forEach(function(i){ var r = rows[i]; if (!r) { pod.appendChild(h("div")); return; }
+    var p = h("div", "pod p" + (i + 1)); p.appendChild(h("div", "m", medal(i))); p.appendChild(h("b", null, r.name)); p.appendChild(h("small", null, fmt(r))); pod.appendChild(p); });
+  wrap.appendChild(pod);
+  var ol = h("ol", "rows");
+  rows.slice(3, 50).forEach(function(r, k){ var li = h("li"); li.appendChild(h("span", "n", String(k + 4)));
+    var t = h("span", "t"); t.appendChild(h("b", null, r.name)); if (r.sub) t.appendChild(h("small", null, r.sub)); li.appendChild(t);
+    li.appendChild(h("span", "v", fmt(r))); ol.appendChild(li); });
+  wrap.appendChild(ol); return wrap;
+}
+function paint(){
+  [].forEach.call(tabs.children, function(t){ t.setAttribute("aria-pressed", String(t.dataset.k === cur)); });
+  var b = BOARDS.filter(function(x){ return x.key === cur; })[0];
+  box.textContent = ""; var c = h("section", "card"); c.appendChild(h("h2", null, b.title)); c.appendChild(h("p", "sub", b.sub));
+  if (b.prize) c.appendChild(h("div", "prize", "🎁 Every Friday the top 3 win Pounds, and 1st place gets a one-of-a-kind item."));
+  box.appendChild(c);
+  if (cur === "played") return played(c);
+  if (!weekly) { c.appendChild(h("div", "empty", "Loading…")); return; }
+  if (weekly === "soon") { c.appendChild(h("div", "empty", "This board switches on with the next server update. Check back soon!")); return; }
+  var rows = weekly[cur] || [];
+  c.appendChild(list(rows.map(function(r){ return { name: r.name, v: r.v, sub: r.sub }; }), function(r){ return Number(r.v).toLocaleString("en-GB"); }));
+}
+var gm = null;
+function played(c){
+  if (!sb) { c.appendChild(h("div", "empty", "Couldn't connect.")); return; }
+  if (gm) return show();
+  c.appendChild(h("div", "empty", "Loading…"));
+  sb.auth.getSession().then(function(s){
+    if (!s.data.session) { gm = "signin"; return; }
+    return sb.functions.invoke("gamemaker", { body: { action: "list" } }).then(function(r){ gm = (r.data && r.data.games) || []; });
+  }).catch(function(){ gm = []; }).then(function(){ if (cur === "played") paint(); });
+  function show(){
+    if (gm === "signin") { var a = h("div", "empty"); a.innerHTML = 'Sign in on the <a style="color:inherit" href="https://civilinitiatives.org/">Launchpad</a> to see the boards.'; c.appendChild(a); return; }
+    var rows = gm.slice().sort(function(a, b){ return (b.plays || 0) - (a.plays || 0); }).map(function(g){ return { name: g.title, v: g.plays || 0, sub: "by " + (g.by || "someone"), id: g.id }; });
+    c.appendChild(list(rows, function(r){ return Number(r.v).toLocaleString("en-GB") + " play" + (r.v === 1 ? "" : "s"); }));
+    var go = h("p", "note"); go.innerHTML = '<a style="color:inherit" href="https://sandbox.civilinitiatives.org/">Play them in the Game Maker →</a>'; c.appendChild(go);
+  }
+}
+/* the weekly boards */
+if (sb) sb.rpc("board_get").then(function(r){ weekly = r.error || !r.data ? "soon" : r.data; if (cur !== "played") paint(); }, function(){ weekly = "soon"; });
+else weekly = "soon";
+paint();
+})();
+</script>
+</body>
+</html>
