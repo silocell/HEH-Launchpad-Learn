@@ -252,7 +252,7 @@ function api(body){
 
 function setTop(){
   if (!S) return;
-  document.getElementById("pts").textContent = S.pts;
+  document.getElementById("pts").textContent = Number(S.pts || 0).toLocaleString("en-GB");
   var sc = document.getElementById("streakChip");
   sc.hidden = !(S.streak > 1); document.getElementById("streak").textContent = S.streak;
   document.body.setAttribute("data-skin", (S.wear && S.wear.theme) || "c-classic");
@@ -612,7 +612,7 @@ document.getElementById("shopBtn").onclick = function(){
   function paint(){
     s.textContent = "";
     var hd = h("div", "qhead"); hd.appendChild(h("h3", null, "Shop")); hd.appendChild(h("span", "sp"));
-    hd.appendChild(h("span", "chip pts", S.pts + "p")).style.cssText = "background:var(--rule)";
+    hd.appendChild(h("span", "chip pts", Number(S.pts || 0).toLocaleString("en-GB") + "p")).style.cssText = "background:var(--rule)";
     var x = h("button", "ghost", "Close"); x.type = "button"; x.onclick = function(){ v.remove(); drawHomeIfHome(); }; hd.appendChild(x);
     s.appendChild(hd);
     s.appendChild(h("p", "muted", "Earn pence by answering questions. Nothing here costs real money."));
