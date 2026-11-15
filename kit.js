@@ -321,6 +321,9 @@
       });
     }
 
+    /* let an app open one of its own practice entries from a button (e.g. Brainstorm's times tables card) */
+    Kit.open = function (key) { var p = (app.practice || []).filter(function (x) { return x.key === key; })[0]; if (p) { if (p.run) runCustom(p); else runPractice(p); } };
+
     /* ---------- practice: ten from one topic ---------- */
     function runPractice(p) {
       var n = p.n || 10, i = 0, right = 0, missed = [], r = rngFrom(Date.now() + p.key);

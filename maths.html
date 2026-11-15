@@ -186,6 +186,118 @@ var T = {
 };
 var ORDER = ["rounding", "negatives", "bidmas", "simplify", "fracof", "fracadd", "percent", "pchange", "ratio", "substitute", "collect", "expand", "solve", "sequences", "angles", "area", "averages", "factors", "powers", "decimals", "probability"];
 
+/* ---------- Times tables (like Sparx's times tables) ----------
+   Every fact from 2×2 to 12×12 is tracked on this device: how often it's right
+   and how fast. "Fluent" = right on the last two tries and under 3 seconds.
+   Rounds pick the facts you're weakest or slowest at; the grid shows them all. */
+var TT_KEY = "hl.tt.facts";
+function ttLoad(){ try { return JSON.parse(localStorage.getItem(TT_KEY) || "{}"); } catch(e){ return {}; } }
+function ttSave(F){ try { localStorage.setItem(TT_KEY, JSON.stringify(F)); } catch(e){} if (window.HEHLearn && HEHLearn.save) try { HEHLearn.save("tt-facts", F); } catch(e){} }
+function ttKey(a, b){ return Math.min(a, b) + "x" + Math.max(a, b); }
+function ttState(f){ if (!f || !f.n) return "new"; if (f.last2 === 2 && f.ms < 3000) return "fluent"; if (f.last2 >= 1) return "slow"; return "learn"; }
+function ttFacts(){ var o = []; for (var a = 2; a <= 12; a++) for (var b = a; b <= 12; b++) o.push([a, b]); return o; }
+function ttNote(F, a, b, ok, ms){
+  var k = ttKey(a, b), f = F[k] || { n: 0, ok: 0, ms: 9999, last2: 0 };
+  f.n++; if (ok) f.ok++;
+  f.last2 = ok ? Math.min(2, (f.last2 || 0) + 1) : 0;
+  if (ok) f.ms = f.ms >= 9999 ? ms : Math.round(f.ms * 0.6 + ms * 0.4);
+  F[k] = f;
+}
+function ttWeight(F, a, b){ var f = F[ttKey(a, b)], st = ttState(f); return st === "learn" ? 6 : st === "new" ? 4 : st === "slow" ? 3 + Math.min(3, (f.ms - 3000) / 1500) : 1; }
+function ttPick(F, r, only){
+  var pool = ttFacts().filter(function(x){ return !only || x[0] === only || x[1] === only; });
+  var tot = 0, w = pool.map(function(x){ var v = ttWeight(F, x[0], x[1]); tot += v; return v; }), t = r() * tot;
+  for (var i = 0; i < pool.length; i++) { t -= w[i]; if (t <= 0) break; }
+  var x = pool[Math.min(i, pool.length - 1)]; return r() < .5 ? [x[0], x[1]] : [x[1], x[0]];
+}
+function ttCount(F){ var c = { fluent: 0, slow: 0, learn: 0, new: 0 }; ttFacts().forEach(function(x){ c[ttState(F[ttKey(x[0], x[1])])]++; }); return c; }
+
+/* A round: 60 seconds (or one table), type the answer on the number pad. */
+function ttRound(main, api, only){
+  var F = ttLoad(), r = Kit.rng(Date.now()), score = 0, wrong = 0, streak = 0, end = Date.now() + 60000, timer = null, cur = null, t0 = 0, typed = "", done = false;
+  var box = Kit.h("div", "k-q"), hd = Kit.h("div", "k-qhead");
+  hd.appendChild(Kit.h("span", "k-kicker", only ? "✖️ The " + only + " times table" : "⏱️ Times tables · 60 seconds"));
+  var info = Kit.h("span", "k-code", "60s"); hd.appendChild(info); box.appendChild(hd);
+  var q = Kit.h("div", "tt-q"); box.appendChild(q);
+  var ans = Kit.h("div", "tt-ans", ""); ans.setAttribute("aria-live", "polite"); box.appendChild(ans);
+  var pad = Kit.h("div", "tt-pad"); box.appendChild(pad);
+  var sc = Kit.h("p", "k-note"); sc.style.textAlign = "center"; box.appendChild(sc);
+  main.appendChild(box);
+  function show(){ ans.textContent = typed || " "; }
+  function next(){ cur = ttPick(F, r, only); typed = ""; show(); q.textContent = cur[0] + " × " + cur[1]; t0 = Date.now(); }
+  function submit(){
+    if (done || !typed) return;
+    var right = cur[0] * cur[1], ok = Number(typed) === right, ms = Date.now() - t0;
+    ttNote(F, cur[0], cur[1], ok, ms);
+    api.record(ok, { q: cur[0] + " × " + cur[1], a: right, skill: "Times tables" });
+    if (ok) { score++; streak++; box.classList.remove("tt-bad"); box.classList.add("tt-good"); }
+    else { wrong++; streak = 0; box.classList.remove("tt-good"); box.classList.add("tt-bad"); ans.textContent = cur[0] + " × " + cur[1] + " = " + right; }
+    sc.textContent = score + " right" + (streak >= 5 ? " · 🔥 " + streak + " in a row" : "");
+    setTimeout(function(){ box.classList.remove("tt-good", "tt-bad"); if (!done) next(); }, ok ? 120 : 900);
+  }
+  function key(k){ if (done) return; if (k === "⌫") typed = typed.slice(0, -1); else if (k === "✓") return submit(); else if (typed.length < 3) typed += k; show();
+    if (cur && typed.length >= String(cur[0] * cur[1]).length && Number(typed) === cur[0] * cur[1]) submit(); }
+  ["1","2","3","4","5","6","7","8","9","⌫","0","✓"].forEach(function(k){ var b = Kit.h("button", "tt-key" + (k === "✓" ? " go" : ""), k); b.type = "button"; b.onclick = function(){ key(k); }; pad.appendChild(b); });
+  function onKey(e){ if (/^[0-9]$/.test(e.key)) key(e.key); else if (e.key === "Backspace") key("⌫"); else if (e.key === "Enter") key("✓"); }
+  document.addEventListener("keydown", onKey);
+  function finish(){
+    done = true; clearInterval(timer); document.removeEventListener("keydown", onKey); ttSave(F); api.xp(score * 3);
+    var best = only ? false : api.best(score), c = ttCount(F);
+    main.textContent = "";
+    var e = Kit.h("div", "k-q"); e.appendChild(Kit.h("div", "k-kicker", only ? "✖️ The " + only + " times table" : "⏱️ Times tables"));
+    e.appendChild(Kit.h("div", "k-big", score + " right"));
+    e.appendChild(Kit.h("p", null, (wrong ? wrong + " to work on. " : "No mistakes! ") + (best ? "🏆 New best! " : "") + "You're fluent in " + c.fluent + " of " + ttFacts().length + " facts."));
+    var row = Kit.h("div", "k-actions"), a = Kit.h("button", "k-btn", "Go again"); a.type = "button"; a.onclick = function(){ main.textContent = ""; ttRound(main, api, only); };
+    var g = Kit.h("button", "k-btn ghost", "See my grid"); g.type = "button"; g.onclick = function(){ main.textContent = ""; ttGrid(main, api); };
+    var b = Kit.h("button", "k-btn ghost", "Back"); b.type = "button"; b.onclick = api.home;
+    row.appendChild(a); row.appendChild(g); row.appendChild(b); e.appendChild(row); main.appendChild(e);
+  }
+  if (only) { var left = 12; var orig = submit; submit = function(){ orig(); if (--left <= 0) setTimeout(finish, 950); }; info.textContent = "12 facts"; }
+  else timer = setInterval(function(){ var l = Math.max(0, Math.ceil((end - Date.now()) / 1000)); info.textContent = l + "s"; if (l <= 0) finish(); }, 250);
+  var stop = Kit.h("button", "k-btn ghost", "Stop"); stop.type = "button"; stop.style.marginTop = "12px"; stop.onclick = function(){ if (!done) finish(); }; box.appendChild(stop);
+  next();
+}
+
+/* The grid: every fact coloured by how well you know it. Tap a row to practise that table. */
+function ttGrid(main, api){
+  var F = ttLoad(), c = ttCount(F);
+  var box = Kit.h("div", "k-q"), hd = Kit.h("div", "k-qhead"); hd.appendChild(Kit.h("span", "k-kicker", "🧮 My times tables")); box.appendChild(hd);
+  box.appendChild(Kit.h("p", null, "Fluent in " + c.fluent + " of " + ttFacts().length + " facts. Tap a number down the side to practise that table."));
+  var g = Kit.h("div", "tt-grid");
+  g.appendChild(Kit.h("span", "tt-h", "×"));
+  for (var b = 1; b <= 12; b++) g.appendChild(Kit.h("span", "tt-h", String(b)));
+  for (var a = 1; a <= 12; a++) {
+    var rowBtn = Kit.h("button", "tt-h tt-row", String(a)); rowBtn.type = "button"; rowBtn.setAttribute("aria-label", "Practise the " + a + " times table");
+    (function(n){ rowBtn.onclick = function(){ main.textContent = ""; ttRound(main, api, n < 2 ? 2 : n); }; })(a);
+    g.appendChild(rowBtn);
+    for (var b2 = 1; b2 <= 12; b2++) {
+      var st = (a < 2 || b2 < 2) ? "fluent" : ttState(F[ttKey(a, b2)]);
+      var cell = Kit.h("span", "tt-c " + st, String(a * b2)); cell.title = a + " × " + b2 + " = " + (a * b2); g.appendChild(cell);
+    }
+  }
+  box.appendChild(g);
+  var key = Kit.h("div", "tt-keyrow");
+  [["fluent", "Fluent"], ["slow", "Right but slow"], ["learn", "Still learning"], ["new", "Not tried yet"]].forEach(function(x){ var s = Kit.h("span", null, x[1]); s.prepend(Kit.h("i", "tt-c " + x[0], "")); key.appendChild(s); });
+  box.appendChild(key);
+  var row = Kit.h("div", "k-actions"), go = Kit.h("button", "k-btn", "⏱️ 60-second round"); go.type = "button"; go.onclick = function(){ main.textContent = ""; ttRound(main, api); };
+  var back = Kit.h("button", "k-btn ghost", "Back"); back.type = "button"; back.onclick = api.home;
+  row.appendChild(go); row.appendChild(back); box.appendChild(row); main.appendChild(box);
+}
+var ttCss = document.createElement("style");
+ttCss.textContent = ".tt-q{font-size:2.6rem;font-weight:900;text-align:center;margin:14px 0 4px;font-variant-numeric:tabular-nums}" +
+  ".tt-ans{font-size:1.8rem;font-weight:800;text-align:center;min-height:2.4rem;font-variant-numeric:tabular-nums}" +
+  ".tt-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:320px;margin:10px auto 0}" +
+  ".tt-key{font:800 1.4rem inherit;font-family:inherit;padding:14px 0;border-radius:14px;border:1px solid var(--rule);background:var(--card);color:var(--ink);cursor:pointer;touch-action:manipulation}" +
+  ".tt-key.go{background:var(--accent,#1f6fde);color:#fff;border-color:transparent}" +
+  ".k-q.tt-good .tt-ans{color:#16a34a}.k-q.tt-bad .tt-ans{color:#dc2626;font-size:1.3rem}" +
+  ".tt-grid{display:grid;grid-template-columns:repeat(13,minmax(0,1fr));gap:2px;margin:10px 0;font-size:clamp(.55rem,2.4vw,.85rem);font-variant-numeric:tabular-nums}" +
+  ".tt-h{display:grid;place-items:center;font-weight:800;padding:4px 0;color:var(--soft)}" +
+  ".tt-row{border:0;border-radius:6px;background:rgba(127,127,127,.15);color:var(--ink);font:inherit;font-weight:800;cursor:pointer}" +
+  ".tt-c{display:grid;place-items:center;padding:4px 0;border-radius:5px;font-weight:700}" +
+  ".tt-c.fluent{background:#16a34a;color:#fff}.tt-c.slow{background:#f59e0b;color:#1f1300}.tt-c.learn{background:#dc2626;color:#fff}.tt-c.new{background:rgba(127,127,127,.18);color:var(--soft)}" +
+  ".tt-keyrow{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.8rem;color:var(--soft)}.tt-keyrow i{display:inline-block;width:12px;height:12px;padding:0;margin-right:5px;vertical-align:-1px}";
+document.head.appendChild(ttCss);
+
 /* This week's homework: three focus topics (they move on each week),
    four tasks of six, times tables, and a mixed "keep it fresh" task. */
 function weekNo(id){ return Math.round(new Date(id).getTime() / 6048e5); }
@@ -209,7 +321,23 @@ Kit.start({
     return tasks;
   },
   make: function(item){ var tp = T[item.t] || T.times, q = tp.make(Kit.rng(item.t + ":" + item.s)); q.skill = q.skill || tp.title; return q; },
-  practice: ORDER.concat(["times"]).map(function(k){ return { key: k, title: T[k].title, icon: T[k].icon }; })
+  extraHome: function(main){
+    var F = ttLoad(), c = ttCount(F), n = ttFacts().length;
+    var box = Kit.h("section", "k-card"), hd = Kit.h("div", "k-head"); hd.appendChild(Kit.h("h2", null, "✖️ Times tables")); box.appendChild(hd);
+    var inner = Kit.h("div"); inner.style.padding = "0 16px 16px";
+    inner.appendChild(Kit.h("p", null, "Fluent in " + c.fluent + " of " + n + " facts" + (c.slow ? " · " + c.slow + " right but slow" : "") + (c.learn ? " · " + c.learn + " still learning" : "") + "."));
+    var bar = Kit.h("div"); bar.style.cssText = "height:10px;border-radius:99px;background:rgba(127,127,127,.18);overflow:hidden;margin:4px 0 12px";
+    var fill = Kit.h("div"); fill.style.cssText = "height:100%;width:" + Math.round(100 * c.fluent / n) + "%;background:linear-gradient(90deg,#16a34a,#22c55e)"; bar.appendChild(fill); inner.appendChild(bar);
+    var row = Kit.h("div", "k-actions");
+    var go = Kit.h("button", "k-btn", "⏱️ 60-second round"); go.type = "button";
+    var gr = Kit.h("button", "k-btn ghost", "🧮 My grid"); gr.type = "button";
+    go.onclick = function(){ Kit.open("ttround"); }; gr.onclick = function(){ Kit.open("ttgrid"); };
+    row.appendChild(go); row.appendChild(gr); inner.appendChild(row); box.appendChild(inner); main.appendChild(box);
+  },
+  practice: [
+    { key: "ttround", title: "Times tables: 60-second round", icon: "⏱️", sub: "Picks the facts you're slowest at", run: function(m, api){ ttRound(m, api); } },
+    { key: "ttgrid", title: "Times tables: my grid", icon: "🧮", sub: "See every fact, practise one table", run: function(m, api){ ttGrid(m, api); } }
+  ].concat(ORDER.concat(["times"]).map(function(k){ return { key: k, title: T[k].title, icon: T[k].icon }; }))
 });
 })();
 </script>
