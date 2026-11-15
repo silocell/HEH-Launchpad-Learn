@@ -259,7 +259,7 @@ Kit.start({
   blurb: "Read a section, answer a few questions, earn XP. Every story and article here is an original, written for the Launchpad.",
   doneLine: "Book finished - and every question right.",
   weekly: function(r, id){
-    var w = weekNo(id), n = BOOKS.length, pick = [w % n, (w + 2) % n];
+    var w = weekNo(id), n = w >= weekNo("2026-11-20T09:00:00Z") ? BOOKS.length : 6, pick = [w % n, (w + 2) % n];
     return pick.map(function(k, j){ var b = BOOKS[k]; return { key: "b" + j, code: String(j + 1), title: b.icon + " " + b.title, sub: b.kind + " · " + b.level + " · " + b.sections.length + " parts", items: bookItems(b, r) }; });
   },
   make: make,

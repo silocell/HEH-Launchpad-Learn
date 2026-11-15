@@ -263,12 +263,15 @@ Kit.start({
   doneLine: "Quiz complete.",
   weekly: function(r, id){
     var w = weekNo(id), bio = ORDER.slice(0, 5), chem = ORDER.slice(5, 9), phys = ORDER.slice(9);
+    /* Questions added in Nov 2026 join the homework from 20 Nov, so a week
+       that has already started keeps the same questions. */
+    var lim = w >= weekNo("2026-11-20T09:00:00Z") ? Q.length : 168, okQ = function(i){ return i < lim; };
     var focus = [bio[w % bio.length], chem[w % chem.length], phys[w % phys.length]];
     var tasks = focus.map(function(t, k){
-      var ids = Kit.shuffle(r, byTopic[t]).slice(0, 10);
+      var ids = Kit.shuffle(r, byTopic[t].filter(okQ)).slice(0, 10);
       return { key: "q" + (k + 1), code: String(k + 1), title: TOPICS[t][2] + ": " + TOPICS[t][0], sub: ids.length + " questions", items: ids.map(function(q){ return { t: t, q: q, s: Math.floor(r() * 1e9) }; }) };
     });
-    var mix = Kit.shuffle(r, Q.map(function(_, i){ return i; })).slice(0, 10);
+    var mix = Kit.shuffle(r, Q.map(function(_, i){ return i; }).filter(okQ)).slice(0, 10);
     tasks.push({ key: "mix", code: "R", title: "Recap: everything", sub: "10 questions from any topic", items: mix.map(function(q){ return { t: Q[q][0], q: q, s: Math.floor(r() * 1e9) }; }) });
     return tasks;
   },

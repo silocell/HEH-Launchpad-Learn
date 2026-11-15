@@ -80,9 +80,28 @@ var V = {
     ["the station","la gare","la estación","der Bahnhof"], ["the supermarket","le supermarché","el supermercado","der Supermarkt"], ["the beach","la plage","la playa","der Strand"], ["the hospital","l'hôpital","el hospital","das Krankenhaus"] ]},
   me: { title:"Describing people", icon:"🙂", w:[
     ["tall","grand","alto","groß"], ["funny","drôle","divertido","lustig"], ["kind","gentil","amable","nett"], ["lazy","paresseux","perezoso","faul"],
-    ["clever","intelligent","inteligente","klug"], ["sporty","sportif","deportista","sportlich"], ["shy","timide","tímido","schüchtern"], ["boring","ennuyeux","aburrido","langweilig"] ]}
+    ["clever","intelligent","inteligente","klug"], ["sporty","sportif","deportista","sportlich"], ["shy","timide","tímido","schüchtern"], ["boring","ennuyeux","aburrido","langweilig"] ]},
+  clothes: { title:"Clothes", icon:"👕", w:[
+    ["the T-shirt","le tee-shirt","la camiseta","das T-Shirt"], ["the trousers","le pantalon","los pantalones","die Hose"], ["the skirt","la jupe","la falda","der Rock"], ["the shoes","les chaussures","los zapatos","die Schuhe"],
+    ["the jumper","le pull","el jersey","der Pullover"], ["the coat","le manteau","el abrigo","der Mantel"], ["the hat","le chapeau","el sombrero","der Hut"], ["the dress","la robe","el vestido","das Kleid"],
+    ["the school uniform","l'uniforme scolaire","el uniforme escolar","die Schuluniform"] ]},
+  home: { title:"At home", icon:"🏠", w:[
+    ["the house","la maison","la casa","das Haus"], ["the kitchen","la cuisine","la cocina","die Küche"], ["the bedroom","la chambre","el dormitorio","das Schlafzimmer"], ["the bathroom","la salle de bains","el cuarto de baño","das Badezimmer"],
+    ["the living room","le salon","el salón","das Wohnzimmer"], ["the garden","le jardin","el jardín","der Garten"], ["the bed","le lit","la cama","das Bett"], ["the table","la table","la mesa","der Tisch"],
+    ["the chair","la chaise","la silla","der Stuhl"], ["the door","la porte","la puerta","die Tür"] ]},
+  body: { title:"The body", icon:"🖐️", w:[
+    ["the head","la tête","la cabeza","der Kopf"], ["the eye","l'œil","el ojo","das Auge"], ["the nose","le nez","la nariz","die Nase"], ["the mouth","la bouche","la boca","der Mund"],
+    ["the ear","l'oreille","la oreja","das Ohr"], ["the hand","la main","la mano","die Hand"], ["the foot","le pied","el pie","der Fuß"], ["the leg","la jambe","la pierna","das Bein"],
+    ["the arm","le bras","el brazo","der Arm"], ["the hair","les cheveux","el pelo","die Haare"] ]},
+  months: { title:"Months", icon:"📅", w:[
+    ["January","janvier","enero","Januar"], ["February","février","febrero","Februar"], ["March","mars","marzo","März"], ["April","avril","abril","April"],
+    ["May","mai","mayo","Mai"], ["June","juin","junio","Juni"], ["July","juillet","julio","Juli"], ["August","août","agosto","August"],
+    ["September","septembre","septiembre","September"], ["October","octobre","octubre","Oktober"], ["November","novembre","noviembre","November"], ["December","décembre","diciembre","Dezember"] ]}
 };
 var ORDER = Object.keys(V);
+/* Topics added in Nov 2026 join the weekly homework from 20 Nov, so a week
+   that has already started keeps the same two topics. */
+function weekTopics(w){ return w >= weekNo("2026-11-20T09:00:00Z") ? ORDER : ORDER.slice(0, 12); }
 /* Sentences: English, then the words in order (and any other right order) */
 var SENT = {
   fr: [["I have a dog.","J'ai un chien"],["My name is Sam.","Je m'appelle Sam"],["I like football.","J'aime le foot"],["It's cold today.","Il fait froid aujourd'hui","Aujourd'hui il fait froid"],
@@ -124,7 +143,7 @@ function make(item){
 function weekNo(id){ return Math.round(new Date(id).getTime() / 6048e5); }
 /* ---------- games (Languagenut-style, our own versions) ---------- */
 function gameWords(n){
-  var w = weekNo(Kit.week().id), a = ORDER[(w * 2) % ORDER.length], b = ORDER[(w * 2 + 1) % ORDER.length], c = COL[lang];
+  var w = weekNo(Kit.week().id), WT = weekTopics(w), a = WT[(w * 2) % WT.length], b = WT[(w * 2 + 1) % WT.length], c = COL[lang];
   var pool = V[a].w.concat(V[b].w), seen = {};
   pool = Kit.shuffle(Kit.rng(Date.now()), pool).filter(function(x){ if (seen[x[0]] || seen[x[c]]) return false; seen[x[0]] = seen[x[c]] = 1; return true; });
   return { list: pool.slice(0, n).map(function(x){ return { en: x[0], fx: x[c] }; }), topics: V[a].title + " & " + V[b].title };
@@ -222,7 +241,7 @@ Kit.start({
     document.title = "Word Passport · " + L().name;
   },
   weekly: function(r, id){
-    var w = weekNo(id), a = ORDER[(w * 2) % ORDER.length], b = ORDER[(w * 2 + 1) % ORDER.length], seed = function(){ return Math.floor(r() * 1e9); };
+    var w = weekNo(id), WT = weekTopics(w), a = WT[(w * 2) % WT.length], b = WT[(w * 2 + 1) % WT.length], seed = function(){ return Math.floor(r() * 1e9); };
     function list(n, f){ var o = []; for (var i = 0; i < n; i++) o.push(f(i)); return o; }
     return [
       { key:"l1", code:"1", title:"Learn: " + V[a].title, sub:V[a].icon + " Meet the words", items:list(8, function(i){ return { t:a, k:i % 2 ? "say" : "see", s:seed() }; }) },
