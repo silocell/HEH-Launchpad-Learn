@@ -1,5 +1,5 @@
 /* =====================================================================
-   learn.js - one place every learning game reports to.
+   learn.js - one place every HWL Learning game reports to.
 
    A game calls HEHLearn.record({ subject, skill, ok, front, back })
    after each answer. The database does the rest (learn_record in
@@ -234,7 +234,7 @@
 })();
 
 /* =====================================================================
-   Feedback for every learning game: a sound for right and wrong answers,
+   Feedback for every HWL Learning game: a sound for right and wrong answers,
    "in a row" streaks, confetti for big moments, and a daily goal.
    It all hangs off HEHLearn.record, which every game already calls after
    an answer, so each game gets it without changing. Nothing here talks

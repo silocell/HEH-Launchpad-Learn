@@ -12,7 +12,7 @@ try{ var m = document.cookie.match(/(?:^|; )hl_theme=(dark|light|system)/), t = 
 if (/^lab\./i.test(location.hostname) || /^\/HEH-(Homework|Launchpad)-Lab(\/|$)/i.test(location.pathname)) document.documentElement.classList.add("lab");
 </script>
 <style>
-/* Flash cards. Nobody writes these: a wrong answer in any learning game
+/* Flash cards. Nobody writes these: a wrong answer in any HWL Learning game
    makes one. Leitner boxes - right moves a card up a box and it comes
    back later; wrong sends it to box 1. */
 :root{ --bg:#f5f3ff; --card:#fff; --ink:#1e1b3a; --soft:#625f86; --rule:#e4e0f7; --bar:#1e1b4b; --a1:#6d28d9; --a2:#4f46e5; --good:#15803d; --bad:#b91c1c; }
@@ -135,7 +135,7 @@ function draw(){
   }
   if (mine.length) p.appendChild(boxes);
   main.appendChild(p);
-  if (!all.length) return say("✨", "No cards yet. Get something wrong in a learning game and it turns up here.", ["Play a learning game", "./"]);
+  if (!all.length) return say("✨", "No cards yet. Get something wrong in an HWL Learning game and it turns up here.", ["Play an HWL Learning game", "./"]);
   if (!queue.length) {
     var next = mine.filter(function(c){ return !due(c); }).sort(function(a, b){ return new Date(a.due_at) - new Date(b.due_at); })[0];
     var e = h("div", "panel empty"); e.style.marginTop = "12px";

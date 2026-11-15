@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="https://civilinitiatives.org/site.js?b=20261112d"></script>
-<title>Learning Games</title>
+<title>HWL Learning</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <script>
 try{ var m = document.cookie.match(/(?:^|; )hl_theme=(dark|light|system)/), t = m ? m[1] : JSON.parse(localStorage.getItem("hl.theme")); /* the cookie is shared by every *.civilinitiatives.org site */
@@ -47,9 +47,9 @@ footer a{color:inherit}
 <link rel="stylesheet" href="https://civilinitiatives.org/glass.css?b=20261102a">
 </head>
 <body>
-<div class="top"><b>🚀 Learning Games</b><div class="sp"></div><a href="https://civilinitiatives.org/games.html">← <span class="long">back to the </span>Launchpad</a></div>
+<div class="top"><b>🚀 HWL Learning</b><div class="sp"></div><a href="https://civilinitiatives.org/games.html">← <span class="long">back to the </span>Launchpad</a></div>
 <main>
-  <h1>Learning Games</h1>
+  <h1>HWL Learning</h1>
   <p class="muted">Sign in with your Launchpad account to begin. Your progress syncs across all your devices.</p>
   <div class="today" id="today" hidden>
     <div class="today-top"><b>🎯 Today</b><span id="todayTxt"></span></div>
@@ -83,7 +83,7 @@ var GAMES = [
   { icon:"🎮", bg:"linear-gradient(135deg,#0f766e,#0891b2 50%,#4f46e5)", name:"Game Maker", url:"https://sandbox.civilinitiatives.org/",
     says:"Describe a game and Claude builds it for you - a maths race, a spelling game, anything. Your first one is free.", tags:["Make your own","New"] }
 ];
-/* today's goal and best streak, from the learning games (kept on this device) */
+/* today's goal and best streak, from HWL Learning (kept on this device) */
 (function(){
   var n = 0, best = 0, GOAL = 20;
   try { var p = (localStorage.getItem("hl.learn.day") || "").split("|"), d = new Date();
@@ -92,7 +92,7 @@ var GAMES = [
   document.getElementById("today").hidden = false;
   document.getElementById("todayTxt").textContent = Math.min(n, GOAL) + " / " + GOAL + " right answers" + (n >= GOAL ? " ✅" : "");
   setTimeout(function(){ document.getElementById("todayFill").style.width = Math.min(100, n / GOAL * 100) + "%"; }, 60);
-  document.getElementById("todayMore").textContent = (n >= GOAL ? "Daily goal done - anything more is a bonus. " : "Any learning game counts. ") + (best ? "🔥 Best streak: " + best + " in a row." : "Get 3 in a row to start a streak.");
+  document.getElementById("todayMore").textContent = (n >= GOAL ? "Daily goal done - anything more is a bonus. " : "Any HWL Learning game counts. ") + (best ? "🔥 Best streak: " + best + " in a row." : "Get 3 in a row to start a streak.");
 })();
 var list = document.getElementById("list");
 function h(t, c, x){ var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
