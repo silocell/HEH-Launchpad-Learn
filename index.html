@@ -47,7 +47,7 @@ footer a{color:inherit}
 <link rel="stylesheet" href="https://civilinitiatives.org/glass.css?b=20261102a">
 </head>
 <body>
-<div class="top"><b>🚀 HWL Learning</b><div class="sp"></div><a href="https://play.civilinitiatives.org/">← <span class="long">back to the </span>Launchpad</a></div>
+<div class="top"><b>🚀 HWL Learning</b><div class="sp"></div><a id="backLink" href="https://play.civilinitiatives.org/">← <span class="long">back to </span>Games</a></div>
 <main>
   <h1>HWL Learning</h1>
   <p class="muted">Sign in with your Launchpad account to begin. Your progress syncs across all your devices.</p>
@@ -101,6 +101,21 @@ GAMES.forEach(function(g){
   var tags = h("span", "tags"); g.tags.forEach(function(t){ tags.appendChild(h("span", "tag", t)); });
   w.appendChild(tags); a.appendChild(w); list.appendChild(a);
 });
+</script>
+<script>
+/* Back goes where you came from: the dashboard -> the dashboard, anything else -> Games.
+   Remembered for this visit, so it still works after opening a game and coming back. */
+(function(){
+  var a = document.getElementById("backLink"); if (!a) return;
+  var from = "";
+  try {
+    var r = document.referrer ? new URL(document.referrer) : null;
+    if (r && (r.hostname === "civilinitiatives.org" || r.hostname === "www.civilinitiatives.org") && !/games/.test(r.pathname)) from = "dash";
+    else if (r && r.hostname === "play.civilinitiatives.org") from = "play";
+    if (from) sessionStorage.setItem("hl.learn.from", from); else from = sessionStorage.getItem("hl.learn.from") || "";
+  } catch (e) {}
+  if (from === "dash") { a.href = "https://civilinitiatives.org/"; a.innerHTML = '\u2190 <span class="long">back to the </span>Launchpad'; }
+})();
 </script>
 </body>
 </html>
