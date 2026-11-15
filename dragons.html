@@ -26,7 +26,7 @@ button{font:inherit;cursor:pointer} button:disabled{cursor:default;opacity:.5}
 .brand{font-weight:800;font-size:1.15rem;white-space:nowrap} .top .sp{flex:1}
 .chip{background:rgba(255,255,255,.12);border-radius:999px;padding:5px 12px;font-weight:700;white-space:nowrap;font-size:.9rem}
 .top a{color:#b9d6c9;font-size:.85rem;text-decoration:none}
-@media (max-width:520px){ .top a{display:none} .top{gap:8px;padding:10px 12px} }
+@media (max-width:520px){ .top a:not(.xbtn){display:none} .top{gap:8px;padding:10px 12px} .chip{font-size:.8rem;padding:4px 10px} }
 nav.tabs{display:flex;gap:6px;max-width:980px;margin:16px auto 0;padding:0 16px}
 nav.tabs button{border:0;background:transparent;color:var(--soft);font-weight:700;padding:8px 14px;border-radius:999px}
 nav.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
@@ -77,6 +77,36 @@ input[type=email],select{font:inherit;padding:10px 12px;border:1px solid var(--r
   font:700 22px/1 system-ui,sans-serif;text-decoration:none;border:2px solid rgba(255,255,255,.35);flex:none;margin-left:6px}
 .xbtn:hover{background:rgba(255,255,255,.26)}
 .xbtn:focus-visible{outline:3px solid #fde68a;outline-offset:2px}
+
+/* ---------- 2026-11 look: habitats, compact cards, stats strip ---------- */
+.hero2{position:relative;overflow:hidden;border-radius:20px;padding:18px 18px 16px;margin-bottom:14px;color:#fff;background:linear-gradient(120deg,#047857,#0ea5e9 70%,#6366f1)}
+.hero2 h1{margin:0;font-size:1.5rem;font-weight:900}.hero2 p{margin:4px 0 0;opacity:.92;max-width:34rem}
+.hero2 .big{position:absolute;right:10px;bottom:-18px;font-size:92px;opacity:.2;pointer-events:none}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--rule);border-radius:14px;padding:10px 12px}
+.stat b{display:block;font-size:1.35rem;font-weight:900;font-variant-numeric:tabular-nums}.stat span{font-size:.75rem;color:var(--soft)}
+.nest{grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr))}
+.dcard{display:grid;grid-template-columns:120px minmax(0,1fr);gap:0;padding:0;overflow:hidden;text-align:left}
+.hab{position:relative;display:grid;place-items:end center;padding:8px 6px 4px;min-height:132px}
+.hab svg{width:112px;height:auto;position:relative}
+.hab::after{content:"";position:absolute;left:8%;right:8%;bottom:10px;height:12px;border-radius:50%;background:rgba(0,0,0,.18)}
+.hab-fire{background:radial-gradient(circle at 70% 20%,#fde68a,transparent 40%),linear-gradient(#fb923c,#b91c1c)}
+.hab-stone{background:radial-gradient(circle at 70% 20%,#f5f5f4,transparent 40%),linear-gradient(#a8a29e,#44403c)}
+.hab-storm{background:radial-gradient(circle at 70% 20%,#e0e7ff,transparent 40%),linear-gradient(#818cf8,#312e81)}
+.hab-ice{background:radial-gradient(circle at 70% 20%,#fff,transparent 40%),linear-gradient(#67e8f9,#0e7490)}
+.dinfo{padding:12px 14px;min-width:0}
+.dinfo .nm{font-size:1.15rem;font-weight:900;margin-bottom:2px;overflow-wrap:anywhere}
+.dinfo .sub{font-size:.82rem;color:var(--soft);margin-bottom:6px}
+.dinfo .row{justify-content:flex-start;margin-top:8px}
+.dinfo .btn{padding:9px 16px}.dinfo .ghost{padding:8px 12px;font-size:.9rem}
+@media (max-width:380px){ .dcard{grid-template-columns:92px minmax(0,1fr)} .hab svg{width:88px} .hab{min-height:110px} }
+.bcards{display:grid;gap:12px;margin-bottom:14px}
+.bmode{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start}
+.bmode .ic{font-size:2rem;line-height:1}
+.bmode h3{margin:0 0 4px;font-size:1.05rem}
+.code{font:900 1.6rem ui-monospace,Menlo,Consolas,monospace;letter-spacing:.18em;background:var(--bg);border:2px dashed var(--rule);border-radius:12px;padding:8px 12px;display:inline-block;margin:4px 0}
+input.codein{font:800 1.2rem ui-monospace,Menlo,Consolas,monospace;letter-spacing:.14em;text-transform:uppercase;padding:10px 12px;border:1px solid var(--rule);border-radius:10px;background:var(--card);color:var(--ink);width:100%;margin:4px 0 10px}
+.soon{font-size:.85rem;color:var(--soft);background:var(--bg);border-radius:10px;padding:8px 10px;margin-top:8px}
 </style>
 <script src="https://civilinitiatives.org/auth-store.js?b=20261026a"></script>
 <script src="learn.js?b=20261114a"></script>
@@ -173,34 +203,40 @@ function err(e){ main.textContent = ""; var b = h("div", "card center"); b.appen
 function bar(val, max, colour){ var m = h("div", "meter"), f = h("span"); f.style.width = Math.max(0, Math.min(100, 100 * val / max)) + "%"; f.style.background = colour; m.appendChild(f); return m; }
 function drawNest(){
   main.textContent = "";
+  var hero = h("div", "hero2"); hero.appendChild(h("h1", null, "🐉 Word Dragons")); hero.appendChild(h("p", null, "Grow dragons by getting English right: spelling, grammar, vocabulary and punctuation. Then battle other dragons."));
+  hero.appendChild(h("div", "big", "🐉")); main.appendChild(hero);
+  var st = h("div", "stats");
+  function stat(v, l){ var x = h("div", "stat"); x.appendChild(h("b", null, String(v))); x.appendChild(h("span", null, l)); st.appendChild(x); }
+  stat(S.dragons.filter(function(d){ return d.stage !== "Egg"; }).length + (S.dragons.some(function(d){ return d.stage === "Egg"; }) ? " + 🥚" : ""), "dragons");
+  stat(S.total, "right answers"); stat(S.wins, "battles won");
+  main.appendChild(st);
   if (!S.dragons.length && !S.canHatch) { main.appendChild(h("div", "card center", "Something's odd - no egg yet. Try again in a moment.")); return; }
   var nest = h("div", "nest");
   S.dragons.forEach(function(d){
-    var c = h("div", "card dragon");
-    c.appendChild(art(d));
-    c.appendChild(h("div", "nm", d.name));
-    var meta = h("div"); meta.appendChild(h("span", "el el-" + d.element, SKILL[d.element])); meta.appendChild(document.createTextNode("  " + d.stage + (d.stage === "Egg" ? "" : " · level " + d.level))); c.appendChild(meta);
+    var c = h("div", "card dragon dcard");
+    var hab = h("div", "hab hab-" + (d.element || "fire")); hab.appendChild(art(d)); c.appendChild(hab);
+    var info = h("div", "dinfo");
+    info.appendChild(h("div", "nm", d.name));
+    var sub = h("div", "sub"); sub.appendChild(h("span", "el el-" + d.element, SKILL[d.element])); sub.appendChild(document.createTextNode("  " + d.stage + (d.stage === "Egg" ? "" : " · level " + d.level))); info.appendChild(sub);
     if (d.stage === "Egg") {
-      var l = h("div", "lbl"); l.appendChild(h("span", null, "Hatching")); l.appendChild(h("span", null, d.hatch + " / 5")); c.appendChild(l);
-      c.appendChild(bar(d.hatch, 5, "#f59e0b"));
-      c.appendChild(h("p", "muted", "Get 5 " + SKILL[d.element].toLowerCase() + " questions right to hatch it."));
+      var l = h("div", "lbl"); l.appendChild(h("span", null, "Hatching")); l.appendChild(h("span", null, d.hatch + " / 5")); info.appendChild(l);
+      info.appendChild(bar(d.hatch, 5, "#f59e0b"));
     } else {
-      var l1 = h("div", "lbl"); l1.appendChild(h("span", null, "XP")); l1.appendChild(h("span", null, (d.xp - d.prev) + " / " + (d.next - d.prev))); c.appendChild(l1);
-      c.appendChild(bar(d.xp - d.prev, d.next - d.prev, "linear-gradient(90deg,#059669,#0ea5e9)"));
-      var l2 = h("div", "lbl"); l2.appendChild(h("span", null, d.health < 20 ? "😴 Sleepy" : d.health < 50 ? "Hungry" : "Healthy")); l2.appendChild(h("span", null, d.health + "%")); c.appendChild(l2);
-      c.appendChild(bar(d.health, 100, d.health < 20 ? "#dc2626" : d.health < 50 ? "#f59e0b" : "#16a34a"));
+      var l1 = h("div", "lbl"); l1.appendChild(h("span", null, "XP")); l1.appendChild(h("span", null, (d.xp - d.prev) + " / " + (d.next - d.prev))); info.appendChild(l1);
+      info.appendChild(bar(d.xp - d.prev, d.next - d.prev, "linear-gradient(90deg,#059669,#0ea5e9)"));
+      var l2 = h("div", "lbl"); l2.appendChild(h("span", null, d.health < 20 ? "😴 Sleepy" : d.health < 50 ? "😋 Hungry" : "💚 Healthy")); l2.appendChild(h("span", null, d.health + "%")); info.appendChild(l2);
+      info.appendChild(bar(d.health, 100, d.health < 20 ? "#dc2626" : d.health < 50 ? "#f59e0b" : "#16a34a"));
     }
     var row = h("div", "row");
-    var t = h("button", "btn", d.stage === "Egg" ? "Warm the egg" : "Train"); t.onclick = function(){ lesson(d); };
-    var r = h("button", "ghost", "New name"); r.title = "Pick a different name from the list";
+    var t = h("button", "btn", d.stage === "Egg" ? "🔥 Warm it" : "📖 Train"); t.onclick = function(){ lesson(d); };
+    var r = h("button", "ghost", "Rename"); r.title = "Pick a different name from the list";
     r.onclick = function(){ api({ action:"rename", dragon:d.id }).then(function(s){ S = s; drawNest(); }).catch(function(e){ toast(e.message); }); };
-    row.appendChild(t); row.appendChild(r); c.appendChild(row);
-    nest.appendChild(c);
+    row.appendChild(t); row.appendChild(r); info.appendChild(row);
+    c.appendChild(info); nest.appendChild(c);
   });
   if (S.canHatch) {
     var e = h("div", "card dragon");
-    e.appendChild(art({ stage:"Egg", element:"fire", hatch:0 }));
-    e.appendChild(h("div", "nm", S.dragons.length ? "A new egg!" : "Your first egg"));
+    e.appendChild(h("div", "nm", S.dragons.length ? "🥚 A new egg!" : "🥚 Your first egg"));
     e.appendChild(h("p", "muted", "Pick its element - that's the English skill it grows on."));
     var eg = h("div", "eggs");
     ["fire","stone","storm","ice"].forEach(function(el){
@@ -210,8 +246,8 @@ function drawNest(){
     });
     e.appendChild(eg); nest.appendChild(e);
   } else if (S.nextEggAt && S.dragons.length < 4) {
-    var n = h("div", "card dragon center"); n.appendChild(h("div", "nm", "🥚 Next egg"));
-    n.appendChild(h("p", "muted", "At " + S.nextEggAt + " right answers (you're on " + S.total + ")."));
+    var n = h("div", "card"); n.appendChild(h("div", "nm", "🥚 Next egg"));
+    n.appendChild(h("p", "muted", "At " + S.nextEggAt + " right answers - you're on " + S.total + "."));
     n.appendChild(bar(S.total, S.nextEggAt, "#f59e0b")); nest.appendChild(n);
   }
   main.appendChild(nest);
@@ -283,20 +319,37 @@ function hatchedOptions(sel){
 }
 function drawBattles(){
   main.textContent = "";
-  var grid = h("div", "grid2"), make = h("div", "card"), list = h("div", "card");
-  make.appendChild(h("h2", null, "Challenge someone"));
-  make.appendChild(h("p", "muted", "Type their school email. You'll both get the same 8 English questions - most right wins, and on a tie the faster one wins. They'll only ever see your dragon, never your name."));
-  var em = h("input"); em.type = "email"; em.placeholder = "their school email"; em.autocomplete = "off";
-  var sel = h("select");
-  make.appendChild(em); make.appendChild(sel);
-  if (!hatchedOptions(sel)) make.appendChild(h("p", "muted", "Hatch a dragon first - battles need one."));
-  var go = h("button", "btn", "Challenge!"); go.disabled = !sel.options.length;
-  go.onclick = function(){
-    go.disabled = true;
-    api({ action:"challenge", email:em.value, dragon:Number(sel.value) }).then(function(r){ toast(r.said); fight(r, false); })
-      .catch(function(e){ toast(e.message); go.disabled = false; });
+  var hero = h("div", "hero2"); hero.style.background = "linear-gradient(120deg,#b91c1c,#ea580c 55%,#f59e0b)";
+  hero.appendChild(h("h1", null, "⚔️ Battles")); hero.appendChild(h("p", null, "Both dragons get the same 8 English questions. Most right wins; on a tie, the faster one wins. Nobody ever sees your name - only your dragon."));
+  hero.appendChild(h("div", "big", "⚔️")); main.appendChild(hero);
+  var grid = h("div", "grid2"), make = h("div", "bcards"), list = h("div", "card");
+  var sel = h("select"), have = hatchedOptions(sel);
+  function soon(box, e){ var m = (e && e.message) || ""; var n = h("p", "soon", /unknown|not found|action|404|upgrad/i.test(m) ? "🔧 This switches on with the next server update." : m); box.appendChild(n); setTimeout(function(){ n.remove(); }, 6000); }
+  var pick = h("div", "card"); pick.appendChild(h("h2", null, "Your fighter"));
+  if (have) pick.appendChild(sel); else pick.appendChild(h("p", "muted", "Hatch a dragon first - battles need one."));
+  make.appendChild(pick);
+  /* Quick battle: you fight another player's dragon straight away (its answers
+     were recorded when it last battled), so you never wait for anyone. */
+  var q = h("div", "card bmode"); q.appendChild(h("div", "ic", "⚡"));
+  var qw = h("div"); qw.appendChild(h("h3", null, "Quick battle")); qw.appendChild(h("p", "muted", "Fight a random dragon of about the same level, right now."));
+  var qb = h("button", "btn", "Find a dragon"); qb.disabled = !have;
+  qb.onclick = function(){ qb.disabled = true; api({ action:"quick", dragon:Number(sel.value) }).then(function(r){ if (r.said) toast(r.said); fight(r, true); }).catch(function(e){ qb.disabled = false; soon(qw, e); }); };
+  qw.appendChild(qb); q.appendChild(qw); make.appendChild(q);
+  /* Battle code: a friend types your code (tell them in person) - no emails. */
+  var c = h("div", "card bmode"); c.appendChild(h("div", "ic", "🤝"));
+  var cw = h("div"); cw.appendChild(h("h3", null, "Battle a friend"));
+  cw.appendChild(h("p", "muted", "Tell a friend your dragon code in person, or type theirs."));
+  var mine = h("div"); mine.appendChild(h("span", "muted", "Your code: ")); var code = h("span", "code", "······"); mine.appendChild(code); cw.appendChild(mine);
+  api({ action:"mycode" }).then(function(r){ code.textContent = r.code || "······"; }).catch(function(){ code.textContent = "soon"; });
+  var ci = h("input", "codein"); ci.placeholder = "THEIR CODE"; ci.maxLength = 8; ci.autocomplete = "off"; ci.setAttribute("aria-label", "Your friend's dragon code"); cw.appendChild(ci);
+  var cb = h("button", "btn", "Challenge!"); cb.disabled = !have;
+  cb.onclick = function(){
+    var v = ci.value.trim().toUpperCase(); if (v.length < 4) { toast("Type your friend's code first."); return; }
+    cb.disabled = true;
+    api({ action:"challenge", code:v, dragon:Number(sel.value) }).then(function(r){ toast(r.said || "Challenge sent!"); fight(r, false); })
+      .catch(function(e){ cb.disabled = false; soon(cw, e); });
   };
-  make.appendChild(go);
+  cw.appendChild(cb); c.appendChild(cw); make.appendChild(c);
 
   list.appendChild(h("h2", null, "Battles this week"));
   var box = h("div"); list.appendChild(box); box.appendChild(h("p", "muted", "Loading…"));
