@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<!-- Built from silocell/HEH-Launchpad-Learn (languages.html) by tools/subdomains.py. Change it there, not here. -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script src="https://civilinitiatives.org/site.js?b=20261114p"></script>
+<title>Word Passport</title>
+<meta name="description" content="French, Spanish and German words and sentences for Key Stage 3: learn, listen, spell and build sentences.">
+<link rel="icon" type="image/png" href="/favicon.png">
+<script>
+try{ var m = document.cookie.match(/(?:^|; )hl_theme=(dark|light|system)/), t = m ? m[1] : JSON.parse(localStorage.getItem("hl.theme"));
+     if(t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t); }catch(e){}
+if (/^lab\./i.test(location.hostname) || /^\/HEH-(Homework|Launchpad)-Lab(\/|$)/i.test(location.pathname)) document.documentElement.classList.add("lab");
+</script>
+<link rel="stylesheet" href="kit.css?b=20261114d">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js"></script>
+<script src="https://civilinitiatives.org/auth-store.js?b=20261026a"></script>
+<script src="learn.js?b=20261114a"></script>
+<script src="https://civilinitiatives.org/games-gate.js?b=20261027h" data-kind="learning"></script>
+<script src="kit.js?b=20261114c"></script>
+<link rel="stylesheet" href="https://civilinitiatives.org/glass.css?b=20261114a">
+</head>
+<body>
+<div class="labbar">Lab</div>
+<header class="k-top"><span class="k-brand">🛂 Word Passport</span><span class="k-sp"></span><span class="k-xp" id="kXp">⚡ 0 XP</span><a href="https://learn.civilinitiatives.org/" aria-label="Back to HWL Learning">✕</a></header>
+<main class="k" id="main"></main>
+<footer class="k">© 2026 HWL Systems · Developed by Shiv Kumar · Free to use, no adverts</footer>
+<script>
+/* Word Passport - French, Spanish and German for Key Stage 3.
+   Learn a topic's words, hear them said, type them with the accents, and
+   build real sentences. Every word was checked by hand. Listening uses
+   your device's own voices, so nothing is sent anywhere.
+   GPL-3.0. */
+(function(){
+"use strict";
+var LANGS = {
+  fr: { name:"French", flag:"🇫🇷", voice:"fr-FR", accents:["é","è","ê","à","â","ç","ù","û","ô","î","ï","ë","œ"] },
+  es: { name:"Spanish", flag:"🇪🇸", voice:"es-ES", accents:["á","é","í","ó","ú","ñ","ü","¿","¡"] },
+  de: { name:"German", flag:"🇩🇪", voice:"de-DE", accents:["ä","ö","ü","ß","Ä","Ö","Ü"] }
+};
+/* [English, French, Spanish, German] */
+var V = {
+  greet: { title:"Greetings", icon:"👋", w:[
+    ["hello","bonjour","hola","hallo"], ["goodbye","au revoir","adiós","tschüss"], ["please","s'il te plaît","por favor","bitte"], ["thank you","merci","gracias","danke"],
+    ["good night","bonne nuit","buenas noches","gute Nacht"], ["see you soon","à bientôt","hasta pronto","bis bald"], ["how are you?","ça va ?","¿qué tal?","wie geht's?"],
+    ["my name is…","je m'appelle…","me llamo…","ich heiße…"], ["yes","oui","sí","ja"], ["no","non","no","nein"] ]},
+  numbers: { title:"Numbers", icon:"🔢", w:[
+    ["one","un","uno","eins"], ["two","deux","dos","zwei"], ["three","trois","tres","drei"], ["four","quatre","cuatro","vier"], ["five","cinq","cinco","fünf"],
+    ["six","six","seis","sechs"], ["seven","sept","siete","sieben"], ["eight","huit","ocho","acht"], ["nine","neuf","nueve","neun"], ["ten","dix","diez","zehn"],
+    ["twelve","douze","doce","zwölf"], ["fifteen","quinze","quince","fünfzehn"], ["twenty","vingt","veinte","zwanzig"] ]},
+  colours: { title:"Colours", icon:"🎨", w:[
+    ["red","rouge","rojo","rot"], ["blue","bleu","azul","blau"], ["green","vert","verde","grün"], ["yellow","jaune","amarillo","gelb"], ["black","noir","negro","schwarz"],
+    ["white","blanc","blanco","weiß"], ["pink","rose","rosa","rosa"], ["grey","gris","gris","grau"], ["brown","marron","marrón","braun"], ["purple","violet","morado","lila"] ]},
+  family: { title:"Family", icon:"👪", w:[
+    ["the mother","la mère","la madre","die Mutter"], ["the father","le père","el padre","der Vater"], ["the brother","le frère","el hermano","der Bruder"], ["the sister","la sœur","la hermana","die Schwester"],
+    ["the grandmother","la grand-mère","la abuela","die Großmutter"], ["the grandfather","le grand-père","el abuelo","der Großvater"], ["the aunt","la tante","la tía","die Tante"],
+    ["the uncle","l'oncle","el tío","der Onkel"], ["the parents","les parents","los padres","die Eltern"] ]},
+  school: { title:"School subjects", icon:"🏫", w:[
+    ["maths","les maths","las matemáticas","Mathe"], ["English","l'anglais","el inglés","Englisch"], ["science","les sciences","las ciencias","Naturwissenschaften"], ["history","l'histoire","la historia","Geschichte"],
+    ["geography","la géographie","la geografía","Erdkunde"], ["art","le dessin","el dibujo","Kunst"], ["music","la musique","la música","Musik"], ["PE","l'EPS","la educación física","Sport"], ["computing","l'informatique","la informática","Informatik"] ]},
+  food: { title:"Food & drink", icon:"🍞", w:[
+    ["the bread","le pain","el pan","das Brot"], ["the water","l'eau","el agua","das Wasser"], ["the milk","le lait","la leche","die Milch"], ["the cheese","le fromage","el queso","der Käse"],
+    ["the apple","la pomme","la manzana","der Apfel"], ["the chicken","le poulet","el pollo","das Hähnchen"], ["the fish","le poisson","el pescado","der Fisch"], ["the egg","l'œuf","el huevo","das Ei"],
+    ["the cake","le gâteau","la tarta","der Kuchen"], ["the vegetables","les légumes","las verduras","das Gemüse"] ]},
+  hobbies: { title:"Hobbies", icon:"⚽", w:[
+    ["to play football","jouer au foot","jugar al fútbol","Fußball spielen"], ["to read","lire","leer","lesen"], ["to swim","nager","nadar","schwimmen"], ["to dance","danser","bailar","tanzen"],
+    ["to listen to music","écouter de la musique","escuchar música","Musik hören"], ["to watch TV","regarder la télé","ver la tele","fernsehen"], ["to cook","cuisiner","cocinar","kochen"],
+    ["to play video games","jouer aux jeux vidéo","jugar a los videojuegos","Videospiele spielen"] ]},
+  weather: { title:"Weather", icon:"🌦️", w:[
+    ["it's raining","il pleut","llueve","es regnet"], ["it's cold","il fait froid","hace frío","es ist kalt"], ["it's hot","il fait chaud","hace calor","es ist heiß"], ["it's windy","il y a du vent","hace viento","es ist windig"],
+    ["it's snowing","il neige","nieva","es schneit"], ["it's nice weather","il fait beau","hace buen tiempo","es ist schön"], ["it's sunny","il fait du soleil","hace sol","es ist sonnig"] ]},
+  days: { title:"Days of the week", icon:"📅", w:[
+    ["Monday","lundi","lunes","Montag"], ["Tuesday","mardi","martes","Dienstag"], ["Wednesday","mercredi","miércoles","Mittwoch"], ["Thursday","jeudi","jueves","Donnerstag"],
+    ["Friday","vendredi","viernes","Freitag"], ["Saturday","samedi","sábado","Samstag"], ["Sunday","dimanche","domingo","Sonntag"] ]},
+  animals: { title:"Pets & animals", icon:"🐶", w:[
+    ["the dog","le chien","el perro","der Hund"], ["the cat","le chat","el gato","die Katze"], ["the rabbit","le lapin","el conejo","das Kaninchen"], ["the bird","l'oiseau","el pájaro","der Vogel"],
+    ["the horse","le cheval","el caballo","das Pferd"], ["the mouse","la souris","el ratón","die Maus"], ["the snake","le serpent","la serpiente","die Schlange"], ["the tortoise","la tortue","la tortuga","die Schildkröte"] ]},
+  town: { title:"In town", icon:"🏙️", w:[
+    ["the cinema","le cinéma","el cine","das Kino"], ["the park","le parc","el parque","der Park"], ["the library","la bibliothèque","la biblioteca","die Bibliothek"], ["the swimming pool","la piscine","la piscina","das Schwimmbad"],
+    ["the station","la gare","la estación","der Bahnhof"], ["the supermarket","le supermarché","el supermercado","der Supermarkt"], ["the beach","la plage","la playa","der Strand"], ["the hospital","l'hôpital","el hospital","das Krankenhaus"] ]},
+  me: { title:"Describing people", icon:"🙂", w:[
+    ["tall","grand","alto","groß"], ["funny","drôle","divertido","lustig"], ["kind","gentil","amable","nett"], ["lazy","paresseux","perezoso","faul"],
+    ["clever","intelligent","inteligente","klug"], ["sporty","sportif","deportista","sportlich"], ["shy","timide","tímido","schüchtern"], ["boring","ennuyeux","aburrido","langweilig"] ]},
+  clothes: { title:"Clothes", icon:"👕", w:[
+    ["the T-shirt","le tee-shirt","la camiseta","das T-Shirt"], ["the trousers","le pantalon","los pantalones","die Hose"], ["the skirt","la jupe","la falda","der Rock"], ["the shoes","les chaussures","los zapatos","die Schuhe"],
+    ["the jumper","le pull","el jersey","der Pullover"], ["the coat","le manteau","el abrigo","der Mantel"], ["the hat","le chapeau","el sombrero","der Hut"], ["the dress","la robe","el vestido","das Kleid"],
+    ["the school uniform","l'uniforme scolaire","el uniforme escolar","die Schuluniform"] ]},
+  home: { title:"At home", icon:"🏠", w:[
+    ["the house","la maison","la casa","das Haus"], ["the kitchen","la cuisine","la cocina","die Küche"], ["the bedroom","la chambre","el dormitorio","das Schlafzimmer"], ["the bathroom","la salle de bains","el cuarto de baño","das Badezimmer"],
+    ["the living room","le salon","el salón","das Wohnzimmer"], ["the garden","le jardin","el jardín","der Garten"], ["the bed","le lit","la cama","das Bett"], ["the table","la table","la mesa","der Tisch"],
+    ["the chair","la chaise","la silla","der Stuhl"], ["the door","la porte","la puerta","die Tür"] ]},
+  body: { title:"The body", icon:"🖐️", w:[
+    ["the head","la tête","la cabeza","der Kopf"], ["the eye","l'œil","el ojo","das Auge"], ["the nose","le nez","la nariz","die Nase"], ["the mouth","la bouche","la boca","der Mund"],
+    ["the ear","l'oreille","la oreja","das Ohr"], ["the hand","la main","la mano","die Hand"], ["the foot","le pied","el pie","der Fuß"], ["the leg","la jambe","la pierna","das Bein"],
+    ["the arm","le bras","el brazo","der Arm"], ["the hair","les cheveux","el pelo","die Haare"] ]},
+  months: { title:"Months", icon:"📅", w:[
+    ["January","janvier","enero","Januar"], ["February","février","febrero","Februar"], ["March","mars","marzo","März"], ["April","avril","abril","April"],
+    ["May","mai","mayo","Mai"], ["June","juin","junio","Juni"], ["July","juillet","julio","Juli"], ["August","août","agosto","August"],
+    ["September","septembre","septiembre","September"], ["October","octobre","octubre","Oktober"], ["November","novembre","noviembre","November"], ["December","décembre","diciembre","Dezember"] ]}
+};
+var ORDER = Object.keys(V);
+/* Topics added in Nov 2026 join the weekly homework from 20 Nov, so a week
+   that has already started keeps the same two topics. */
+function weekTopics(w){ return w >= weekNo("2026-11-20T09:00:00Z") ? ORDER : ORDER.slice(0, 12); }
+/* Sentences: English, then the words in order (and any other right order) */
+var SENT = {
+  fr: [["I have a dog.","J'ai un chien"],["My name is Sam.","Je m'appelle Sam"],["I like football.","J'aime le foot"],["It's cold today.","Il fait froid aujourd'hui","Aujourd'hui il fait froid"],
+       ["I live in London.","J'habite à Londres"],["My sister is funny.","Ma sœur est drôle"],["I play video games.","Je joue aux jeux vidéo"],["I am twelve years old.","J'ai douze ans"],
+       ["I don't like fish.","Je n'aime pas le poisson"],["I eat bread.","Je mange du pain"]],
+  es: [["I have a dog.","Tengo un perro"],["My name is Sam.","Me llamo Sam"],["I like football.","Me gusta el fútbol"],["It's cold today.","Hoy hace frío","Hace frío hoy"],
+       ["I live in London.","Vivo en Londres"],["My sister is funny.","Mi hermana es divertida"],["I play video games.","Juego a los videojuegos"],["I am twelve years old.","Tengo doce años"],
+       ["I don't like fish.","No me gusta el pescado"],["I eat bread.","Como pan"]],
+  de: [["I have a dog.","Ich habe einen Hund"],["My name is Sam.","Ich heiße Sam"],["I like football.","Ich mag Fußball"],["It's cold today.","Heute ist es kalt","Es ist heute kalt"],
+       ["I live in London.","Ich wohne in London"],["My sister is funny.","Meine Schwester ist lustig"],["I play video games.","Ich spiele Videospiele"],["I am twelve years old.","Ich bin zwölf Jahre alt"],
+       ["I don't like fish.","Ich mag keinen Fisch"],["I eat bread.","Ich esse Brot"]]
+};
+var COL = { fr:1, es:2, de:3 };
+var lang = "fr";
+try { var saved = localStorage.getItem("hl.lang.choice"); if (LANGS[saved]) lang = saved; } catch(e){}
+function L(){ return LANGS[lang]; }
+function noArticle(s){ return s.replace(/^(le|la|les|l'|el|los|las|der|die|das)\s*/i, "").replace(/…$/, ""); }
+
+/* question kinds: see (word → English), say (English → word), type, listen, order */
+function make(item){
+  var r = Kit.rng("lang:" + lang + ":" + item.t + ":" + item.k + ":" + item.s), c = COL[lang], li = L();
+  if (item.k === "order") {
+    var list = SENT[lang], x = list[Math.floor(r() * list.length)];
+    var toks = x[1].split(" ");
+    return { type:"order", q:"Put the words in order: " + x[0], prompt:x[0], tokens:Kit.shuffle(r, toks), a:x[1], accept:x.slice(2), skill:li.name + " sentences", say:null,
+      why:li.name + ": " + x[1] + (x[2] ? " (or: " + x[2] + ")" : "") + "." };
+  }
+  var top = V[item.t], words = top.w, w = words[Math.floor(r() * words.length)], word = w[c], eng = w[0];
+  var others = Kit.shuffle(r, words.filter(function(o){ return o !== w; })).slice(0, 3);
+  var skill = li.name + ": " + top.title;
+  if (item.k === "see") return { type:"mc", q:"What does “" + word + "” mean?", a:eng, opts:Kit.shuffle(r, [eng].concat(others.map(function(o){ return o[0]; }))), say:{ text:noArticle(word) === word ? word : word, lang:li.voice }, skill:skill, why:"“" + word + "” means " + eng + "." };
+  if (item.k === "say") return { type:"mc", q:"How do you say “" + eng + "” in " + li.name + "?", a:word, opts:Kit.shuffle(r, [word].concat(others.map(function(o){ return o[c]; }))), skill:skill, why:"“" + eng + "” is " + word + " in " + li.name + "." };
+  if (item.k === "listen") return { type:"mc", q:"Listen. What did you hear?", lead:Kit.canSay() ? "Tap 🔊 Listen to hear it again." : "Your device can't speak, so here it is written: " + word, a:eng, opts:Kit.shuffle(r, [eng].concat(others.map(function(o){ return o[0]; }))), say:{ text:word, lang:li.voice }, skill:skill + " (listening)", why:"You heard “" + word + "”, which means " + eng + "." };
+  /* type it */
+  var bare = noArticle(word);
+  return { type:"text", q:"Type the " + li.name + " for: " + eng, a:word.replace(/…$/, ""), accept:[bare, word], shown:word, accents:li.accents, skill:skill + " (spelling)", ph:"Type it in " + li.name,
+    why:word + (bare !== word ? " - remember the word for “the” goes with it" : "") + "." , hint: bare !== word ? "Include the word for “the” if you can." : null };
+}
+function weekNo(id){ return Math.round(new Date(id).getTime() / 6048e5); }
+/* ---------- games (Languagenut-style, our own versions) ---------- */
+function gameWords(n){
+  var w = weekNo(Kit.week().id), WT = weekTopics(w), a = WT[(w * 2) % WT.length], b = WT[(w * 2 + 1) % WT.length], c = COL[lang];
+  var pool = V[a].w.concat(V[b].w), seen = {};
+  pool = Kit.shuffle(Kit.rng(Date.now()), pool).filter(function(x){ if (seen[x[0]] || seen[x[c]]) return false; seen[x[0]] = seen[x[c]] = 1; return true; });
+  return { list: pool.slice(0, n).map(function(x){ return { en: x[0], fx: x[c] }; }), topics: V[a].title + " & " + V[b].title };
+}
+function card(main, title, sub){
+  var box = Kit.h("div", "k-q"), hd = Kit.h("div", "k-qhead");
+  hd.appendChild(Kit.h("span", "k-kicker", title)); var sp = Kit.h("span", "k-code", sub); hd.appendChild(sp);
+  var ds = Kit.h("div", "k-dots"); hd.appendChild(ds);
+  main.appendChild(box); box.appendChild(hd); return { box: box, info: sp };
+}
+function endScreen(main, api, title, big, line, again){
+  main.textContent = "";
+  var c = Kit.h("div", "k-q"); c.appendChild(Kit.h("div", "k-kicker", title)); c.appendChild(Kit.h("div", "k-big", big)); c.appendChild(Kit.h("p", null, line));
+  var row = Kit.h("div", "k-actions"), a = Kit.h("button", "k-btn", "Play again"); a.type = "button"; a.onclick = again;
+  var b = Kit.h("button", "k-btn ghost", "Back"); b.type = "button"; b.onclick = api.home; row.appendChild(a); row.appendChild(b); c.appendChild(row); main.appendChild(c);
+}
+function matchUp(main, api){
+  var g = gameWords(6), left = g.list.length, misses = 0, t0 = Date.now(), first = null, li = L();
+  var ui = card(main, "🃏 Match-up · " + li.name, g.topics);
+  ui.box.appendChild(Kit.h("p", "k-note", "Tap a word, then tap its partner. Match all six pairs as fast as you can."));
+  var grid = Kit.h("div", "k-match"); ui.box.appendChild(grid);
+  var cards = [];
+  g.list.forEach(function(x, i){ cards.push({ t: x.fx, k: i, fx: true }); cards.push({ t: x.en, k: i }); });
+  Kit.shuffle(Kit.rng(t0), cards).forEach(function(cd){
+    var b = Kit.h("button", "k-mc", cd.t); b.type = "button"; cd.el = b;
+    b.onclick = function(){
+      if (b.classList.contains("done") || b === (first && first.el)) return;
+      if (cd.fx && Kit.canSay()) Kit.say(cd.t, li.voice);
+      if (!first) { first = cd; b.classList.add("sel"); return; }
+      if (first.k === cd.k && first.fx !== cd.fx) {
+        b.classList.add("done"); first.el.classList.add("done"); first.el.classList.remove("sel");
+        api.record(true, { q: "Match: " + g.list[cd.k].fx, a: g.list[cd.k].en, skill: li.name + " vocabulary" });
+        first = null; left--;
+        if (!left) {
+          var secs = Math.round((Date.now() - t0) / 1000), score = Math.max(10, 100 - misses * 8 - Math.max(0, secs - 20));
+          api.xp(15 + Math.max(0, 20 - misses * 3)); var best = api.best(score);
+          setTimeout(function(){ endScreen(main, api, "🃏 Match-up", secs + "s", (misses ? misses + " wrong tap" + (misses > 1 ? "s" : "") + ". " : "No wrong taps! ") + "Score " + score + "." + (best ? " 🏆 New best!" : ""), function(){ main.textContent = ""; matchUp(main, api); }); }, 500);
+        }
+      } else {
+        misses++; b.classList.add("bad"); first.el.classList.add("bad");
+        var a = first; first = null;
+        setTimeout(function(){ b.classList.remove("bad"); a.el.classList.remove("bad", "sel"); }, 450);
+      }
+      ui.info.textContent = (6 - left) + "/6 · " + misses + " wrong";
+    };
+    grid.appendChild(b);
+  });
+}
+function speedRound(main, api){
+  var li = L(), c = COL[lang], g = gameWords(40).list, all = Object.keys(V).reduce(function(a, k){ return a.concat(V[k].w); }, []);
+  var score = 0, combo = 0, wrong = 0, end = Date.now() + 60000, r = Kit.rng(Date.now()), timer = null, i = 0;
+  var ui = card(main, "⚡ Speed round · " + li.name, "60s");
+  var big = Kit.h("div", "k-qtext"); big.style.cssText = "font-size:1.8rem;text-align:center;margin:18px 0"; ui.box.appendChild(big);
+  var opts = Kit.h("div", "k-opts"); ui.box.appendChild(opts);
+  var sc = Kit.h("p", "k-note"); sc.style.textAlign = "center"; ui.box.appendChild(sc);
+  function next(){
+    if (i >= g.length) i = 0;
+    var w = g[i++], others = Kit.shuffle(r, all.filter(function(x){ return x[0] !== w.en; })).slice(0, 3).map(function(x){ return x[0]; });
+    big.textContent = w.fx; opts.textContent = "";
+    Kit.shuffle(r, [w.en].concat(others)).forEach(function(o){
+      var b = Kit.h("button", "k-opt", o); b.type = "button";
+      b.onclick = function(){
+        var ok = o === w.en; api.record(ok, { q: w.fx, a: w.en, skill: li.name + " vocabulary" });
+        if (ok) { combo++; score += 1 + Math.floor(combo / 5); } else { combo = 0; wrong++; b.classList.add("wrong"); }
+        sc.textContent = "Score " + score + (combo >= 5 ? " · 🔥 x" + (1 + Math.floor(combo / 5)) + " combo" : "");
+        setTimeout(next, ok ? 80 : 350);
+      };
+      opts.appendChild(b);
+    });
+  }
+  function tick(){
+    var left = Math.max(0, Math.ceil((end - Date.now()) / 1000)); ui.info.textContent = left + "s";
+    if (left <= 0) { clearInterval(timer); api.xp(score * 2); var best = api.best(score);
+      endScreen(main, api, "⚡ Speed round", String(score), wrong + " wrong. Every 5 in a row adds a combo bonus." + (best ? " 🏆 New best!" : ""), function(){ main.textContent = ""; speedRound(main, api); }); }
+  }
+  timer = setInterval(tick, 250); next(); tick();
+  var stop = Kit.h("button", "k-btn ghost", "Stop"); stop.type = "button"; stop.style.marginTop = "12px"; stop.onclick = function(){ clearInterval(timer); api.home(); }; ui.box.appendChild(stop);
+}
+
+
+Kit.start({
+  stats: true, id: "languages", name: "Word Passport", icon: "🛂", subject: "languages", colour: "#ea580c", colour2: "#e11d48",
+  variant: function(){ return lang; },
+  blurb: "French, Spanish and German: learn words, hear them, spell them and build sentences - then race the clock in Match-up and the Speed round.",
+  doneLine: "Stamped in your passport.",
+  extraHome: function(main, reload){
+    var box = Kit.h("section", "k-card"), hd = Kit.h("div", "k-head"); hd.appendChild(Kit.h("h2", null, "Your language")); box.appendChild(hd);
+    var sel = Kit.h("div", "k-sel");
+    Object.keys(LANGS).forEach(function(k){
+      var b = Kit.h("button", null, LANGS[k].flag + " " + LANGS[k].name); b.type = "button"; b.setAttribute("aria-pressed", String(k === lang));
+      b.onclick = function(){ if (k === lang) return; lang = k; try { localStorage.setItem("hl.lang.choice", k); } catch(e){} Kit.reload(); };
+      sel.appendChild(b);
+    });
+    box.appendChild(sel); main.appendChild(box);
+    document.title = "Word Passport · " + L().name;
+  },
+  weekly: function(r, id){
+    var w = weekNo(id), WT = weekTopics(w), a = WT[(w * 2) % WT.length], b = WT[(w * 2 + 1) % WT.length], seed = function(){ return Math.floor(r() * 1e9); };
+    function list(n, f){ var o = []; for (var i = 0; i < n; i++) o.push(f(i)); return o; }
+    return [
+      { key:"l1", code:"1", title:"Learn: " + V[a].title, sub:V[a].icon + " Meet the words", items:list(8, function(i){ return { t:a, k:i % 2 ? "say" : "see", s:seed() }; }) },
+      { key:"l2", code:"2", title:"Learn: " + V[b].title, sub:V[b].icon + " Meet the words", items:list(8, function(i){ return { t:b, k:i % 2 ? "say" : "see", s:seed() }; }) },
+      { key:"ty", code:"3", title:"Spell it", sub:"Type the words, with the accents", items:list(6, function(i){ return { t:i % 2 ? a : b, k:"type", s:seed() }; }) },
+      { key:"li", code:"4", title:"Listen", sub:"🔊 Hear it, then choose", items:list(6, function(i){ return { t:i % 2 ? a : b, k:"listen", s:seed() }; }) },
+      { key:"se", code:"5", title:"Sentences", sub:"Put the words in order", items:list(4, function(){ return { t:"sent", k:"order", s:seed() }; }) }
+    ];
+  },
+  make: make,
+  practice: [
+    { key:"match", title:"Match-up", icon:"🃏", sub:"Pair the words, beat the clock", run:matchUp },
+    { key:"speed", title:"Speed round", icon:"⚡", sub:"60 seconds, as many as you can", run:speedRound }
+  ].concat(ORDER.map(function(k){ return { key:k, title:V[k].title, icon:V[k].icon, sub:V[k].w.length + " words",
+    items:function(i, seed){ return { t:k, k:["see", "say", "listen", "type"][i % 4], s:seed }; } }; }).concat([{ key:"sent", title:"Sentences", icon:"🧩", sub:"Build them", n:6, items:function(i, seed){ return { t:"sent", k:"order", s:seed }; } }]))
+});
+})();
+</script>
+</body>
+</html>
